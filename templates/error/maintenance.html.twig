@@ -1,0 +1,51 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}System Under Maintenance | {{ company_name ?? 'ModularSaaS' }}{% endblock %}
+
+{% block body %}
+    <div class="maint-container">
+        <!-- Decorative background circles -->
+        <div style="position: absolute; top: 15%; left: 15%; width: 26rem; height: 26rem; background-color: rgba(99, 102, 241, 0.04); border-radius: 9999px; filter: blur(64px);"></div>
+        <div style="position: absolute; bottom: 15%; right: 15%; width: 26rem; height: 26rem; background-color: rgba(239, 68, 68, 0.04); border-radius: 9999px; filter: blur(64px);"></div>
+
+        <div style="max-width: 32rem; width: 100%; position: relative; z-index: 10;">
+            <div class="maint-card">
+                <!-- Icon -->
+                <div class="maint-icon-container">
+                    <i data-lucide="wrench" style="width: 2.5rem; height: 2.5rem; color: #dc2626;"></i>
+                </div>
+
+                <!-- Title -->
+                <h1 class="maint-title">
+                    System Under Maintenance
+                </h1>
+
+                <!-- Description -->
+                <p class="maint-desc">
+                    We are currently performing scheduled maintenance updates on the platform. All features are temporarily offline for regular users to prevent data conflicts.
+                </p>
+
+                <!-- Status alert -->
+                <div class="maint-alert">
+                    <i data-lucide="alert-circle" style="width: 1.1rem; height: 1.1rem; flex-shrink: 0; margin-top: 0.1rem;"></i>
+                    <span>Administrators can still bypass this screen by signing into their administrator account.</span>
+                </div>
+
+                <!-- Sign In Action -->
+                <div>
+                    <a href="{{ path('app_login') }}" class="maint-btn">
+                        <i data-lucide="log-in" style="width: 1.1rem; height: 1.1rem; color: #ffffff;"></i>
+                        <span>Admin Login</span>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            if (typeof lucide !== 'undefined') {
+                lucide.createIcons();
+            }
+        });
+    </script>
+{% endblock %}

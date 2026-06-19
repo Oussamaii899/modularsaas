@@ -1,0 +1,46 @@
+{% set pagesCount = pagesCount|default(0) %}
+{% set currentPage = currentPage|default(1) %}
+{% set totalItems = totalItems|default(0) %}
+{% set items = items|default([]) %}
+
+{% if totalItems > 0 %}
+    <div class="pagination-container px-4 sm:px-6 py-4 border-t border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-slate-50/30">
+        <div class="text-xs font-bold text-slate-500 uppercase tracking-widest">
+            Showing {{ items|length }} of {{ totalItems }} records
+        </div>
+
+        {% if pagesCount > 1 %}
+            <div class="flex items-center gap-2">
+                {% if currentPage > 1 %}
+                    <a href="{{ path(app.request.get('_route'), app.request.query.all|merge({'page': currentPage - 1})) }}" class="p-2 text-slate-400 hover:text-indigo-600 hover:bg-white rounded-lg border border-transparent hover:border-slate-200 transition-all shadow-sm">
+                        <i data-lucide="chevron-left" class="w-4 h-4"></i>
+                    </a>
+                {% else %}
+                    <div class="p-2 text-slate-200 cursor-not-allowed">
+                        <i data-lucide="chevron-left" class="w-4 h-4"></i>
+                    </div>
+                {% endif %}
+
+                <div class="flex items-center gap-1">
+                    {% for i in 1..pagesCount %}
+                        {% if i == currentPage %}
+                            <span class="w-8 h-8 flex items-center justify-center text-xs font-black bg-indigo-600 text-white rounded-lg shadow-lg shadow-indigo-100">{{ i }}</span>
+                        {% else %}
+                            <a href="{{ path(app.request.get('_route'), app.request.query.all|merge({'page': i})) }}" class="w-8 h-8 flex items-center justify-center text-xs font-bold text-slate-500 hover:text-indigo-600 hover:bg-white rounded-lg border border-transparent hover:border-slate-200 transition-all">{{ i }}</a>
+                        {% endif %}
+                    {% endfor %}
+                </div>
+
+                {% if currentPage < pagesCount %}
+                    <a href="{{ path(app.request.get('_route'), app.request.query.all|merge({'page': currentPage + 1})) }}" class="p-2 text-slate-400 hover:text-indigo-600 hover:bg-white rounded-lg border border-transparent hover:border-slate-200 transition-all shadow-sm">
+                        <i data-lucide="chevron-right" class="w-4 h-4"></i>
+                    </a>
+                {% else %}
+                    <div class="p-2 text-slate-200 cursor-not-allowed">
+                        <i data-lucide="chevron-right" class="w-4 h-4"></i>
+                    </div>
+                {% endif %}
+            </div>
+        {% endif %}
+    </div>
+{% endif %}

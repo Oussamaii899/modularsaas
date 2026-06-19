@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Financial Report: {{ start_date }} to {{ end_date }}</title>
+    <style>
+        body {
+            font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+            color: #334155;
+            margin: 0;
+            padding: 20px;
+            font-size: 13px;
+            line-height: 1.5;
+        }
+        .report-header {
+            margin-bottom: 30px;
+            border-bottom: 2px solid #f1f5f9;
+            padding-bottom: 20px;
+        }
+        .report-header table {
+            width: 100%;
+        }
+        .title {
+            font-size: 22px;
+            font-weight: bold;
+            color: #0f172a;
+        }
+        .date-range {
+            font-size: 14px;
+            color: #64748b;
+            margin-top: 4px;
+        }
+        .company-info {
+            text-align: right;
+            font-size: 11px;
+            color: #64748b;
+        }
+        .metrics-grid {
+            width: 100%;
+            margin-bottom: 35px;
+            border-collapse: collapse;
+        }
+        .metrics-grid td {
+            width: 25%;
+            padding: 12px;
+            background-color: #f8fafc;
+            border: 1px solid #e2e8f0;
+            text-align: center;
+        }
+        .metric-title {
+            font-size: 11px;
+            text-transform: uppercase;
+            color: #64748b;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        .metric-value {
+            font-size: 18px;
+            font-weight: bold;
+            color: #0f172a;
+        }
+        .text-green { color: #16a34a !important; }
+        .text-red { color: #dc2626 !important; }
+        
+        .section-title {
+            font-size: 14px;
+            font-weight: bold;
+            color: #0f172a;
+            margin-bottom: 12px;
+            border-left: 3px solid #4f46e5;
+            padding-left: 8px;
+        }
+        .tx-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 30px;
+        }
+        .tx-table th {
+            background-color: #f1f5f9;
+            color: #475569;
+            text-align: left;
+            padding: 8px 10px;
+            font-size: 11px;
+            font-weight: bold;
+            text-transform: uppercase;
+            border-bottom: 1px solid #cbd5e1;
+        }
+        .tx-table td {
+            padding: 8px 10px;
+            border-bottom: 1px solid #f1f5f9;
+            font-size: 12px;
+        }
+        .text-right { text-align: right !important; }
+        .footer {
+            margin-top: 50px;
+            border-top: 1px solid #f1f5f9;
+            padding-top: 15px;
+            text-align: center;
+            font-size: 10px;
+            color: #94a3b8;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="report-header">
+        <table>
+            <tr>
+                <td>
+                    <div class="title">Financial Summary Report</div>
+                    <div class="date-range">Period: {{ start_date|date('M d, Y') }} &mdash; {{ end_date|date('M d, Y') }}</div>
+                </td>
+                <td class="company-info">
+                    <strong>{{ company_name ?? 'ModularSaaS' }}</strong><br>
+                    {{ company_address ?? '123 Business Rd, suite 100' }}<br>
+                    {{ company_email ?? 'billing@modularsaas.com' }}
+                </td>
+            </tr>
+        </table>
+    </div>
+
+    <table class="metrics-grid">
+        <tr>
+            <td>
+                <div class="metric-title">Total Sales</div>
+                <div class="metric-value">${{ total_sales|number_format(2) }}</div>
+            </td>
+            <td>
+                <div class="metric-title">Total Purchases</div>
+                <div class="metric-value">${{ total_purchases|number_format(2) }}</div>
+            </td>
+            <td>
+                <div class="metric-title">Customer Refunds</div>
+                <div class="metric-value text-red">-${{ total_refunded_sales|abs|number_format(2) }}</div>
+            </td>
+            <td>
+                <div class="metric-title">Supplier Refunds</div>
+                <div class="metric-value text-green">${{ total_refunded_purchases|abs|number_format(2) }}</div>
+            </td>
+        </tr>
+        <tr>
+            <td>
+                <div class="metric-title">Net Profit/Loss</div>
+                {% set net_sales = total_sales - total_refunded_sales|abs %}
+                {% set net_purchases = total_purchases - total_refunded_purchases|abs %}
+                {% set net_val = net_sales - net_purchases %}
+                <div class="metric-value {% if net_val >= 0 %}text-green{% else %}text-red{% endif %}">
+                    ${{ net_val|number_format(2) }}
+                </div>
+            </td>
+            <td>
+                <div class="metric-title">Outstanding Sales</div>
+                <div class="metric-value">${{ total_outstanding_sales|number_format(2) }}</div>
+            </td>
+            <td>
+                <div class="metric-title">Outstanding Purchases</div>
+                <div class="metric-value">${{ total_outstanding_purchases|number_format(2) }}</div>
+            </td>
+            <td>
+                <!-- blank cell for alignment -->
+                <div class="metric-title">&nbsp;</div>
+                <div class="metric-value">&nbsp;</div>
+            </td>
+        </tr>
+    </table>
+
+    <div class="section-title">Sales Transactions (Max 100)</div>
+    <table class="tx-table">
+        <thead>
+            <tr>
+                <th>Invoice</th>
+                <th>Client</th>
+                <th>Status</th>
+                <th>Created At</th>
+                <th class="text-right">Total Amount</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for sale in sales_list %}
+                <tr>
+                    <td>{{ sale.slug }}</td>
+                    <td>{{ sale.contact.name }}</td>
+                    <td>{{ sale.paymentStatus }}</td>
+                    <td>{{ sale.createdAt|date('Y-m-d H:i') }}</td>
+                    <td class="text-right">${{ sale.total|number_format(2) }}</td>
+                </tr>
+            {% else %}
+                <tr>
+                    <td colspan="5" style="text-align: center; color: #94a3b8;">No sales recorded during this period.</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <div class="section-title">Purchase Transactions (Max 100)</div>
+    <table class="tx-table">
+        <thead>
+            <tr>
+                <th>Reference</th>
+                <th>Supplier</th>
+                <th>Status</th>
+                <th>Created At</th>
+                <th class="text-right">Total Amount</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for purchase in purchases_list %}
+                <tr>
+                    <td>{{ purchase.slug }}</td>
+                    <td>{{ purchase.contact.name }}</td>
+                    <td>{{ purchase.paymentStatus }}</td>
+                    <td>{{ purchase.createdAt|date('Y-m-d H:i') }}</td>
+                    <td class="text-right">${{ purchase.total|number_format(2) }}</td>
+                </tr>
+            {% else %}
+                <tr>
+                    <td colspan="5" style="text-align: center; color: #94a3b8;">No purchases recorded during this period.</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <div class="footer">
+        Generated on {{ 'now'|date('Y-m-d H:i:s') }} | Financial Report for internal review.
+    </div>
+
+</body>
+</html>

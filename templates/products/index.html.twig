@@ -1,0 +1,141 @@
+{% extends 'layouts/dashboard.html.twig' %}
+
+{% block title %}Product Catalog | {{ company_name ?? 'ModularSaaS' }}{% endblock %}
+
+{% block content_title %}Service & Product Management{% endblock %}
+{% block content_subtitle %}Control your inventory and service offerings{% endblock %}
+
+{% block content_actions %}
+    <div class="flex flex-col sm:flex-row items-stretch sm:items-center w-full sm:w-auto gap-2 sm:gap-3">
+        <!-- Search Bar -->
+        <form action="{{ path('app_products_index') }}" method="get" class="relative flex-1 sm:flex-none">
+            <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
+                <i data-lucide="search" class="w-4 h-4 text-slate-400" style="margin-left: 10px;"></i>
+            </div>
+            <input type="text" name="q" value="{{ searchQuery }}" placeholder="Search products..." class="block w-full sm:w-[400px] h-10 pl-10 pr-4 py-2 text-sm bg-white border border-slate-200 rounded-lg placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all shadow-sm">
+        </form>
+
+        {% if is_granted('add.products') %}
+        <a href="{{ path('app_products_new') }}" class="inline-flex h-10 items-center justify-center gap-2 rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow hover:bg-indigo-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 transition-colors">
+            <i data-lucide="plus-circle" class="w-4 h-4"></i>
+            <span>Add Product</span>
+        </a>
+        {% endif %}
+    </div>
+{% endblock %}
+
+{% block main_content %}
+    <div class="rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden min-h-[400px]">
+        <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse text-sm">
+                <thead>
+                    <tr class="border-b border-slate-100 bg-slate-50/30 transition-colors pointer-events-none">
+                        <th class="h-12 px-4 align-middle font-medium text-slate-500 text-left uppercase tracking-wider text-[11px]">Product Details</th>
+                        <th class="h-12 px-4 align-middle font-medium text-slate-500 text-center uppercase tracking-wider text-[11px]">Description</th>
+                        <th class="h-12 px-4 align-middle font-medium text-slate-500 text-center uppercase tracking-wider text-[11px]">Unit Price</th>
+                        <th class="h-12 px-4 align-middle font-medium text-slate-500 text-center uppercase tracking-wider text-[11px]">Stock Level</th>
+                        <th class="h-12 px-4 align-middle font-medium text-slate-500 text-center uppercase tracking-wider text-[11px]">Actions</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100">
+                    {% for product in products %}
+                        <tr class="hover:bg-slate-50/80 transition-colors group">
+                            <td class="p-4 align-middle">
+                                <div class="flex items-center gap-3">
+                                    <div class="w-10 h-10 rounded-lg overflow-hidden flex-shrink-0 flex items-center justify-center bg-slate-50 text-indigo-600 font-bold border border-slate-200 shadow-sm group-hover:scale-105 transition-transform">
+                                        {% if product.image %}
+                                            <img src="{{ asset('uploads/products/' ~ product.image) }}" class="w-full h-full object-cover" alt="{{ product.name }}">
+                                        {% else %}
+                                            {{ product.name|slice(0, 2)|upper }}
+                                        {% endif %}
+                                    </div>
+                                    <div class="flex flex-col">
+                                        <span class="font-bold text-slate-900 text-base leading-tight">{{ product.name }}</span>
+                                        <span class="text-[11px] font-mono text-slate-500 mt-1">SKU: {{ product.sku|default('NO-SKU') }}</span>
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="p-4 align-middle text-center">
+                                <div class="text-xs text-slate-500 max-w-xs mx-auto truncate" title="{{ product.description }}">
+                                    {{ product.description ? (product.description|length > 60 ? product.description|slice(0, 60) ~ '...' : product.description) : 'No description' }}
+                                </div>
+                            </td>
+                            <td class="p-4 align-middle text-center">
+                                <div class="text-sm font-bold text-slate-900 tracking-tight inline-block">${{ product.price|number_format(2) }}</div>
+                            </td>
+                            <td class="p-4 align-middle text-center">
+                                <span class="text-sm font-bold text-slate-700">{{ product.stockQuantity }} units</span>
+                            </td>
+                            <td class="p-4 align-middle text-center">
+                                <div class="flex items-center justify-center gap-1">
+                                    <a href="{{ path('app_products_show', {'slug': product.slug}) }}" class="p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-all" title="View Details">
+                                        <i data-lucide="eye" class="w-4.5 h-4.5"></i>
+                                    </a>
+                                    {% if is_granted('edit.products') %}
+                                    <a href="{{ path('app_products_edit', {'slug': product.slug}) }}" class="p-2 text-slate-400 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition-all" title="Edit">
+                                        <i data-lucide="pencil" class="w-4.5 h-4.5"></i>
+                                    </a>
+                                    {% endif %}
+                                    {% if is_granted('delete.products') %}
+                                    <button type="button" onclick="document.getElementById('deleteModal_{{ product.id }}').showModal()" class="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all" title="Delete">
+                                        <i data-lucide="trash-2" class="w-4.5 h-4.5"></i>
+                                    </button>
+
+                                    <!-- Delete Modal -->
+                                    <dialog id="deleteModal_{{ product.id }}" style="margin:auto;" class="m-auto p-0 rounded-lg shadow-xl border border-slate-200 backdrop:bg-slate-600/20 backdrop:backdrop-blur-[2px] open:animate-in open:fade-in open:zoom-in-95 duration-200 overflow-hidden">
+                                        <div class="bg-white max-w-md w-full text-left">
+                                            <div class="p-6">
+                                                <div class="flex items-start gap-4 mb-5">
+                                                    <div class="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center flex-shrink-0">
+                                                        <i data-lucide="alert-circle" class="w-5 h-5 text-red-600"></i>
+                                                    </div>
+                                                    <div class="flex-1">
+                                                        <h3 class="text-lg font-bold text-slate-900 leading-none mb-2">Delete {{ product.name }}?</h3>
+                                                        <p class="text-sm text-slate-500 leading-normal">This action cannot be undone. This record and all related history will be permanently removed.</p>
+                                                    </div>
+                                                </div>
+                                                <div class="flex justify-end gap-3 mt-6">
+                                                    <button type="button" onclick="document.getElementById('deleteModal_{{ product.id }}').close()" class="px-4 py-2 text-sm font-semibold text-slate-700 bg-white border border-slate-200 hover:bg-slate-50 rounded-md transition-all">Cancel</button>
+                                                    <form method="post" action="{{ path('app_products_delete', {'slug': product.slug}) }}" class="inline m-0">
+                                                        <input type="hidden" name="_token" value="{{ csrf_token('delete' ~ product.id) }}">
+                                                        <button type="submit" class="px-4 py-2 text-sm font-bold text-white rounded-md shadow-sm transition-all border border-red-600" style="background-color: #dc2626;">Delete Product</button>
+                                                    </form>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </dialog>
+                                    {% endif %}
+                                </div>
+                            </td>
+                        </tr>
+                    {% else %}
+                        <tr>
+                            <td colspan="5" class="p-8 text-center text-slate-500">
+                                <div class="flex flex-col items-center gap-3">
+                                    <i data-lucide="box" class="w-8 h-8 text-slate-300"></i>
+                                    <div class="flex flex-col gap-1">
+                                        <p class="font-medium text-slate-900">No products found</p>
+                                        <p class="text-sm">Try adjusting your search or register a new product</p>
+                                    </div>
+                                    {% if is_granted('add.products') %}
+                                    <a href="{{ path('app_products_new') }}" class="mt-2 inline-flex h-10 items-center justify-center gap-2 rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow hover:bg-indigo-700 transition-colors">
+                                        <i data-lucide="plus" class="w-4 h-4"></i>
+                                        Add First Product
+                                    </a>
+                                    {% endif %}
+                                </div>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        {% include 'components/_pagination.html.twig' with {
+            items: products,
+            pagesCount: pagesCount|default(0),
+            currentPage: currentPage|default(1),
+            totalItems: totalItems|default(0)
+        } %}
+    </div>
+{% endblock %}

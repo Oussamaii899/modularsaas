@@ -1,0 +1,180 @@
+{% extends 'layouts/dashboard.html.twig' %}
+
+{% block title %}Purchase History | {{ company_name ?? 'ModularSaaS' }}{% endblock %}
+
+{% block content_title %}Purchases{% endblock %}
+{% block content_subtitle %}Manage your inventory acquisitions{% endblock %}
+
+{% block content_actions %}
+    {% if is_granted('add.purchases') %}
+    <a href="{{ path('app_purchases_new') }}" class="inline-flex h-10 items-center justify-center gap-2 rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow hover:bg-indigo-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 transition-colors">
+        <i data-lucide="shopping-bag" class="w-4 h-4"></i>
+        <span>Add Purchase</span>
+    </a>
+    {% endif %}
+{% endblock %}
+
+{% block main_content %}
+    <!-- Unified Search/Filter Form -->
+    <form action="{{ path('app_purchases_index') }}" method="get" class="unified-filter-form" style="display: flex; flex-direction: row; flex-wrap: wrap; align-items: center; gap: 12px; width: 100%; padding: 12px; border-radius: 12px; margin-bottom: 16px; box-sizing: border-box;">
+        <!-- Search Input -->
+        <div style="position: relative; flex: 1; min-width: 240px;">
+            <div style="position: absolute; top: 0; bottom: 0; left: 0; padding-left: 12px; display: flex; align-items: center; pointer-events: none;">
+                <i data-lucide="search" class="w-4 h-4 text-slate-400"></i>
+            </div>
+            <input type="text" name="q" value="{{ searchQuery|default('') }}" placeholder="Search purchases..." class="unified-filter-input" style="display: block; width: 100%; height: 40px; padding-left: 36px; padding-right: 16px; padding-top: 8px; padding-bottom: 8px; font-size: 14px; border-radius: 8px; box-sizing: border-box; outline: none; transition: all 0.2s;">
+        </div>
+
+        <!-- Status Filter -->
+        <div style="width: 176px; flex-shrink: 0;">
+            <select name="status" onchange="this.form.submit()" class="unified-filter-select" style="display: block; width: 100%; height: 40px; padding: 8px 12px; font-size: 14px; border-radius: 8px; box-sizing: border-box; font-weight: 500; cursor: pointer; outline: none; transition: all 0.2s;">
+                <option value="">All Statuses</option>
+                <option value="Paid" {% if statusFilter == 'Paid' %}selected{% endif %}>Paid</option>
+                <option value="Partial" {% if statusFilter == 'Partial' %}selected{% endif %}>Partial</option>
+                <option value="Unpaid" {% if statusFilter == 'Unpaid' %}selected{% endif %}>Unpaid</option>
+                <option value="Overpaid" {% if statusFilter == 'Overpaid' %}selected{% endif %}>Overpaid</option>
+                <option value="Refunded" {% if statusFilter == 'Refunded' %}selected{% endif %}>Refunded</option>
+                <option value="Cancelled" {% if statusFilter == 'Cancelled' %}selected{% endif %}>Cancelled</option>
+            </select>
+        </div>
+
+        <!-- Sort By -->
+        <div style="width: 176px; flex-shrink: 0;">
+            <select name="sort" onchange="this.form.submit()" class="unified-filter-select" style="display: block; width: 100%; height: 40px; padding: 8px 12px; font-size: 14px; border-radius: 8px; box-sizing: border-box; font-weight: 500; cursor: pointer; outline: none; transition: all 0.2s;">
+                <option value="newest" {% if sortFilter == 'newest' %}selected{% endif %}>Newest First</option>
+                <option value="oldest" {% if sortFilter == 'oldest' %}selected{% endif %}>Oldest First</option>
+                <option value="total_desc" {% if sortFilter == 'total_desc' %}selected{% endif %}>Highest Amount</option>
+                <option value="total_asc" {% if sortFilter == 'total_asc' %}selected{% endif %}>Lowest Amount</option>
+            </select>
+        </div>
+
+        {% if contactIdFilter %}
+            <input type="hidden" name="contact_id" value="{{ contactIdFilter }}">
+        {% endif %}
+
+        <!-- Actions -->
+        <div style="display: flex; align-items: center; gap: 8px; flex-shrink: 0;">
+            <button type="submit" class="unified-filter-submit" style="height: 40px; padding: 0 16px; font-size: 14px; font-weight: 600; border-radius: 8px; border: none; cursor: pointer; display: inline-flex; align-items: center; justify-content: center;">Apply</button>
+            {% if searchQuery or statusFilter or sortFilter != 'newest' or contactIdFilter %}
+                <a href="{{ path('app_purchases_index') }}" class="unified-filter-reset" style="height: 40px; padding: 0 16px; font-size: 14px; font-weight: 600; border-radius: 8px; border: none; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; text-decoration: none;">Reset</a>
+            {% endif %}
+        </div>
+    </form>
+
+    <!-- Active Contact Filter Banner -->
+    {% if filterContact %}
+        <div style="display: flex; align-items: center; justify-content: space-between; background-color: rgba(79, 70, 229, 0.08); color: #312e81; padding: 8px 16px; border-radius: 8px; margin-bottom: 16px; border: none; font-size: 12px; font-weight: 600; box-sizing: border-box; width: 100%;">
+            <div style="display: flex; align-items: center; gap: 8px;">
+                <i data-lucide="filter" class="w-3.5 h-3.5 text-indigo-500" style="display: inline-block; vertical-align: middle;"></i>
+                <span>Showing transactions only for supplier: <strong>{{ filterContact.name }}</strong></span>
+            </div>
+            <a href="{{ path('app_purchases_index', searchQuery ? {'q': searchQuery} : {}) }}" style="display: inline-flex; align-items: center; gap: 4px; font-size: 12px; font-weight: 700; color: #4338ca; text-decoration: none; transition: all 0.2s;">
+                <span>Clear Filter</span>
+                <i data-lucide="x" class="w-3 h-3"></i>
+            </a>
+        </div>
+    {% endif %}
+
+    <div class="rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden">
+        <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse text-sm">
+                <thead>
+                    <tr class="border-b border-slate-100 bg-slate-50/30 transition-colors pointer-events-none">
+                        <th class="h-12 px-4 align-middle font-medium text-slate-500 text-left uppercase tracking-wider text-[11px]">Transaction</th>
+                        <th class="h-12 px-4 align-middle font-medium text-slate-500 text-center uppercase tracking-wider text-[11px]">Supplier</th>
+                        <th class="h-12 px-4 align-middle font-medium text-slate-500 text-center uppercase tracking-wider text-[11px]">Total</th>
+                        <th class="h-12 px-4 align-middle font-medium text-slate-500 text-center uppercase tracking-wider text-[11px]">Status</th>
+                        <th class="h-12 px-4 align-middle font-medium text-slate-500 text-center uppercase tracking-wider text-[11px]">Actions</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100">
+                    {% for purchase in purchases %}
+                        <tr class="hover:bg-slate-50/80 transition-colors group">
+                            <td class="p-4 align-top">
+                                <div class="flex items-start gap-3">
+                                    <div class="w-10 h-10 rounded-lg bg-indigo-50 flex-shrink-0 flex items-center justify-center text-indigo-600 border border-indigo-100 shadow-sm">
+                                        <i data-lucide="shopping-bag" class="w-5 h-5"></i>
+                                    </div>
+                                    <div class="flex flex-col">
+                                        <span class="font-bold text-slate-900 text-base">PUR-{{ "%04d"|format(purchase.id) }}</span>
+                                        <span class="text-xs text-slate-500 mt-0.5">
+                                            {{ purchase.createdAt ? purchase.createdAt|date('M d, Y H:i') : '' }}
+                                        </span>
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="p-4 align-top text-center">
+                                <div class="flex items-center justify-center gap-3">
+                                    <div class="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-xs font-bold text-slate-600 border border-slate-200 flex-shrink-0">
+                                        {{ purchase.contact.name|first|upper }}
+                                    </div>
+                                    <div class="text-sm font-semibold text-slate-700">{{ purchase.contact.name }}</div>
+                                </div>
+                            </td>
+                            <td class="p-4 align-top text-center">
+                                <span class="font-bold text-slate-900">${{ purchase.total|number_format(2) }}</span>
+                            </td>
+                            <td class="p-4 align-top text-center">
+                                {% set status = purchase.paymentStatus|default('Unpaid') %}
+                                {% set style_map = {
+                                    'Paid': { 'text': '#059669', 'bg': '#10b981' },
+                                    'Partial': { 'text': '#d97706', 'bg': '#f59e0b' },
+                                    'Unpaid': { 'text': '#e11d48', 'bg': '#f43f5e' },
+                                    'Overpaid': { 'text': '#7c3aed', 'bg': '#8b5cf6' },
+                                    'Refunded': { 'text': '#475569', 'bg': '#64748b' },
+                                    'Cancelled': { 'text': '#e11d48', 'bg': '#f43f5e' }
+                                } %}
+                                {% set status_style = style_map[status] ?? { 'text': '#475569', 'bg': '#64748b' } %}
+                                
+                                <span class="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider" style="color: {{ status_style.text }};">
+                                    <span class="w-1.5 h-1.5 rounded-full {% if status != 'Paid' %}animate-pulse{% endif %}" style="background-color: {{ status_style.bg }};"></span>
+                                    {{ status }}
+                                </span>
+                            </td>
+                            <td class="p-4 align-top text-center">
+                                <div class="flex items-center justify-center gap-1">
+                                    <a href="{{ path('app_purchases_show', {'slug': purchase.slug}) }}" class="p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-all" title="View Details">
+                                        <i data-lucide="eye" class="w-4.5 h-4.5"></i>
+                                    </a>
+                                    <a href="{{ path('app_purchase_invoice', {'slug': purchase.slug}) }}" class="p-2 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg transition-all" title="Download Invoice">
+                                        <i data-lucide="download" class="w-4.5 h-4.5"></i>
+                                    </a>
+                                    {% if is_granted('edit.purchases') %}
+                                    <a href="{{ path('app_purchases_edit', {'slug': purchase.slug}) }}" class="p-2 text-slate-400 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition-all" title="Edit">
+                                        <i data-lucide="pencil" class="w-4.5 h-4.5"></i>
+                                    </a>
+                                    {% endif %}
+                                </div>
+                            </td>
+                        </tr>
+                    {% else %}
+                        <tr>
+                            <td colspan="5" class="p-8 text-center text-slate-500">
+                                <div class="flex flex-col items-center gap-3">
+                                    <i data-lucide="shopping-bag" class="w-8 h-8 text-slate-300"></i>
+                                    <div class="flex flex-col gap-1">
+                                        <p class="font-medium text-slate-900">No purchases found</p>
+                                        <p class="text-sm">Try adjusting your search or add a new purchase</p>
+                                    </div>
+                                    {% if is_granted('add.purchases') %}
+                                    <a href="{{ path('app_purchases_new') }}" class="mt-2 inline-flex h-10 items-center justify-center gap-2 rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow hover:bg-indigo-700 transition-colors">
+                                        <i data-lucide="plus" class="w-4 h-4"></i>
+                                        Add First Purchase
+                                    </a>
+                                    {% endif %}
+                                </div>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        {% include 'components/_pagination.html.twig' with {
+            items: purchases,
+            pagesCount: pagesCount|default(0),
+            currentPage: currentPage|default(1),
+            totalItems: totalItems|default(0)
+        } %}
+    </div>
+{% endblock %}

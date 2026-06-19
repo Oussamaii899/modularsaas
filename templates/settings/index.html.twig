@@ -1,0 +1,780 @@
+{% extends 'layouts/dashboard.html.twig' %}
+
+{% block title %}Settings & Maintenance | {{ company_name ?? 'ModularSaaS' }}{% endblock %}
+
+{% block content_title %}Settings & Maintenance{% endblock %}
+{% block content_subtitle %}Configure system variables, branding, theme, and run administrative tasks{% endblock %}
+
+{# Remove Dashboard default action buttons #}
+{% block content_actions %}{% endblock %}
+
+{% block main_content %}
+    <style>
+        /* ---- Settings Page Layout (Pure CSS) ---- */
+        .s-tabs {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            padding: 0.5rem;
+            border-radius: 0.75rem;
+            border: 1px solid #e2e8f0;
+            background: #ffffff;
+            margin-bottom: 1.5rem;
+        }
+        html.dark .s-tabs {
+            background: #1e293b;
+            border-color: #1e293b;
+        }
+        .s-tab-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.625rem 1rem;
+            font-size: 0.875rem;
+            font-weight: 600;
+            border-radius: 0.5rem;
+            border: none;
+            background: transparent;
+            color: #475569;
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+        .s-tab-btn:hover { background: #f1f5f9; color: #4f46e5; }
+        html.dark .s-tab-btn { color: #94a3b8; }
+        html.dark .s-tab-btn:hover { background: #334155; color: #a5b4fc; }
+        .s-tab-btn.active { background: #eef2ff; color: #4f46e5; }
+        html.dark .s-tab-btn.active { background: rgba(99,102,241,0.15); color: #a5b4fc; }
+        .s-tab-btn.active-danger { background: #fef2f2; color: #dc2626; }
+        html.dark .s-tab-btn.active-danger { background: rgba(220,38,38,0.15); color: #fca5a5; }
+
+        /* Card */
+        .s-card {
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
+            border-radius: 0.75rem;
+            padding: 1.75rem;
+            margin-bottom: 1.5rem;
+        }
+        html.dark .s-card {
+            background: #1e293b;
+            border-color: #1e293b;
+        }
+        .s-card-title {
+            font-size: 1rem;
+            font-weight: 700;
+            color: #0f172a;
+            margin: 0 0 0.25rem 0;
+        }
+        html.dark .s-card-title { color: #f1f5f9; }
+        .s-card-desc {
+            font-size: 0.8rem;
+            color: #64748b;
+            margin: 0 0 1.5rem 0;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid #f1f5f9;
+        }
+        html.dark .s-card-desc { color: #64748b; border-bottom-color: #334155; }
+
+        /* Form Grid */
+        .s-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 1.25rem;
+        }
+        @media (min-width: 768px) {
+            .s-grid { grid-template-columns: 1fr 1fr; }
+            .s-span-2 { grid-column: span 2; }
+        }
+
+        /* Form Group */
+        .s-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.375rem;
+        }
+        .s-label {
+            font-size: 0.7rem;
+            font-weight: 700;
+            color: #475569;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+        }
+        html.dark .s-label { color: #94a3b8; }
+
+        /* Inputs */
+        .s-input {
+            width: 100%;
+            height: 2.625rem;
+            padding: 0 0.875rem;
+            font-size: 0.875rem;
+            font-family: inherit;
+            color: #0f172a;
+            background: #ffffff;
+            border: 1px solid #cbd5e1;
+            border-radius: 0.5rem;
+            outline: none;
+            transition: border-color 0.15s, box-shadow 0.15s;
+        }
+        .s-input:focus {
+            border-color: var(--primary-500, #6366f1);
+            box-shadow: 0 0 0 3px rgba(99,102,241,0.12);
+        }
+        html.dark .s-input {
+            background: #0f172a;
+            color: #e2e8f0;
+            border-color: #334155;
+        }
+        html.dark .s-input:focus {
+            border-color: var(--primary-400, #818cf8);
+        }
+
+        .s-textarea {
+            width: 100%;
+            padding: 0.75rem 0.875rem;
+            font-size: 0.875rem;
+            font-family: inherit;
+            color: #0f172a;
+            background: #ffffff;
+            border: 1px solid #cbd5e1;
+            border-radius: 0.5rem;
+            outline: none;
+            resize: vertical;
+            transition: border-color 0.15s, box-shadow 0.15s;
+        }
+        .s-textarea:focus {
+            border-color: var(--primary-500, #6366f1);
+            box-shadow: 0 0 0 3px rgba(99,102,241,0.12);
+        }
+        html.dark .s-textarea {
+            background: #0f172a;
+            color: #e2e8f0;
+            border-color: #334155;
+        }
+
+        .s-select {
+            width: 100%;
+            height: 2.625rem;
+            padding: 0 0.875rem;
+            font-size: 0.875rem;
+            font-family: inherit;
+            color: #0f172a;
+            background: #ffffff;
+            border: 1px solid #cbd5e1;
+            border-radius: 0.5rem;
+            outline: none;
+            transition: border-color 0.15s, box-shadow 0.15s;
+        }
+        html.dark .s-select {
+            background: #0f172a;
+            color: #e2e8f0;
+            border-color: #334155;
+        }
+
+        /* Radio option cards */
+        .s-radio-card {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0.875rem 1rem;
+            border: 1px solid #e2e8f0;
+            border-radius: 0.75rem;
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+        .s-radio-card:hover { background: #f8fafc; }
+        html.dark .s-radio-card { border-color: #334155; }
+        html.dark .s-radio-card:hover { background: #334155; }
+        .s-radio-card.selected {
+            border-color: var(--primary-500, #6366f1);
+            box-shadow: 0 0 0 2px rgba(99,102,241,0.12);
+        }
+        html.dark .s-radio-card.selected {
+            border-color: var(--primary-400, #818cf8);
+            box-shadow: 0 0 0 2px rgba(99,102,241,0.15);
+        }
+        .s-radio-card span {
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: #0f172a;
+        }
+        html.dark .s-radio-card span { color: #e2e8f0; }
+
+        /* Color picker cards */
+        .s-color-card {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 0.75rem;
+            border: 1px solid #e2e8f0;
+            border-radius: 0.75rem;
+            cursor: pointer;
+            transition: all 0.15s;
+            text-align: center;
+        }
+        .s-color-card:hover { background: #f8fafc; }
+        html.dark .s-color-card { border-color: #334155; }
+        html.dark .s-color-card:hover { background: #334155; }
+        .s-color-card.selected {
+            border-color: var(--primary-500, #6366f1);
+            box-shadow: 0 0 0 2px rgba(99,102,241,0.12);
+        }
+        html.dark .s-color-card.selected {
+            border-color: var(--primary-400, #818cf8);
+            box-shadow: 0 0 0 2px rgba(99,102,241,0.15);
+        }
+        .s-color-card .s-dot {
+            width: 2rem;
+            height: 2rem;
+            border-radius: 9999px;
+            margin-bottom: 0.5rem;
+        }
+        .s-color-card .s-color-name {
+            font-size: 0.75rem;
+            font-weight: 500;
+            color: #475569;
+        }
+        html.dark .s-color-card .s-color-name { color: #94a3b8; }
+
+        /* Save bar */
+        .s-save-bar {
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            padding: 1rem;
+            border: 1px solid #e2e8f0;
+            border-radius: 0.75rem;
+            background: #ffffff;
+            margin-top: 1.5rem;
+        }
+        html.dark .s-save-bar { background: #1e293b; border-color: #1e293b; }
+
+        .s-btn-primary {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            height: 2.5rem;
+            padding: 0 1.5rem;
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: #ffffff;
+            background: var(--primary-600, #4f46e5);
+            border: none;
+            border-radius: 0.5rem;
+            cursor: pointer;
+            transition: background 0.15s;
+        }
+        .s-btn-primary:hover { background: var(--primary-700, #4338ca); }
+
+        /* Maintenance items */
+        .s-maint-row {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            padding: 1.25rem 0;
+            border-bottom: 1px solid #f1f5f9;
+        }
+        .s-maint-row:last-child { border-bottom: none; }
+        html.dark .s-maint-row { border-bottom-color: #334155; }
+        @media (min-width: 640px) {
+            .s-maint-row {
+                flex-direction: row;
+                align-items: center;
+                justify-content: space-between;
+            }
+        }
+        .s-maint-title {
+            font-size: 0.875rem;
+            font-weight: 700;
+            color: #0f172a;
+            margin: 0;
+        }
+        html.dark .s-maint-title { color: #f1f5f9; }
+        .s-maint-desc {
+            font-size: 0.75rem;
+            color: #64748b;
+            margin: 0.25rem 0 0 0;
+        }
+
+        .s-btn-outline {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 1rem;
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: #475569;
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
+            border-radius: 0.5rem;
+            cursor: pointer;
+            transition: all 0.15s;
+            white-space: nowrap;
+        }
+        .s-btn-outline:hover { background: #f8fafc; }
+        html.dark .s-btn-outline { background: #0f172a; color: #94a3b8; border-color: #334155; }
+        html.dark .s-btn-outline:hover { background: #334155; }
+
+        .s-btn-danger {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 1rem;
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: #b91c1c;
+            background: #fef2f2;
+            border: 1px solid #fecaca;
+            border-radius: 0.5rem;
+            cursor: pointer;
+            transition: all 0.15s;
+            white-space: nowrap;
+        }
+        .s-btn-danger:hover { background: #fee2e2; }
+
+        /* Toggle switch */
+        .s-toggle {
+            position: relative;
+            width: 3rem;
+            height: 1.625rem;
+            background: #cbd5e1;
+            border-radius: 9999px;
+            cursor: pointer;
+            transition: background 0.2s;
+            flex-shrink: 0;
+        }
+        .s-toggle.active {
+            background: #dc2626;
+        }
+        .s-toggle::after {
+            content: '';
+            position: absolute;
+            top: 0.1875rem;
+            left: 0.1875rem;
+            width: 1.25rem;
+            height: 1.25rem;
+            background: #ffffff;
+            border-radius: 9999px;
+            transition: transform 0.2s;
+        }
+        .s-toggle.active::after {
+            transform: translateX(1.375rem);
+        }
+
+        .s-hint {
+            font-size: 0.7rem;
+            color: #94a3b8;
+            margin-top: 0.25rem;
+        }
+
+        /* Hidden panel */
+        .s-panel { display: none; }
+        .s-panel.s-active { display: block; }
+    </style>
+
+    {# Flash Messages #}
+    {% for label, messages in app.flashes %}
+        {% for message in messages %}
+            <div style="
+                display: flex; align-items: center; gap: 0.6rem; padding: 0.85rem 1.1rem;
+                border-radius: 0.6rem; font-size: 0.875rem; font-weight: 500; margin-bottom: 1.25rem;
+                {% if label == 'success' %}
+                    background-color: #f0fdf4; color: #166534; border: 1px solid #dcfce7;
+                {% else %}
+                    background-color: #fff1f2; color: #9f1239; border: 1px solid #ffe4e6;
+                {% endif %}
+            ">
+                <i data-lucide="{% if label == 'success' %}check-circle{% else %}alert-circle{% endif %}" style="width:1.1rem;height:1.1rem;flex-shrink:0;"></i>
+                <span>{{ message }}</span>
+            </div>
+        {% endfor %}
+    {% endfor %}
+
+    <!-- Tab Menu -->
+    <div class="s-tabs">
+        {% if is_granted('ROLE_ADMIN') or is_granted('perm.general') %}
+        <button onclick="switchTab('general')" id="tab-btn-general" class="s-tab-btn">
+            <i data-lucide="settings" style="width:1rem;height:1rem;"></i> General Details
+        </button>
+        {% endif %}
+        {% if is_granted('ROLE_ADMIN') or is_granted('perm.appearance') %}
+        <button onclick="switchTab('appearance')" id="tab-btn-appearance" class="s-tab-btn">
+            <i data-lucide="palette" style="width:1rem;height:1rem;"></i> Appearance
+        </button>
+        {% endif %}
+        {% if is_granted('ROLE_ADMIN') or is_granted('perm.branding') %}
+        <button onclick="switchTab('branding')" id="tab-btn-branding" class="s-tab-btn">
+            <i data-lucide="award" style="width:1rem;height:1rem;"></i> Branding & Invoices
+        </button>
+        {% endif %}
+        {% if is_granted('ROLE_ADMIN') or is_granted('perm.maintenance') %}
+        <button onclick="switchTab('maintenance')" id="tab-btn-maintenance" class="s-tab-btn">
+            <i data-lucide="shield-alert" style="width:1rem;height:1rem;"></i> Maintenance
+        </button>
+        {% endif %}
+    </div>
+
+    <!-- Form Panels -->
+    <form method="post" enctype="multipart/form-data" id="settings-form">
+        <!-- Tab: General -->
+        {% if is_granted('ROLE_ADMIN') or is_granted('perm.general') %}
+        <div id="tab-panel-general" class="s-panel">
+            <div class="s-card">
+                <h3 class="s-card-title">Business Identity & Defaults</h3>
+                <p class="s-card-desc">Your physical office identity — address, currency, timezone, phone, email.</p>
+                <div class="s-grid">
+                    <div class="s-group">
+                        <label class="s-label">Business Name</label>
+                        <input type="text" name="business_name" value="{{ settings.business_name|default('') }}" class="s-input">
+                    </div>
+                    <div class="s-group">
+                        <label class="s-label">Business Logo</label>
+                        <div style="display:flex;align-items:center;gap:0.75rem;">
+                            <div style="width:2.75rem;height:2.75rem;border-radius:0.5rem;border:1px solid #e2e8f0;display:flex;align-items:center;justify-content:center;overflow:hidden;flex-shrink:0;background:#f8fafc;">
+                                {% if settings.business_logo %}
+                                    <img src="{{ asset('uploads/branding/' ~ settings.business_logo) }}" style="width:100%;height:100%;object-fit:cover;">
+                                {% else %}
+                                    <i data-lucide="image" style="width:1.25rem;height:1.25rem;color:#94a3b8;"></i>
+                                {% endif %}
+                            </div>
+                            <input type="file" name="business_logo" accept="image/*" class="s-input" style="height:auto;padding:0.375rem 0.5rem;">
+                        </div>
+                    </div>
+                    <div class="s-group">
+                        <label class="s-label">Email Address</label>
+                        <input type="email" name="email" value="{{ settings.email|default('') }}" class="s-input">
+                    </div>
+                    <div class="s-group">
+                        <label class="s-label">Phone Number</label>
+                        <input type="text" name="phone" value="{{ settings.phone|default('') }}" class="s-input">
+                    </div>
+                    <div class="s-group s-span-2">
+                        <label class="s-label">Physical Address</label>
+                        <input type="text" name="address" value="{{ settings.address|default('') }}" class="s-input">
+                    </div>
+                    <div class="s-group">
+                        <label class="s-label">Website URL</label>
+                        <input type="text" name="website" value="{{ settings.website|default('') }}" class="s-input">
+                    </div>
+                    <div class="s-group">
+                        <label class="s-label">Currency</label>
+                        <select name="currency" class="s-select">
+                            <option value="MAD" {% if settings.currency|default('MAD') == 'MAD' %}selected{% endif %}>Moroccan Dirham (MAD)</option>
+                            <option value="$" {% if settings.currency|default('MAD') == '$' %}selected{% endif %}>USD ($)</option>
+                            <option value="€" {% if settings.currency|default('MAD') == '€' %}selected{% endif %}>EUR (€)</option>
+                            <option value="£" {% if settings.currency|default('MAD') == '£' %}selected{% endif %}>GBP (£)</option>
+                        </select>
+                    </div>
+                    <div class="s-group s-span-2">
+                        <label class="s-label">Timezone</label>
+                        <select name="timezone" class="s-select">
+                            <option value="Africa/Casablanca" {% if settings.timezone|default('Africa/Casablanca') == 'Africa/Casablanca' %}selected{% endif %}>Morocco (Africa/Casablanca)</option>
+                            <option value="UTC" {% if settings.timezone|default('Africa/Casablanca') == 'UTC' %}selected{% endif %}>UTC</option>
+                            <option value="Europe/Paris" {% if settings.timezone|default('Africa/Casablanca') == 'Europe/Paris' %}selected{% endif %}>Europe/Paris</option>
+                            <option value="America/New_York" {% if settings.timezone|default('Africa/Casablanca') == 'America/New_York' %}selected{% endif %}>America/New_York</option>
+                        </select>
+                    </div>
+                    </div>
+                </div>
+            </div>
+        {% endif %}
+
+        <!-- Tab: Appearance -->
+        {% if is_granted('ROLE_ADMIN') or is_granted('perm.appearance') %}
+        <div id="tab-panel-appearance" class="s-panel">
+            <div class="s-card">
+                <h3 class="s-card-title">Visual Settings</h3>
+                <p class="s-card-desc">Personalize themes, accent colors, and sidebar look.</p>
+
+                <div class="s-group" style="margin-bottom:1.5rem;">
+                    <label class="s-label">Dark / Light Mode</label>
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;max-width:28rem;margin-top:0.375rem;">
+                        <label class="s-radio-card {{ settings.theme|default('light') == 'light' ? 'selected' : '' }}">
+                            <div style="display:flex;align-items:center;gap:0.625rem;">
+                                <i data-lucide="sun" style="width:1.25rem;height:1.25rem;color:#f59e0b;"></i>
+                                <span>Light Theme</span>
+                            </div>
+                            <input type="radio" name="theme" value="light" {% if settings.theme|default('light') == 'light' %}checked{% endif %} onchange="selectRadio(this)">
+                        </label>
+                        <label class="s-radio-card {{ settings.theme|default('light') == 'dark' ? 'selected' : '' }}">
+                            <div style="display:flex;align-items:center;gap:0.625rem;">
+                                <i data-lucide="moon" style="width:1.25rem;height:1.25rem;color:#6366f1;"></i>
+                                <span>Dark Theme</span>
+                            </div>
+                            <input type="radio" name="theme" value="dark" {% if settings.theme|default('light') == 'dark' %}checked{% endif %} onchange="selectRadio(this)">
+                        </label>
+                    </div>
+                </div>
+
+                <div class="s-group" style="margin-bottom:1.5rem;">
+                    <label class="s-label">Primary Accent Color</label>
+                    <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:0.625rem;max-width:32rem;margin-top:0.375rem;">
+                        {% set colors = [
+                            {'name': 'Indigo', 'value': 'indigo', 'hex': '#6366f1'},
+                            {'name': 'Emerald', 'value': 'emerald', 'hex': '#10b981'},
+                            {'name': 'Blue', 'value': 'blue', 'hex': '#3b82f6'},
+                            {'name': 'Rose', 'value': 'rose', 'hex': '#f43f5e'},
+                            {'name': 'Violet', 'value': 'violet', 'hex': '#a855f7'}
+                        ] %}
+                        {% for c in colors %}
+                            <label class="s-color-card {{ settings.primary_color|default('indigo') == c.value ? 'selected' : '' }}">
+                                <div class="s-dot" style="background-color:{{ c.hex }};"></div>
+                                <span class="s-color-name">{{ c.name }}</span>
+                                <input type="radio" name="primary_color" value="{{ c.value }}" style="position:absolute;opacity:0;pointer-events:none;" {% if settings.primary_color|default('indigo') == c.value %}checked{% endif %} onchange="selectColorCard(this)">
+                            </label>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <div class="s-group">
+                    <label class="s-label">Sidebar Style</label>
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;max-width:28rem;margin-top:0.375rem;">
+                        <label class="s-radio-card {{ settings.sidebar_style|default('light') == 'light' ? 'selected' : '' }}">
+                            <div style="display:flex;align-items:center;gap:0.625rem;">
+                                <div style="width:1rem;height:1rem;border-radius:0.25rem;border:1px solid #94a3b8;background:#fff;"></div>
+                                <span>Light Sidebar</span>
+                            </div>
+                            <input type="radio" name="sidebar_style" value="light" {% if settings.sidebar_style|default('light') == 'light' %}checked{% endif %} onchange="selectRadio(this)">
+                        </label>
+                        <label class="s-radio-card {{ settings.sidebar_style|default('light') == 'dark' ? 'selected' : '' }}">
+                            <div style="display:flex;align-items:center;gap:0.625rem;">
+                                <div style="width:1rem;height:1rem;border-radius:0.25rem;border:1px solid #334155;background:#0f172a;"></div>
+                                <span>Dark Sidebar</span>
+                            </div>
+                            <input type="radio" name="sidebar_style" value="dark" {% if settings.sidebar_style|default('light') == 'dark' %}checked{% endif %} onchange="selectRadio(this)">
+                        </label>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Tab: Branding -->
+        {% if is_granted('ROLE_ADMIN') or is_granted('perm.branding') %}
+        <div id="tab-panel-branding" class="s-panel">
+            <div class="s-card">
+                <h3 class="s-card-title">Company Invoicing & Branding</h3>
+                <p class="s-card-desc">Details used on customer invoices and billing PDFs (separate from your default business name).</p>
+                <div class="s-grid">
+                    <div class="s-group">
+                        <label class="s-label">Company Name (Invoice Header)</label>
+                        <input type="text" name="company_name" value="{{ settings.company_name|default('') }}" class="s-input">
+                    </div>
+                    <div class="s-group">
+                        <label class="s-label">Invoice Logo</label>
+                        <div style="display:flex;align-items:center;gap:0.75rem;">
+                            <div style="width:2.75rem;height:2.75rem;border-radius:0.5rem;border:1px solid #e2e8f0;display:flex;align-items:center;justify-content:center;overflow:hidden;flex-shrink:0;background:#f8fafc;">
+                                {% if settings.company_logo %}
+                                    <img src="{{ asset('uploads/branding/' ~ settings.company_logo) }}" style="width:100%;height:100%;object-fit:cover;">
+                                {% else %}
+                                    <i data-lucide="image" style="width:1.25rem;height:1.25rem;color:#94a3b8;"></i>
+                                {% endif %}
+                            </div>
+                            <input type="file" name="company_logo" accept="image/*" class="s-input" style="height:auto;padding:0.375rem 0.5rem;">
+                        </div>
+                    </div>
+                    <div class="s-group">
+                        <label class="s-label">Invoice Reference Prefix</label>
+                        <input type="text" name="invoice_prefix" value="{{ settings.invoice_prefix|default('INV-') }}" class="s-input" style="max-width:12rem;">
+                        <span class="s-hint">Prefix prepended to sale invoice numbers.</span>
+                    </div>
+                    <div class="s-group s-span-2">
+                        <label class="s-label">Invoice Footer Notes & Terms</label>
+                        <textarea name="invoice_footer" rows="4" class="s-textarea">{{ settings.invoice_footer|default('') }}</textarea>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Save bar (hidden on maintenance tab) -->
+        {% if is_granted('ROLE_ADMIN') or is_granted('perm.general') or is_granted('perm.appearance') or is_granted('perm.branding') %}
+        <div class="s-save-bar" id="save-bar">
+            <button type="submit" class="s-btn-primary">
+                <i data-lucide="save" style="width:1rem;height:1rem;"></i> Save Settings
+            </button>
+        </div>
+        {% endif %}
+    </form>
+
+    <!-- Tab: Maintenance (outside form) -->
+    {% if is_granted('ROLE_ADMIN') or is_granted('perm.maintenance') %}
+    <div id="tab-panel-maintenance" class="s-panel">
+        <div class="s-card">
+            <div style="display:flex;align-items:flex-start;gap:1rem;margin-bottom:1.5rem;">
+                <div style="padding:0.75rem;border-radius:0.75rem;background:#fef2f2;color:#dc2626;flex-shrink:0;">
+                    <i data-lucide="shield-alert" style="width:1.5rem;height:1.5rem;"></i>
+                </div>
+                <div>
+                    <h3 class="s-card-title">Administrative Maintenance Console</h3>
+                    <p style="font-size:0.8rem;color:#64748b;margin:0.25rem 0 0 0;">Run critical routines, clear caches, trigger backup/restore, or toggle maintenance mode.</p>
+                </div>
+            </div>
+
+            <!-- Maintenance Mode Toggle -->
+            <div class="s-maint-row" style="border-top:1px solid #f1f5f9;padding-top:1.25rem;">
+                <div>
+                    <p class="s-maint-title">Maintenance Mode</p>
+                    <p class="s-maint-desc">When enabled, only administrators can access the application. All other users see a maintenance screen.</p>
+                </div>
+                <form action="{{ path('app_settings') }}" method="post" style="margin:0;">
+                    <input type="hidden" name="maintenance_enabled" value="{{ settings.maintenance_enabled|default('0') == '1' ? '0' : '1' }}">
+                    <button type="submit" class="s-toggle {{ settings.maintenance_enabled|default('0') == '1' ? 'active' : '' }}" title="{{ settings.maintenance_enabled|default('0') == '1' ? 'Click to disable' : 'Click to enable' }}"></button>
+                </form>
+            </div>
+
+            <!-- Backup -->
+            <div class="s-maint-row">
+                <div>
+                    <p class="s-maint-title">Database SQL Backup</p>
+                    <p class="s-maint-desc">Dumps tables and records to a downloadable SQL file.</p>
+                </div>
+                <form action="{{ path('app_settings_backup_create') }}" method="post" style="margin:0;">
+                    <button type="submit" class="s-btn-outline">
+                        <i data-lucide="download" style="width:1rem;height:1rem;"></i> Create Backup
+                    </button>
+                </form>
+            </div>
+
+            <!-- Restore -->
+            <div class="s-maint-row">
+                <div>
+                    <p class="s-maint-title">Restore SQL Backup</p>
+                    <p class="s-maint-desc">Loads SQL scripts to reset tables. Overwrites all existing records!</p>
+                </div>
+                <button type="button" onclick="document.getElementById('restoreModal').showModal()" class="s-btn-danger">
+                    <i data-lucide="upload-cloud" style="width:1rem;height:1rem;"></i> Restore Backup
+                </button>
+            </div>
+
+            <!-- Export Data -->
+            <div class="s-maint-row">
+                <div>
+                    <p class="s-maint-title">JSON Data Export</p>
+                    <p class="s-maint-desc">Generates a full structured JSON file of all tables.</p>
+                </div>
+                <form action="{{ path('app_settings_export_data') }}" method="post" style="margin:0;">
+                    <button type="submit" class="s-btn-outline">
+                        <i data-lucide="file-json" style="width:1rem;height:1rem;"></i> Export JSON
+                    </button>
+                </form>
+            </div>
+
+            <!-- Clear Cache -->
+            <div class="s-maint-row">
+                <div>
+                    <p class="s-maint-title">Clear Application Cache</p>
+                    <p class="s-maint-desc">Purges container caches, Twig templates, and compiled classes.</p>
+                </div>
+                <form action="{{ path('app_settings_clear_cache') }}" method="post" style="margin:0;">
+                    <button type="submit" class="s-btn-outline">
+                        <i data-lucide="trash" style="width:1rem;height:1rem;"></i> Clear Cache
+                    </button>
+                </form>
+            </div>
+
+            <!-- Recalculate -->
+            <div class="s-maint-row">
+                <div>
+                    <p class="s-maint-title">Recalculate Summary Data</p>
+                    <p class="s-maint-desc">Recomputes totals and syncs payment statuses for all sales/purchases.</p>
+                </div>
+                <form action="{{ path('app_settings_recalculate') }}" method="post" style="margin:0;">
+                    <button type="submit" class="s-btn-outline">
+                        <i data-lucide="refresh-cw" style="width:1rem;height:1rem;"></i> Recalculate
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Restore Dialog Modal -->
+        <dialog id="restoreModal" class="m-auto border-0 p-0 rounded-xl shadow-2xl max-w-md w-full overflow-hidden bg-white dark:bg-slate-800 backdrop:bg-slate-900/40 backdrop:backdrop-blur-sm">
+            <div class="text-slate-900 dark:text-slate-100 bg-white dark:bg-slate-800">
+                <form method="post" action="{{ path('app_settings_backup_restore') }}" enctype="multipart/form-data" style="margin:0;">
+                    <div class="p-6">
+                        <div class="flex items-start gap-4 mb-5">
+                            <div class="w-10 h-10 rounded-full bg-rose-100 dark:bg-rose-950/30 flex items-center justify-center flex-shrink-0">
+                                <i data-lucide="alert-triangle" class="w-5 h-5 text-rose-600 dark:text-rose-400"></i>
+                            </div>
+                            <div class="flex-1">
+                                <h3 class="text-base font-bold text-slate-900 dark:text-slate-100 mb-2 leading-snug">Restore Database Backup?</h3>
+                                <p class="text-sm text-slate-500 dark:text-slate-400 leading-relaxed mb-4">This replaces current data entirely. Download a backup first.</p>
+                                <label class="s-label mb-2 block">SQL Backup File</label>
+                                <input type="file" name="backup_file" accept=".sql" required class="s-input" style="height:auto;padding:0.375rem 0.5rem;">
+                            </div>
+                        </div>
+                        <div class="flex justify-end gap-3 mt-6">
+                            <button type="button" onclick="document.getElementById('restoreModal').close()" class="s-btn-outline">Cancel</button>
+                            <button type="submit" class="px-4 py-2 text-sm font-bold text-white bg-red-600 hover:bg-red-700 rounded-lg shadow-sm transition-colors active:scale-95">Restore Now</button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </dialog>
+    </div>
+    {% endif %}
+
+    <script>
+        const tabs = [];
+        {% if is_granted('ROLE_ADMIN') or is_granted('perm.general') %}tabs.push('general');{% endif %}
+        {% if is_granted('ROLE_ADMIN') or is_granted('perm.appearance') %}tabs.push('appearance');{% endif %}
+        {% if is_granted('ROLE_ADMIN') or is_granted('perm.branding') %}tabs.push('branding');{% endif %}
+        {% if is_granted('ROLE_ADMIN') or is_granted('perm.maintenance') %}tabs.push('maintenance');{% endif %}
+
+        function switchTab(id) {
+            if (!tabs.includes(id)) return;
+            tabs.forEach(t => {
+                const el = document.getElementById('tab-panel-' + t);
+                if (el) el.classList.remove('s-active');
+                const btn = document.getElementById('tab-btn-' + t);
+                if (btn) btn.classList.remove('active', 'active-danger');
+            });
+            const targetPanel = document.getElementById('tab-panel-' + id);
+            if (targetPanel) targetPanel.classList.add('s-active');
+            const activeBtn = document.getElementById('tab-btn-' + id);
+            if (activeBtn) {
+                if (id === 'maintenance') {
+                    activeBtn.classList.add('active-danger');
+                    const saveBar = document.getElementById('save-bar');
+                    if (saveBar) saveBar.style.display = 'none';
+                } else {
+                    activeBtn.classList.add('active');
+                    const saveBar = document.getElementById('save-bar');
+                    if (saveBar) saveBar.style.display = 'flex';
+                }
+            }
+            window.location.hash = id;
+        }
+
+        function selectRadio(radio) {
+            const parent = radio.closest('div[style]');
+            parent.querySelectorAll('.s-radio-card').forEach(c => c.classList.remove('selected'));
+            radio.closest('.s-radio-card').classList.add('selected');
+
+            if (radio.name === 'theme') {
+                const val = radio.value;
+                localStorage.setItem('theme', val);
+                if (val === 'dark') {
+                    document.documentElement.classList.add('dark');
+                } else {
+                    document.documentElement.classList.remove('dark');
+                }
+            }
+        }
+
+        function selectColorCard(radio) {
+            const parent = radio.closest('div[style]');
+            parent.querySelectorAll('.s-color-card').forEach(c => c.classList.remove('selected'));
+            radio.closest('.s-color-card').classList.add('selected');
+        }
+
+        window.addEventListener('DOMContentLoaded', () => {
+            const hash = window.location.hash.substring(1);
+            if (tabs.includes(hash)) {
+                switchTab(hash);
+            } else if (tabs.length > 0) {
+                switchTab(tabs[0]);
+            }
+        });
+    </script>
+{% endblock %}

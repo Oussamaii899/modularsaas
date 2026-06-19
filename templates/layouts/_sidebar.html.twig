@@ -1,0 +1,132 @@
+{% import 'components/menu_macros.html.twig' as menus %}
+
+{% set is_dark_sidebar = setting('sidebar_style', 'light') == 'dark' %}
+
+<aside id="sidebar" class="fixed inset-y-0 left-0 z-50 w-72 bg-white border-r border-slate-200 transition-transform duration-300 ease-in-out lg:translate-x-0 -translate-x-full lg:sticky lg:top-0 lg:h-screen lg:inset-auto {{ is_dark_sidebar ? 'sidebar-dark' : '' }}">
+    <div class="flex flex-col h-full">
+    
+        <!-- Logo Area -->
+        <div class="p-6 flex items-center justify-between lg:justify-start gap-3">
+            <div class="flex items-center gap-3">
+                {% if setting('company_logo') %}
+                    <img src="{{ asset('uploads/branding/' ~ setting('company_logo')) }}" alt="Company Logo" class="w-10 h-10 rounded-xl object-cover" />
+                {% elseif setting('business_logo') %}
+                    <img src="{{ asset('uploads/branding/' ~ setting('business_logo')) }}" alt="Business Logo" class="w-10 h-10 rounded-xl object-cover" />
+                {% else %}
+                    <div class="w-10 h-10 rounded-xl flex items-center justify-center text-white flex-shrink-0" style="background-color: var(--primary-600, #6366f1);">
+                        <i data-lucide="layers" class="w-6 h-6"></i>
+                    </div>
+                {% endif %}
+                <span class="text-xl font-bold tracking-tight text-slate-900">
+                    {{ setting('company_name', setting('business_name', 'ModularSaaS')) }}
+                </span>
+            </div>
+            <!-- Mobile Close Button -->
+            <button id="sidebar-close" class="p-2 text-slate-500 hover:text-indigo-600 hover:bg-slate-50 rounded-lg lg:hidden transition-colors">
+                <i data-lucide="x" class="w-6 h-6"></i>
+            </button>
+        </div>
+
+        <!-- Navigation -->
+        <nav class="flex-1 px-4 py-4 space-y-1 overflow-y-auto">
+            <div class="pb-4">
+                <p class="px-3 text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Main Menu</p>
+                
+                {% if is_granted('see.dashboard') %}
+                <a href="{{ path('app_dashboard') }}" class="flex items-center gap-3 px-3 py-2 text-sm font-medium {{ app.request.pathinfo == path('app_dashboard') ? 'text-indigo-600 bg-indigo-50' : 'text-slate-600 hover:text-indigo-600 hover:bg-slate-50' }} rounded-lg group">
+                    <i data-lucide="layout-dashboard" class="w-5 h-5 transition-colors {{ app.request.pathinfo == path('app_dashboard') ? 'text-indigo-600' : 'group-hover:text-indigo-600' }}"></i>
+                    Dashboard
+                </a>
+                {% endif %}
+
+                <!-- Purchases Dropdown -->
+                {% set purchase_items = [] %}
+                {% if is_granted('see.purchases') or is_granted('see.purchase.overview') %}
+                    {% set purchase_items = purchase_items|merge([{label: 'Overview', icon: 'pie-chart', active_routes: ['app_purchases_overview'], url: path('app_purchases_overview')}]) %}
+                {% endif %}
+                {% if is_granted('see.purchases') or is_granted('see.purchase.suppliers') %}
+                    {% set purchase_items = purchase_items|merge([{label: 'Suppliers', icon: 'truck', active_routes: ['app_suppliers_index', 'app_suppliers_new', 'app_suppliers_edit', 'app_suppliers_show'], url: path('app_suppliers_index')}]) %}
+                {% endif %}
+                {% if is_granted('see.purchases') or is_granted('see.purchase.list') %}
+                    {% set purchase_items = purchase_items|merge([{label: 'Purchase List', icon: 'shopping-cart', active_routes: ['app_purchases_index', 'app_purchases_new', 'app_purchases_edit', 'app_purchases_show'], url: path('app_purchases_index')}]) %}
+                {% endif %}
+
+                {% if purchase_items is not empty %}
+                {{ menus.dropdown('Purchases', 'shopping-bag', purchase_items, app.request.get('_route')) }}
+                {% endif %}
+
+                <!-- Sales Dropdown -->
+                {% set sale_items = [] %}
+                {% if is_granted('see.sales') or is_granted('see.sale.overview') %}
+                    {% set sale_items = sale_items|merge([{label: 'Overview', icon: 'pie-chart', active_routes: ['app_sales_overview'], url: path('app_sales_overview')}]) %}
+                {% endif %}
+                {% if is_granted('see.sales') or is_granted('see.sale.clients') %}
+                    {% set sale_items = sale_items|merge([{label: 'Clients', icon: 'users', active_routes: ['app_clients_index', 'app_clients_new', 'app_clients_edit', 'app_clients_show'], url: path('app_clients_index')}]) %}
+                {% endif %}
+                {% if is_granted('see.sales') or is_granted('see.sale.list') %}
+                    {% set overpaid_count = get_overpaid_sales_count() %}
+                    {% set overpaid_badge = '' %}
+                    {% if overpaid_count > 0 %}
+                        {% set badge_text = overpaid_count > 9 ? '+9' : overpaid_count %}
+                        {% set overpaid_badge = '<span style="font-size: 10px; font-weight: 900; background-color: #e11d48; color: #ffffff; padding: 2px 6px; border-radius: 9999px; line-height: 1; display: inline-flex; align-items: center; justify-content: center; min-width: 18px; height: 18px; box-sizing: border-box;">' ~ badge_text ~ '</span>' %}
+                    {% endif %}
+                    {% set sale_items = sale_items|merge([{label: 'Sales List', icon: 'dollar-sign', active_routes: ['app_sales_index', 'app_sales_new', 'app_sales_edit', 'app_sales_show'], url: path('app_sales_index'), badge: overpaid_badge}]) %}
+                {% endif %}
+
+                {% if sale_items is not empty %}
+                {{ menus.dropdown('Sales', 'trending-up', sale_items, app.request.get('_route')) }}
+                {% endif %}
+
+                {% if is_granted('see.products') %}
+                <a href="{{ path('app_products_index') }}" class="flex items-center gap-3 px-3 py-2 text-sm font-medium {{ app.request.pathinfo starts with '/products' ? 'text-indigo-600 bg-indigo-50' : 'text-slate-600 hover:text-indigo-600 hover:bg-slate-50' }} rounded-lg group transition-all">
+                    <i data-lucide="package" class="w-5 h-5 transition-colors {{ app.request.pathinfo starts with '/products' ? 'text-indigo-600' : 'group-hover:text-indigo-600' }}"></i>
+                    Products
+                </a>
+                {% endif %}
+
+                {% if is_granted('ROLE_ADMIN') %}
+                <a href="{{ path('app_users_index') }}" class="flex items-center gap-3 px-3 py-2 text-sm font-medium {{ app.request.pathinfo starts with '/users' ? 'text-indigo-600 bg-indigo-50' : 'text-slate-600 hover:text-indigo-600 hover:bg-slate-50' }} rounded-lg group transition-all">
+                    <i data-lucide="users" class="w-5 h-5 transition-colors {{ app.request.pathinfo starts with '/users' ? 'text-indigo-600' : 'group-hover:text-indigo-600' }}"></i>
+                    Users
+                </a>
+                {% endif %}
+            </div>
+
+            <div class="pt-4 border-t border-slate-100">
+                <p class="px-3 text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Management</p>
+                {% if is_granted('ROLE_ADMIN') or is_granted('perm.general') or is_granted('perm.appearance') or is_granted('perm.branding') or is_granted('perm.maintenance') %}
+                <a href="{{ path('app_settings') }}" class="flex items-center gap-3 px-3 py-2 text-sm font-medium {{ app.request.pathinfo starts with '/settings' ? 'text-indigo-600 bg-indigo-50' : 'text-slate-600 hover:text-indigo-600 hover:bg-slate-50' }} rounded-lg group transition-all">
+                    <i data-lucide="settings" class="w-5 h-5 transition-colors {{ app.request.pathinfo starts with '/settings' ? 'text-indigo-600' : 'group-hover:text-indigo-600' }}"></i>
+                    Settings
+                </a>
+                {% endif %}
+                <a href="#" class="flex items-center gap-3 px-3 py-2 text-sm font-medium text-slate-600 hover:text-indigo-600 hover:bg-slate-50 rounded-lg group transition-all">
+                    <i data-lucide="help-circle" class="w-5 h-5 transition-colors group-hover:text-indigo-600"></i>
+                    Help Center
+                </a>
+                {% if is_granted('see.logs') %}
+                <a href="{{ path('app_logs_index') }}" class="flex items-center gap-3 px-3 py-2 text-sm font-medium {{ app.request.pathinfo starts with '/logs' ? 'text-indigo-600 bg-indigo-50' : 'text-slate-600 hover:text-indigo-600 hover:bg-slate-50' }} rounded-lg group transition-all">
+                    <i data-lucide="file-text" class="w-5 h-5 transition-colors {{ app.request.pathinfo starts with '/logs' ? 'text-indigo-600' : 'group-hover:text-indigo-600' }}"></i>
+                    Logs
+                </a>
+                {% endif %}
+            </div>
+        </nav>
+
+        <!-- User Profile -->
+        <div class="p-4 border-t border-slate-100 bg-slate-50/50">
+            <div class="flex items-center gap-3 px-2 py-2">
+                <div class="w-10 h-10 rounded-full bg-slate-200 flex items-center justify-center text-slate-500 font-semibold border-2 border-white shadow-sm overflow-hidden flex-shrink-0">
+                    <img src="{{ app.user.avatar ? asset('uploads/avatars/' ~ app.user.avatar) : 'https://ui-avatars.com/api/?name=' ~ app.user.username ~ '&background=6366f1&color=fff' }}" alt="Avatar" class="w-full h-full object-cover">
+                </div>
+                <div class="flex-1 min-w-0">
+                    <p class="text-sm font-semibold text-slate-900 truncate">{{app.user.username}}</p>
+                    <p class="text-xs text-slate-500 truncate">{{app.user.email}}</p>
+                </div>
+                <a href="{{ path('app_logout') }}" class="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-md transition-colors" title="Log Out">
+                    <i data-lucide="log-out" class="w-4 h-4"></i>
+                </a>
+            </div>
+        </div>
+    </div>
+</aside>

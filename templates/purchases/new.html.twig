@@ -1,0 +1,264 @@
+{% extends 'layouts/dashboard.html.twig' %}
+
+{% block title %}Log New Purchase | {{ company_name ?? 'ModularSaaS' }}{% endblock %}
+
+{% block content_title %}Add New Purchase{% endblock %}
+{% block content_subtitle %}Record an inventory acquisition{% endblock %}
+
+{% block content_actions %}
+    <a href="{{ path('app_purchases_index') }}" class="inline-flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium text-slate-600 bg-white border border-slate-200 hover:bg-slate-50 rounded-md shadow-sm transition-colors">
+        <i data-lucide="arrow-left" class="w-4 h-4"></i>
+        <span>Back to List</span>
+    </a>
+{% endblock %}
+
+{% block main_content %}
+    <div class="max-w-4xl mx-auto pb-12">
+        {{ form_start(form, {'attr': {'class': 'space-y-8', 'id': 'purchase-form'}}) }}
+            <!-- Step 1: Supplier Identity -->
+            <div class="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-visible">
+                <div class="p-6 md:p-8">
+                    <div class="mb-6">
+                        <h3 class="text-lg font-bold text-slate-900 dark:text-slate-100">1. Supplier Information</h3>
+                        <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">Select the vendor and the date of acquisition.</p>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div class="space-y-3">
+                            <label class="text-sm font-semibold text-slate-900 dark:text-slate-300">{{ form_label(form.contact) }}</label>
+                            {{ form_widget(form.contact, {'attr': {'class': 'tom-select-contact w-full'}}) }}
+                            <div class="text-rose-500 text-xs font-medium">{{ form_errors(form.contact) }}</div>
+                        </div>
+                        <div class="space-y-3">
+                            <label class="text-sm font-semibold text-slate-900 dark:text-slate-300">{{ form_label(form.created_at) }}</label>
+                            {{ form_widget(form.created_at, {'attr': {'class': 'w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg focus:outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all text-sm font-medium text-slate-900 dark:text-slate-100'}}) }}
+                            <div class="text-rose-500 text-xs font-medium">{{ form_errors(form.created_at) }}</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 2: Product Breakdown -->
+            <div class="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-visible">
+                <div class="p-6 md:p-8">
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+                        <div>
+                            <h3 class="text-lg font-bold text-slate-900 dark:text-slate-100">2. Acquired Items</h3>
+                            <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">Add the products purchased from this supplier.</p>
+                        </div>
+                        <button type="button" class="add-item-btn inline-flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-bold text-indigo-700 dark:text-indigo-300 bg-indigo-50 dark:bg-indigo-950/30 border border-indigo-100 dark:border-indigo-900/50 hover:bg-indigo-100 dark:hover:bg-indigo-900/50 rounded-md transition-colors shadow-sm">
+                            <i data-lucide="plus" class="w-4 h-4"></i>
+                            <span>Add Product</span>
+                        </button>
+                    </div>
+
+                    <div class="items-collection space-y-4" 
+                         data-prototype="{{ include('purchases/_item_form_row.html.twig', { 'form': form.purchaseItems.vars.prototype })|e('html_attr') }}"
+                         data-index="{{ form.purchaseItems|length }}">
+                        
+                        {% for itemForm in form.purchaseItems %}
+                            {{ include('purchases/_item_form_row.html.twig', { 'form': itemForm }) }}
+                        {% endfor %}
+                    </div>
+
+                    {% if form.purchaseItems|length == 0 %}
+                        <div class="no-items-placeholder upload-zone dark:border-slate-700 dark:text-slate-400" style="display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 32px 16px; margin-top: 16px; border-radius: 8px; text-align: center; box-sizing: border-box; border-style: dashed; border-width: 2px;">
+                            <i data-lucide="shopping-cart" class="w-8 h-8" style="margin-bottom: 8px; opacity: 0.5;"></i>
+                            <p style="font-size: 14px; font-weight: 500; margin: 0; padding: 0;" class="text-slate-700 dark:text-slate-300">No items added yet</p>
+                            <p style="font-size: 12px; margin: 4px 0 0 0; padding: 0;" class="text-slate-500 dark:text-slate-400">Click "Add Product" to start logging.</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Step 3: Record Payment Option -->
+            <div class="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-visible">
+                <div class="p-6 md:p-8">
+                    <div class="mb-4">
+                        <div class="flex items-center gap-3">
+                            <input type="checkbox" id="record_payment" name="record_payment" value="1" class="h-4.5 w-4.5 rounded border-slate-300 dark:border-slate-700 dark:bg-slate-900 text-indigo-600 focus:ring-indigo-500/20 cursor-pointer">
+                            <label for="record_payment" class="text-base font-bold text-slate-900 dark:text-slate-100 cursor-pointer select-none">Record payment now?</label>
+                        </div>
+                        <p class="text-sm text-slate-500 dark:text-slate-400 mt-1 pl-7.5">Check this box to log an immediate payment transaction against this sale order.</p>
+                    </div>
+
+                    <div id="payment-details-section" class="hidden pl-7.5 space-y-6 pt-4 border-t border-slate-100 dark:border-slate-700">
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                            <div class="space-y-3">
+                                <label class="text-sm font-semibold text-slate-900 dark:text-slate-300">Payment Amount ($)</label>
+                                <input type="number" id="payment_amount" name="payment_amount" step="0.01" placeholder="0.00" class="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg focus:outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all text-sm font-medium text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500">
+                            </div>
+                            <div class="space-y-3">
+                                <label class="text-sm font-semibold text-slate-900 dark:text-slate-300">Payment Method</label>
+                                <select id="payment_method" name="payment_method" class="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg focus:outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all text-sm font-medium text-slate-900 dark:text-slate-100">
+                                    <option value="Cash">Cash</option>
+                                    <option value="Bank Transfer">Bank Transfer</option>
+                                    <option value="Stripe">Stripe</option>
+                                    <option value="Credit Card">Credit Card</option>
+                                    <option value="Other">Other</option>
+                                </select>
+                            </div>
+                            <div class="space-y-3">
+                                <label class="text-sm font-semibold text-slate-900 dark:text-slate-300">Transaction Reference</label>
+                                <input type="text" id="payment_reference" name="payment_reference" placeholder="Check #, TX ID, etc." class="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg focus:outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all text-sm font-medium text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 4: Financial Summary -->
+            <div class="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden">
+                <div class="p-6 md:p-8">
+                    <div class="flex flex-col gap-4">
+                        <div>
+                            <h3 class="text-lg font-bold text-slate-900 dark:text-slate-100">4. Grand Total</h3>
+                            <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">Automatically calculated from line items.</p>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <span class="text-2xl font-bold text-slate-400">$</span>
+                            {{ form_widget(form.total, {'attr': {'class': 'bg-transparent border-none text-3xl font-bold text-slate-900 dark:text-slate-100 p-0 w-48 focus:ring-0', 'readonly': true}}) }}
+                        </div>
+                    </div>
+
+                    <div class="mt-8 pt-6 border-t border-slate-100 dark:border-slate-700 flex flex-col sm:flex-row items-center justify-end gap-4">
+                        <a href="{{ path('app_purchases_index') }}" class="w-full sm:w-auto px-6 py-2.5 text-sm font-medium text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors text-center">Discard</a>
+                        <button type="submit" class="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-8 py-2.5 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg shadow-sm transition-colors active:scale-95">
+                            <i data-lucide="save" class="w-4 h-4"></i>
+                            <span>Record Purchase</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        {{ form_end(form) }}
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Initialize TomSelect on Contact
+            if(document.querySelector('.tom-select-contact')) {
+                new TomSelect('.tom-select-contact', {
+                    create: false,
+                    sortField: { field: "text", direction: "asc" }
+                });
+            }
+
+            const collectionHolder = document.querySelector('.items-collection');
+            const addButton = document.querySelector('.add-item-btn');
+            const placeholder = document.querySelector('.no-items-placeholder');
+            const totalInput = document.getElementById('{{ form.total.vars.id }}');
+
+            // Payment recording toggle elements
+            const recordPaymentCheckbox = document.getElementById('record_payment');
+            const paymentDetailsSection = document.getElementById('payment-details-section');
+            const paymentAmountInput = document.getElementById('payment_amount');
+
+            const updateGrandTotal = () => {
+                let grandTotal = 0;
+                document.querySelectorAll('.item-row').forEach(row => {
+                    const price = parseFloat(row.querySelector('.price-input').value) || 0;
+                    const qty = parseInt(row.querySelector('.quantity-input').value) || 0;
+                    grandTotal += price * qty;
+                });
+                totalInput.value = grandTotal.toFixed(2);
+                if (recordPaymentCheckbox && recordPaymentCheckbox.checked) {
+                    paymentAmountInput.value = totalInput.value;
+                }
+            };
+
+            if (recordPaymentCheckbox) {
+                recordPaymentCheckbox.addEventListener('change', function() {
+                    if (this.checked) {
+                        paymentDetailsSection.classList.remove('hidden');
+                        paymentAmountInput.value = totalInput.value;
+                    } else {
+                        paymentDetailsSection.classList.add('hidden');
+                        paymentAmountInput.value = '';
+                    }
+                });
+            }
+
+            const bindRowEvents = (row) => {
+                const productSelect = row.querySelector('.product-select');
+                const priceInput = row.querySelector('.price-input');
+                const qtyInput = row.querySelector('.quantity-input');
+                const removeBtn = row.querySelector('.remove-item-btn');
+                const priceDisplay = row.querySelector('.price-display');
+
+                if (priceInput && priceDisplay) {
+                    priceDisplay.textContent = parseFloat(priceInput.value || 0).toFixed(2);
+                }
+
+                if (productSelect) {
+                    // Initialize TomSelect for product
+                    new TomSelect(productSelect, {
+                        create: false,
+                        sortField: { field: "text", direction: "asc" }
+                    });
+
+                    // Fetch price on change
+                    productSelect.addEventListener('change', (e) => {
+                        const productId = e.target.value;
+                        if (productId) {
+                            fetch(`/products/api/${productId}/price`)
+                                .then(res => res.json())
+                                .then(data => {
+                                    if (data.price) {
+                                        priceInput.value = data.price;
+                                        if (priceDisplay) {
+                                            priceDisplay.textContent = parseFloat(data.price).toFixed(2);
+                                        }
+                                        updateGrandTotal();
+                                    }
+                                });
+                        }
+                    });
+                }
+
+                if (priceInput) priceInput.addEventListener('input', updateGrandTotal);
+                if (qtyInput) qtyInput.addEventListener('input', updateGrandTotal);
+                
+                if (removeBtn) {
+                    removeBtn.addEventListener('click', () => {
+                        row.remove();
+                        updateGrandTotal();
+                        if (collectionHolder.children.length === 0 && placeholder) {
+                            placeholder.style.display = 'flex';
+                        }
+                    });
+                }
+            };
+
+            const addItem = () => {
+                const prototype = collectionHolder.dataset.prototype;
+                const index = parseInt(collectionHolder.dataset.index);
+                const newForm = prototype.replace(/__name__/g, index);
+                
+                collectionHolder.dataset.index = index + 1;
+                
+                const div = document.createElement('div');
+                div.innerHTML = newForm;
+                const newRow = div.firstElementChild;
+                
+                collectionHolder.appendChild(newRow);
+                if (placeholder) placeholder.style.display = 'none';
+                
+                bindRowEvents(newRow);
+                
+                if (typeof lucide !== 'undefined') {
+                    lucide.createIcons();
+                }
+            };
+
+            if (addButton) {
+                addButton.addEventListener('click', addItem);
+            }
+            
+            document.querySelectorAll('.item-row').forEach(row => {
+                bindRowEvents(row);
+            });
+            
+            updateGrandTotal();
+        });
+    </script>
+{% endblock %}

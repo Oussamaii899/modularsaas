@@ -1,0 +1,304 @@
+{% extends 'layouts/dashboard.html.twig' %}
+
+{% block title %}Edit Sale | {{ company_name ?? 'ModularSaaS' }}{% endblock %}
+
+{% block content_title %}Edit Sale{% endblock %}
+{% block content_subtitle %}Updating record INV-{{ "%04d"|format(sale.id) }}{% endblock %}
+
+{% block content_actions %}
+    <a href="{{ path('app_sales_show', {'slug': sale.slug}) }}" class="inline-flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium text-slate-600 bg-white border border-slate-200 hover:bg-slate-50 rounded-md shadow-sm transition-colors">
+        <i data-lucide="eye" class="w-4 h-4"></i>
+        <span>View Record</span>
+    </a>
+{% endblock %}
+
+{% block main_content %}
+    <div class="max-w-4xl mx-auto pb-12">
+        {{ form_start(form, {'attr': {'class': 'space-y-8', 'id': 'sale-form'}}) }}
+            <!-- Step 1: Customer Identity -->
+            <div class="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-visible">
+                <div class="p-6 md:p-8">
+                    <div class="mb-6">
+                        <h3 class="text-lg font-bold text-slate-900 dark:text-slate-100">1. Customer Information</h3>
+                        <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">Update the client or the date of sale.</p>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div class="space-y-3">
+                            <label class="text-sm font-semibold text-slate-900 dark:text-slate-300">{{ form_label(form.contact) }}</label>
+                            {{ form_widget(form.contact, {'attr': {'class': 'tom-select-contact w-full'}}) }}
+                        </div>
+                        <div class="space-y-3">
+                            <label class="text-sm font-semibold text-slate-900 dark:text-slate-300">{{ form_label(form.created_at) }}</label>
+                            {{ form_widget(form.created_at, {'attr': {'class': 'w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg focus:outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all text-sm font-medium text-slate-900 dark:text-slate-100'}}) }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 2: Product Breakdown -->
+            <div class="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-visible">
+                <div class="p-6 md:p-8">
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+                        <div>
+                            <h3 class="text-lg font-bold text-slate-900 dark:text-slate-100">2. Sold Items</h3>
+                            <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">Manage the products saled from this supplier.</p>
+                        </div>
+                        <button type="button" class="add-item-btn inline-flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-bold text-indigo-700 dark:text-indigo-300 bg-indigo-50 dark:bg-indigo-950/30 border border-indigo-100 dark:border-indigo-900/50 hover:bg-indigo-100 dark:hover:bg-indigo-900/50 rounded-md transition-colors shadow-sm">
+                            <i data-lucide="plus" class="w-4 h-4"></i>
+                            <span>Add Product</span>
+                        </button>
+                    </div>
+
+                    <div class="items-collection space-y-4" 
+                         data-prototype="{{ include('sales/_item_form_row.html.twig', { 'form': form.saleItems.vars.prototype })|e('html_attr') }}"
+                         data-index="{{ form.saleItems|length }}">
+                        
+                        {% for itemForm in form.saleItems %}
+                            {{ include('sales/_item_form_row.html.twig', { 'form': itemForm }) }}
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 3: Financial Summary -->
+            <div class="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden">
+                <div class="p-6 md:p-8">
+                    <div class="flex flex-col gap-4">
+                        <div>
+                            <h3 class="text-lg font-bold text-slate-900 dark:text-slate-100">3. Grand Total</h3>
+                            <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">Automatically calculated from line items.</p>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <span class="text-2xl font-bold text-slate-400">$</span>
+                            {{ form_widget(form.total, {'attr': {'class': 'bg-transparent border-none text-3xl font-bold text-slate-900 dark:text-slate-100 p-0 w-48 focus:ring-0', 'readonly': true}}) }}
+                        </div>
+                    </div>
+
+                    <div class="mt-8 pt-6 border-t border-slate-100 dark:border-slate-700 flex flex-col sm:flex-row items-center justify-end gap-4">
+                        <a href="{{ path('app_sales_show', {'slug': sale.slug}) }}" class="w-full sm:w-auto px-6 py-2.5 text-sm font-medium text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors text-center">Discard changes</a>
+                        <button id="update-sale-button" type="submit" disabled class="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-8 py-2.5 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg shadow-sm transition-colors active:scale-95" style="opacity:0.45;cursor:not-allowed;">
+                            <i data-lucide="save" class="w-4 h-4"></i>
+                            <span>Update Sale</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        {{ form_end(form) }}
+    </div>
+
+    <dialog id="removeItemModal" style="margin:auto;" class="m-auto p-0 rounded-lg shadow-xl border border-slate-200 backdrop:bg-slate-600/20 backdrop:backdrop-blur-[2px] open:animate-in open:fade-in open:zoom-in-95 duration-200 overflow-hidden">
+        <div class="bg-white max-w-md w-full text-left">
+            <div class="p-6">
+                <div class="flex items-start gap-4 mb-5">
+                    <div class="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center flex-shrink-0">
+                        <i data-lucide="alert-circle" class="w-5 h-5 text-red-600"></i>
+                    </div>
+                    <div class="flex-1">
+                        <h3 class="text-lg font-bold text-slate-900 leading-none mb-2">Remove Product?</h3>
+                        <p class="text-sm text-slate-500 leading-normal">Are you sure you want to remove this product from the list? You can always add it back later.</p>
+                    </div>
+                </div>
+                <div class="flex justify-end gap-3 mt-6">
+                    <button type="button" id="cancelRemoveBtn" class="px-4 py-2 text-sm font-semibold text-slate-700 bg-white border border-slate-200 hover:bg-slate-50 rounded-md transition-all">Cancel</button>
+                    <button type="button" id="confirmRemoveBtn" class="px-4 py-2 text-sm font-bold text-white rounded-md shadow-sm transition-all border border-red-600" style="background-color: #dc2626;">Remove Product</button>
+                </div>
+            </div>
+        </div>
+    </dialog>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Initialize TomSelect on Contact
+            if(document.querySelector('.tom-select-contact')) {
+                new TomSelect('.tom-select-contact', {
+                    create: false,
+                    sortField: { field: "text", direction: "asc" }
+                });
+            }
+
+            const collectionHolder = document.querySelector('.items-collection');
+            const addButton = document.querySelector('.add-item-btn');
+            const totalInput = document.getElementById('{{ form.total.vars.id }}');
+            let rowToRemove = null;
+            let initialSaleFormState = '';
+
+            const getSaleFormState = () => {
+                const form = document.getElementById('sale-form');
+                if (!form) return '';
+
+                const values = [];
+                form.querySelectorAll('input, textarea, select').forEach((field) => {
+                    if (field.type === 'checkbox' || field.type === 'radio') {
+                        values.push(`${field.name}:${field.checked}:${field.value}`);
+                        return;
+                    }
+
+                    values.push(`${field.name}:${field.value}`);
+                });
+
+                return JSON.stringify(values);
+            };
+
+            const updateSaleSubmitState = () => {
+                const button = document.getElementById('update-sale-button');
+                if (!button) return;
+
+                const hasChanges = getSaleFormState() !== initialSaleFormState;
+                button.disabled = !hasChanges;
+                button.style.opacity = hasChanges ? '1' : '0.45';
+                button.style.cursor = hasChanges ? 'pointer' : 'not-allowed';
+            };
+
+            document.getElementById('cancelRemoveBtn')?.addEventListener('click', () => {
+                document.getElementById('removeItemModal').close();
+                rowToRemove = null;
+            });
+
+            document.getElementById('confirmRemoveBtn')?.addEventListener('click', () => {
+                if (rowToRemove) {
+                    rowToRemove.remove();
+                    updateGrandTotal();
+                    updateSaleSubmitState();
+                }
+                document.getElementById('removeItemModal').close();
+                rowToRemove = null;
+            });
+
+            const updateGrandTotal = () => {
+                let grandTotal = 0;
+                document.querySelectorAll('.item-row').forEach(row => {
+                    const priceInput = row.querySelector('.price-input');
+                    const qtyInput = row.querySelector('.quantity-input');
+                    if (priceInput && qtyInput) {
+                        const price = parseFloat(priceInput.value) || 0;
+                        const qty = parseInt(qtyInput.value) || 0;
+                        grandTotal += price * qty;
+                    }
+                });
+                totalInput.value = grandTotal.toFixed(2);
+            };
+
+            const bindRowEvents = (row) => {
+                const productSelect = row.querySelector('.product-select');
+                const priceInput = row.querySelector('.price-input');
+                const qtyInput = row.querySelector('.quantity-input');
+                const removeBtn = row.querySelector('.remove-item-btn');
+                const priceDisplay = row.querySelector('.price-display');
+
+                if (priceInput && priceDisplay) {
+                    priceDisplay.textContent = parseFloat(priceInput.value || 0).toFixed(2);
+                }
+
+                if (productSelect && !productSelect.classList.contains('tomselected')) {
+                    // Initialize TomSelect for product
+                    new TomSelect(productSelect, {
+                        create: false,
+                        sortField: { field: "text", direction: "asc" }
+                    });
+
+                    // Fetch price on change
+                    productSelect.addEventListener('change', (e) => {
+                        const productId = e.target.value;
+                        if (productId) {
+                            fetch(`/products/api/${productId}/price`)
+                                .then(res => res.json())
+                                .then(data => {
+                                    if (data.price) {
+                                        priceInput.value = data.price;
+                                        if (priceDisplay) {
+                                            priceDisplay.textContent = parseFloat(data.price).toFixed(2);
+                                        }
+                                        updateGrandTotal();
+                                        updateSaleSubmitState();
+                                    }
+                                });
+                        }
+                    });
+                }
+
+                if (priceInput) priceInput.addEventListener('input', updateGrandTotal);
+                if (qtyInput) qtyInput.addEventListener('input', updateGrandTotal);
+                
+                if (removeBtn) {
+                    removeBtn.addEventListener('click', () => {
+                        rowToRemove = row;
+                        const rowCount = document.querySelectorAll('.item-row').length;
+                        const modalTitle = document.querySelector('#removeItemModal h3');
+                        const modalDesc = document.querySelector('#removeItemModal p');
+                        const confirmBtn = document.getElementById('confirmRemoveBtn');
+                        const cancelBtn = document.getElementById('cancelRemoveBtn');
+                        const hasPayments = {{ sale.getPayments().isEmpty() ? 'false' : 'true' }};
+                        
+                        if (rowCount === 1) {
+                            if (hasPayments) {
+                                if (modalTitle) modalTitle.innerText = "Cannot Delete Transaction";
+                                if (modalDesc) modalDesc.innerText = "This invoice has recorded payments. You cannot remove the final product or delete this sale invoice record. If you need to delete this sale, please delete all associated payments on the transaction detail page first.";
+                                if (confirmBtn) confirmBtn.style.display = 'none';
+                                if (cancelBtn) cancelBtn.innerText = "Close";
+                            } else {
+                                if (modalTitle) modalTitle.innerText = "Delete Sale Invoice?";
+                                if (modalDesc) modalDesc.innerText = "This is the final product in this invoice. Removing it will completely delete this entire Sale invoice record from the system upon updating. Are you sure you want to proceed?";
+                                if (confirmBtn) {
+                                    confirmBtn.style.display = 'inline-flex';
+                                    confirmBtn.innerText = "Yes, Delete Transaction";
+                                    confirmBtn.style.backgroundColor = '#be123c'; // bg-rose-700
+                                    confirmBtn.style.borderColor = '#be123c';
+                                }
+                                if (cancelBtn) cancelBtn.innerText = "Cancel";
+                            }
+                        } else {
+                            if (modalTitle) modalTitle.innerText = "Remove Product?";
+                            if (modalDesc) modalDesc.innerText = "Are you sure you want to remove this product from the list? You can always add it back later.";
+                            if (confirmBtn) {
+                                confirmBtn.style.display = 'inline-flex';
+                                confirmBtn.innerText = "Remove Product";
+                                confirmBtn.style.backgroundColor = '#dc2626'; // bg-red-600
+                                confirmBtn.style.borderColor = '#dc2626';
+                            }
+                            if (cancelBtn) cancelBtn.innerText = "Cancel";
+                        }
+                        document.getElementById('removeItemModal').showModal();
+                    });
+                }
+            };
+
+            const addItem = () => {
+                const prototype = collectionHolder.dataset.prototype;
+                const index = parseInt(collectionHolder.dataset.index);
+                const newForm = prototype.replace(/__name__/g, index);
+                
+                collectionHolder.dataset.index = index + 1;
+                
+                const div = document.createElement('div');
+                div.innerHTML = newForm;
+                const newRow = div.firstElementChild;
+                
+                collectionHolder.appendChild(newRow);
+                
+                bindRowEvents(newRow);
+                updateGrandTotal();
+                updateSaleSubmitState();
+                
+                if (typeof lucide !== 'undefined') {
+                    lucide.createIcons();
+                }
+            };
+
+            if (addButton) {
+                addButton.addEventListener('click', addItem);
+            }
+            
+            document.querySelectorAll('.item-row').forEach(row => {
+                bindRowEvents(row);
+            });
+            
+            updateGrandTotal();
+            initialSaleFormState = getSaleFormState();
+            updateSaleSubmitState();
+
+            document.getElementById('sale-form')?.addEventListener('input', updateSaleSubmitState);
+            document.getElementById('sale-form')?.addEventListener('change', updateSaleSubmitState);
+        });
+    </script>
+{% endblock %}

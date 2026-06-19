@@ -1,0 +1,46 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Access Denied | {{ company_name ?? 'ModularSaaS' }}{% endblock %}
+
+{% block body %}
+<div class="min-h-screen flex items-center justify-center px-4 relative overflow-hidden" style="background-color: #f8fafc; min-height: 100vh; display: flex; align-items: center; justify-content: center; font-family: Inter, system-ui, sans-serif; position: relative;">
+    <!-- Decorative background elements -->
+    <div style="position: absolute; top: 25%; left: 25%; width: 24rem; height: 24rem; background-color: rgba(99, 102, 241, 0.04); border-radius: 9999px; filter: blur(64px);"></div>
+    <div style="position: absolute; bottom: 25%; right: 25%; width: 24rem; height: 24rem; background-color: rgba(239, 68, 68, 0.04); border-radius: 9999px; filter: blur(64px);"></div>
+
+    <div style="max-width: 28rem; width: 100%; position: relative; z-index: 10; padding: 1rem;">
+        <div style="background-color: #ffffff; border: 1px solid #e2e8f0; border-radius: 1rem; padding: 2.5rem 2rem; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04); text-align: center;">
+            <!-- Icon -->
+            <div style="width: 4rem; height: 4rem; background-color: #fef2f2; border: 1px solid #fee2e2; border-radius: 1rem; display: flex; align-items: center; justify-content: center; margin: 0 auto 1.5rem auto; box-shadow: 0 10px 15px -3px rgba(239, 68, 68, 0.05);">
+                <i data-lucide="shield-alert" style="width: 2rem; height: 2rem; color: #ef4444;"></i>
+            </div>
+
+            <!-- Title -->
+            <h1 style="font-size: 1.5rem; font-weight: 700; color: #0f172a; letter-spacing: -0.025em; margin-bottom: 0.75rem; line-height: 1.25;">
+                No Permissions Assigned
+            </h1>
+
+            <!-- Description -->
+            <p style="color: #64748b; font-size: 0.875rem; line-height: 1.5; margin-bottom: 2rem;">
+                Your account (<span style="color: #0f172a; font-weight: 600;">{{ app.user.username }}</span>) is active, but does not have any access permissions assigned to it yet. Please contact your system administrator to assign permissions for your role.
+            </p>
+
+            <!-- Actions -->
+            <div style="margin-top: 1.5rem;">
+                <a href="{{ path('app_logout') }}" style="display: inline-flex; width: 100%; align-items: center; justify-content: center; gap: 0.5rem; height: 2.75rem; padding: 0 1rem; font-size: 0.875rem; font-weight: 600; color: #ffffff; background-color: #4f46e5; border: none; border-radius: 0.75rem; cursor: pointer; text-decoration: none; transition: background-color 0.2s;" onmouseover="this.style.backgroundColor='#4338ca'" onmouseout="this.style.backgroundColor='#4f46e5'">
+                    <i data-lucide="log-out" style="width: 1rem; height: 1rem; color: #ffffff;"></i>
+                    <span>Log Out</span>
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        if (typeof lucide !== 'undefined') {
+            lucide.createIcons();
+        }
+    });
+</script>
+{% endblock %}

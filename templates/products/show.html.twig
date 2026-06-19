@@ -1,0 +1,433 @@
+{% extends 'layouts/dashboard.html.twig' %}
+
+{% block title %}Product Details | {{ company_name ?? 'ModularSaaS' }}{% endblock %}
+
+{% block content_title %}Product Details{% endblock %}
+{% block content_subtitle %}{{ product.name }}{% endblock %}
+
+{% block content_actions %}
+    <a href="{{ path('app_products_index') }}" class="inline-flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium text-slate-600 bg-white border border-slate-200 hover:bg-slate-50 rounded-md shadow-sm transition-colors">
+        <i data-lucide="arrow-left" class="w-4 h-4"></i>
+        <span>Return</span>
+    </a>
+    {% if is_granted('edit.products') %}
+    <a href="{{ path('app_products_edit', {'slug': product.slug}) }}" class="inline-flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded-md shadow-sm transition-colors">
+        <i data-lucide="pencil" class="w-4 h-4 text-white"></i>
+        <span>Edit Product</span>
+    </a>
+    {% endif %}
+    {% if is_granted('delete.products') %}
+    <button type="button" onclick="document.getElementById('deleteProductModal').showModal()" class="inline-flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium text-white rounded-md shadow-sm transition-colors" style="background-color: #dc2626;">
+        <i data-lucide="trash-2" class="w-4 h-4 text-white"></i>
+        <span>Delete Product</span>
+    </button>
+    
+    <dialog id="deleteProductModal" style="margin:auto;" class="p-0 rounded-lg shadow-xl border border-slate-200 backdrop:bg-slate-600/20 backdrop:backdrop-blur-[2px] open:animate-in open:fade-in open:zoom-in-95 duration-200 overflow-hidden">
+        <div class="bg-white max-w-md w-full overflow-hidden text-left">
+            <div class="p-6">
+                <div class="flex items-start gap-4 mb-5">
+                    <div class="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center flex-shrink-0">
+                        <i data-lucide="alert-circle" class="w-5 h-5 text-red-600"></i>
+                    </div>
+                    <div class="flex-1">
+                        <h3 class="text-lg font-bold text-slate-900 leading-none mb-2">Delete {{ product.name }}?</h3>
+                        <p class="text-sm text-slate-500 leading-normal">This action cannot be undone. This record and all related data will be permanently removed.</p>
+                    </div>
+                </div>
+                <div class="flex justify-end gap-3 mt-6">
+                    <button type="button" onclick="document.getElementById('deleteProductModal').close()" class="px-4 py-2 text-sm font-semibold text-slate-700 bg-white border border-slate-200 hover:bg-slate-50 rounded-md transition-all">Cancel</button>
+                    <form method="post" action="{{ path('app_products_delete', {'slug': product.slug}) }}" class="inline m-0">
+                        <input type="hidden" name="_token" value="{{ csrf_token('delete' ~ product.id) }}">
+                        <button type="submit" class="px-4 py-2 text-sm font-semibold text-white rounded-md shadow-sm transition-all border border-red-600" style="background-color: #dc2626;">Confirm Deletion</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </dialog>
+    {% endif %}
+{% endblock %}
+
+{% block main_content %}
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <!-- Main Info Card -->
+        <div class="lg:col-span-2 space-y-6">
+            <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden animate-in fade-in duration-300">
+                <div class="p-6 md:p-8">
+                    <!-- Premium Dual Column Layout -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                        <!-- Left Column: Media Showcase -->
+                        <div class="space-y-4">
+                            <!-- Large Showcase Image Container -->
+                            <div onclick="openLightbox()" class="relative rounded-2xl overflow-hidden border border-slate-200 bg-slate-50/50 shadow-inner group flex items-center justify-center transition-all duration-300 hover:border-slate-300" style="width:100%;height:26rem;cursor:zoom-in;">
+                                {% if product.image %}
+                                    <img id="main-showcase-image" src="{{ asset('uploads/products/' ~ product.image) }}" class="w-full h-full object-contain transition-all duration-300" style="width:100%;height:100%;object-fit:contain;" alt="{{ product.name }}">
+                                {% else %}
+                                    <!-- Premium SVG Box Fallback -->
+                                    <div id="main-showcase-fallback" class="flex flex-col items-center justify-center text-slate-400 p-8 text-center select-none">
+                                        <div class="w-20 h-20 rounded-2xl bg-indigo-50 border border-indigo-100 flex items-center justify-center text-indigo-600 mb-4 shadow-sm">
+                                            <i data-lucide="box" class="w-10 h-10"></i>
+                                        </div>
+                                        <span class="text-base font-bold text-slate-800">{{ product.name }}</span>
+                                        <span class="text-xs text-slate-400 mt-1 font-mono">#PROD-{{ "%04d"|format(product.id) }}</span>
+                                    </div>
+                                    <img id="main-showcase-image" src="" class="w-full h-full object-contain transition-all duration-300 hidden" style="width:100%;height:100%;object-fit:contain;" alt="{{ product.name }}">
+                                {% endif %}
+
+                            </div>
+
+                            <!-- Thumbnails Gallery/Carousel -->
+                            {% if product.image or product.screens|length > 0 %}
+                                <div class="space-y-2">
+                                    <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Product Media Gallery</label>
+                                    <div id="product-media-gallery" class="flex flex-wrap gap-2 items-center">
+                                        <!-- Main Photo Thumbnail -->
+                                        {% if product.image %}
+                                            <button type="button" onclick="updateShowcase('{{ asset('uploads/products/' ~ product.image) }}', this)" class="w-16 h-12 rounded-lg overflow-hidden border-2 border-indigo-600 bg-white shadow-sm transition-all focus:outline-none flex-shrink-0 group relative">
+                                                <img src="{{ asset('uploads/products/' ~ product.image) }}" class="w-full h-full object-cover group-hover:scale-105 transition-transform">
+                                            </button>
+                                        {% endif %}
+
+                                        <!-- Screenshots Thumbnails -->
+                                        {% for screen in product.screens %}
+                                            <div id="show-screen-card-{{ screen.id }}" class="relative flex-shrink-0" style="width:4rem;height:3rem;">
+                                                <button type="button" onclick="updateShowcase('{{ asset('uploads/products/' ~ screen.url) }}', this)" class="w-16 h-12 rounded-lg overflow-hidden border border-slate-200 bg-white shadow-sm transition-all focus:outline-none group hover:border-slate-400 {% if not product.image and loop.first %}border-indigo-600 border-2{% endif %} relative" style="width:4rem;height:3rem;">
+                                                    <img src="{{ asset('uploads/products/' ~ screen.url) }}" class="w-full h-full object-cover group-hover:scale-105 transition-transform" style="width:100%;height:100%;object-fit:cover;">
+                                                </button>
+                                                {% if is_granted('edit.products') %}
+                                                <button type="button" onclick="event.stopPropagation(); deleteShowScreen({{ screen.id }})" class="absolute -top-2 -right-2 inline-flex items-center justify-center rounded-full bg-rose-600 p-1 text-white shadow hover:bg-rose-700" title="Remove screenshot">
+                                                    <i data-lucide="x" class="w-3 h-3"></i>
+                                                </button>
+                                                {% endif %}
+                                            </div>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <!-- Right Column: Product Core Info -->
+                        <div class="flex flex-col justify-between">
+                            <div class="space-y-6">
+                                <div>
+                                    <div class="mb-2">
+                                        <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Product Record</span>
+                                        <span class="text-xs text-slate-400 font-mono" style="margin-left:0.5rem;">#PROD-{{ "%04d"|format(product.id) }}</span>
+                                    </div>
+                                    <h2 class="text-3xl font-black text-slate-900 tracking-tight leading-snug">{{ product.name }}</h2>
+                                    <div class="flex items-center gap-2 mt-1">
+                                        <span class="text-xs font-semibold text-slate-500 font-mono">SKU: {{ product.sku|default('NO-SKU') }}</span>
+                                    </div>
+                                </div>
+
+                                <!-- Quick price & stock card -->
+                                <div class="grid grid-cols-2 gap-4 p-4 rounded-xl bg-slate-50/60 border border-slate-100 shadow-sm">
+                                    <div>
+                                        <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-0.5">Unit Price</span>
+                                        <span class="text-2xl font-black text-indigo-600">${{ product.price|number_format(2) }}</span>
+                                    </div>
+                                    <div>
+                                        <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-0.5">Current Stock</span>
+                                        <div class="flex items-center gap-2 mt-0.5">
+                                            <span class="text-xl font-extrabold text-slate-900">{{ product.stockQuantity }} units</span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Description -->
+                                <div>
+                                    <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Description</span>
+                                    <p class="text-sm text-slate-600 leading-relaxed font-medium whitespace-pre-wrap">{{ product.description|default('No description provided for this product.') }}</p>
+                                </div>
+                            </div>
+
+                            <div class="pt-6 mt-6 border-t border-slate-100 flex items-center gap-6">
+                                <div class="flex items-center gap-2">
+                                    <div class="w-8 h-8 rounded-lg bg-indigo-50 flex items-center justify-center text-indigo-600 shadow-sm border border-indigo-100">
+                                        <i data-lucide="tag" class="w-4 h-4"></i>
+                                    </div>
+                                    <div>
+                                        <span class="text-[9px] font-semibold text-slate-400 block uppercase">Price tier</span>
+                                        <span class="text-xs font-bold text-slate-800">Standard Tier</span>
+                                    </div>
+                                </div>
+                                <div class="flex items-center gap-2">
+                                    <div class="w-8 h-8 rounded-lg bg-emerald-50 flex items-center justify-center text-emerald-600 shadow-sm border border-emerald-100">
+                                        <i data-lucide="circle-check" class="w-4 h-4"></i>
+                                    </div>
+                                    <div>
+                                        <span class="text-[9px] font-semibold text-slate-400 block uppercase">Catalog status</span>
+                                        <span class="text-xs font-bold text-slate-800">Active</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            {% if is_granted('see.purchases') %}
+            <!-- Recent Purchase History for this Product -->
+            <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                <div class="p-6 md:p-8 border-b border-slate-100 flex items-center justify-between bg-slate-50/30">
+                    <div>
+                        <h3 class="text-lg font-bold text-slate-900 tracking-tight">Recent Purchase History</h3>
+                        <p class="text-sm text-slate-500">Last orders registered for this item</p>
+                    </div>
+                    <a href="{{ path('app_purchases_index', {'q': product.name}) }}" class="text-sm font-bold text-indigo-600 hover:text-indigo-700 transition-colors">View All</a>
+                </div>
+                
+                <div class="divide-y divide-slate-100">
+                    {% for item in recent_purchases %}
+                        <div style="display:flex;align-items:center;justify-content:space-between;padding:1rem 1.5rem;" class="hover:bg-slate-50/50 transition-colors group">
+                            <div style="display:flex;align-items:center;gap:1rem;min-width:0;flex:1;">
+                                <div style="width:2.5rem;height:2.5rem;border-radius:0.5rem;background:#f5f3ff;display:flex;align-items:center;justify-content:center;color:#4f46e5;border:1px solid #c7d2fe;flex-shrink:0;">
+                                    <i data-lucide="shopping-cart" class="w-5 h-5"></i>
+                                </div>
+                                <div style="min-width:0;">
+                                    <div class="text-sm font-bold text-slate-900">Purchase PUR-{{ item.purchase.id|format("%04d") }}</div>
+                                    <div class="text-xs text-slate-500">{{ item.purchase.createdAt|date('M d, Y') }} &bull; Supplier: <span class="font-semibold">{{ item.contactName|default(item.contact.name|default('Unknown')) }}</span></div>
+                                    <div class="text-xs text-indigo-600 mt-0.5 font-medium">{{ item.quantity }} pcs @ ${{ item.price|number_format(2) }}</div>
+                                </div>
+                            </div>
+                            <div style="text-align:right;display:flex;flex-direction:column;align-items:flex-end;flex-shrink:0;margin-left:1rem;">
+                                <div class="text-sm font-bold text-slate-900">${{ (item.quantity * item.price)|number_format(2) }}</div>
+                                
+                                {% set status = item.purchase.paymentStatus|default('Unpaid') %}
+                                {% set style_map = {
+                                    'Paid': { 'text': '#059669', 'bg': '#10b981', 'light': '#ecfdf5' },
+                                    'Partial': { 'text': '#d97706', 'bg': '#f59e0b', 'light': '#fef3c7' },
+                                    'Unpaid': { 'text': '#e11d48', 'bg': '#f43f5e', 'light': '#fff1f2' }
+                                } %}
+                                {% set status_style = style_map[status] ?? { 'text': '#475569', 'bg': '#64748b', 'light': '#f1f5f9' } %}
+                                
+                                <div class="text-[10px] font-bold px-2 py-0.5 rounded uppercase tracking-wider inline-flex items-center gap-1 mt-1" style="color: {{ status_style.text }}; background-color: {{ status_style.light }};">
+                                    <span class="w-1 h-1 rounded-full" style="background-color: {{ status_style.bg }};"></span>
+                                    {{ status }}
+                                </div>
+                            </div>
+                        </div>
+                    {% else %}
+                        <div class="flex flex-col items-center justify-center py-12 text-slate-400">
+                            <div class="w-12 h-12 bg-slate-50 rounded-full flex items-center justify-center mb-4 border border-slate-100 shadow-sm">
+                                <i data-lucide="history" class="w-5 h-5 text-slate-400"></i>
+                            </div>
+                            <p class="text-sm font-medium text-slate-900">No purchase transactions</p>
+                            <p class="text-xs text-slate-500 mt-1">Transactions will appear once a purchase is registered containing this product</p>
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+
+            {% if is_granted('see.sales') %}
+            <!-- Recent Sales History for this Product -->
+            <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                <div class="p-6 md:p-8 border-b border-slate-100 flex items-center justify-between bg-slate-50/30">
+                    <div>
+                        <h3 class="text-lg font-bold text-slate-900 tracking-tight">Recent Sales History</h3>
+                        <p class="text-sm text-slate-500">Last invoices registered for this item</p>
+                    </div>
+                    <a href="{{ path('app_sales_index', {'q': product.name}) }}" class="text-sm font-bold text-indigo-600 hover:text-indigo-700 transition-colors">View All</a>
+                </div>
+                
+                <div class="divide-y divide-slate-100">
+                    {% for item in recent_sales %}
+                        <div style="display:flex;align-items:center;justify-content:space-between;padding:1rem 1.5rem;" class="hover:bg-slate-50/50 transition-colors group">
+                            <div style="display:flex;align-items:center;gap:1rem;min-width:0;flex:1;">
+                                <div style="width:2.5rem;height:2.5rem;border-radius:0.5rem;background:#ecfdf5;display:flex;align-items:center;justify-content:center;color:#059669;border:1px solid #a7f3d0;flex-shrink:0;">
+                                    <i data-lucide="trending-up" class="w-5 h-5"></i>
+                                </div>
+                                <div style="min-width:0;">
+                                    <div class="text-sm font-bold text-slate-900">Sale SAL-{{ item.sale.id|format("%04d") }}</div>
+                                    <div class="text-xs text-slate-500">{{ item.sale.createdAt|date('M d, Y') }} &bull; Client: <span class="font-semibold">{{ item.contactName|default(item.contact.name|default('Unknown')) }}</span></div>
+                                    <div class="text-xs text-emerald-600 mt-0.5 font-medium">{{ item.quantity }} pcs @ ${{ item.price|number_format(2) }}</div>
+                                </div>
+                            </div>
+                            <div style="text-align:right;display:flex;flex-direction:column;align-items:flex-end;flex-shrink:0;margin-left:1rem;">
+                                <div class="text-sm font-bold text-slate-900">${{ (item.quantity * item.price)|number_format(2) }}</div>
+                                
+                                {% set status = item.sale.paymentStatus|default('Unpaid') %}
+                                {% set style_map = {
+                                    'Paid': { 'text': '#059669', 'bg': '#10b981', 'light': '#ecfdf5' },
+                                    'Partial': { 'text': '#d97706', 'bg': '#f59e0b', 'light': '#fef3c7' },
+                                    'Unpaid': { 'text': '#e11d48', 'bg': '#f43f5e', 'light': '#fff1f2' }
+                                } %}
+                                {% set status_style = style_map[status] ?? { 'text': '#475569', 'bg': '#64748b', 'light': '#f1f5f9' } %}
+                                
+                                <div class="text-[10px] font-bold px-2 py-0.5 rounded uppercase tracking-wider inline-flex items-center gap-1 mt-1" style="color: {{ status_style.text }}; background-color: {{ status_style.light }};">
+                                    <span class="w-1 h-1 rounded-full" style="background-color: {{ status_style.bg }};"></span>
+                                    {{ status }}
+                                </div>
+                            </div>
+                        </div>
+                    {% else %}
+                        <div class="flex flex-col items-center justify-center py-12 text-slate-400">
+                            <div class="w-12 h-12 bg-slate-50 rounded-full flex items-center justify-center mb-4 border border-slate-100 shadow-sm">
+                                <i data-lucide="history" class="w-5 h-5 text-slate-400"></i>
+                            </div>
+                            <p class="text-sm font-medium text-slate-900">No sales transactions</p>
+                            <p class="text-xs text-slate-500 mt-1">Transactions will appear once a sale is registered containing this product</p>
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Sidebar Stats -->
+        <div class="space-y-6">
+            <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-6">
+                <h3 class="text-sm font-semibold text-slate-900 mb-4">Product Lifecycle Metrics</h3>
+                <div class="space-y-4">
+                    <div>
+                        <div class="text-xs font-medium text-slate-500 mb-1">Lifetime Revenue (Sales)</div>
+                        <div class="text-3xl font-bold tracking-tight text-emerald-600">${{ total_sales_val|number_format(2) }}</div>
+                        <div class="text-xs text-slate-400 mt-1">From {{ total_sales_qty }} units sold</div>
+                    </div>
+                    <div class="pt-4 border-t border-slate-100">
+                        <div class="text-xs font-medium text-slate-500 mb-1">Lifetime Expenditure (Purchases)</div>
+                        <div class="text-2xl font-bold tracking-tight text-rose-600">${{ total_purchases_val|number_format(2) }}</div>
+                        <div class="text-xs text-slate-400 mt-1">For {{ total_purchases_qty }} units procured</div>
+                    </div>
+                    <div class="pt-4 border-t border-slate-100">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <div class="text-xs font-medium text-slate-500 mb-1">Net Flow Balance</div>
+                                {% set net_balance = total_sales_val - total_purchases_val %}
+                                <div class="text-xl font-bold {{ net_balance >= 0 ? 'text-emerald-600' : 'text-rose-600' }}">
+                                    {{ net_balance >= 0 ? '+' : '' }}${{ net_balance|number_format(2) }}
+                                </div>
+                            </div>
+                            <div class="w-10 h-10 bg-slate-50 rounded-md border border-slate-100 flex items-center justify-center">
+                                <i data-lucide="bar-chart-3" class="w-5 h-5 text-slate-400"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Lightbox Modal -->
+    <dialog id="mediaLightbox" style="margin:0;padding:0;width:100vw;height:100vh;max-width:none;max-height:none;border:0;background:transparent;overflow:hidden;" class="backdrop:bg-slate-900/70">
+        <div onclick="if (event.target === this) document.getElementById('mediaLightbox').close()" class="relative flex items-center justify-center" style="width:100vw;height:100vh;background:rgba(15,23,42,0.72);padding:3rem;">
+            <button type="button" onclick="document.getElementById('mediaLightbox').close()" style="position:fixed;top:1rem;right:1rem;z-index:9999;width:2.5rem;height:2.5rem;border:0;border-radius:9999px;background:rgba(15,23,42,0.92);color:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 10px 25px rgba(15,23,42,0.25);">
+                <i data-lucide="x" class="w-5 h-5"></i>
+            </button>
+            <img id="lightbox-image" src="" class="object-contain rounded-lg shadow-2xl" style="max-width:92vw;max-height:86vh;">
+        </div>
+    </dialog>
+
+    <script>
+        function updateShowcase(src, thumbButton) {
+            const mainImg = document.getElementById('main-showcase-image');
+            const fallback = document.getElementById('main-showcase-fallback');
+            
+            if (mainImg) {
+                // If it was hidden, show it and hide fallback
+                if (mainImg.classList.contains('hidden')) {
+                    mainImg.classList.remove('hidden');
+                }
+                if (fallback) {
+                    fallback.classList.add('hidden');
+                }
+                
+                // Set the src
+                mainImg.src = src;
+            }
+            
+            // Highlight thumbnail
+            const buttons = document.querySelectorAll('#product-media-gallery button[onclick^="updateShowcase"]');
+            buttons.forEach(btn => {
+                btn.className = btn.className.replace('border-indigo-600 border-2', 'border-slate-200 border');
+                if (!btn.className.includes('border border-slate-200')) {
+                    btn.classList.add('border', 'border-slate-200');
+                }
+            });
+            
+            thumbButton.className = thumbButton.className.replace('border-slate-200 border', 'border-indigo-600 border-2');
+        }
+
+        function openLightbox() {
+            const mainImg = document.getElementById('main-showcase-image');
+            if (mainImg && mainImg.src && !mainImg.classList.contains('hidden')) {
+                const lightbox = document.getElementById('mediaLightbox');
+                const lightboxImg = document.getElementById('lightbox-image');
+                lightboxImg.src = mainImg.src;
+                lightbox.showModal();
+                
+                // Re-initialize close icon inside modal if lucide is available
+                if (typeof lucide !== 'undefined') {
+                    lucide.createIcons();
+                }
+            }
+        }
+
+        function deleteShowScreen(id) {
+            if (!confirm('Remove this screenshot?')) {
+                return;
+            }
+
+            const card = document.getElementById('show-screen-card-' + id);
+            if (!card) return;
+
+            card.style.pointerEvents = 'none';
+            card.style.opacity = '0.5';
+
+            fetch(`/products/screen/${id}/delete`, {
+                method: 'DELETE',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(response => {
+                if (response.ok) {
+                    return response.json();
+                }
+                throw new Error('Network response was not ok.');
+            })
+            .then(data => {
+                if (data.success) {
+                    const activeImage = card.querySelector('img')?.src;
+                    card.remove();
+
+                    const mainImg = document.getElementById('main-showcase-image');
+                    const fallback = document.getElementById('main-showcase-fallback');
+                    const remainingThumb = document.querySelector('button[onclick^="updateShowcase"]');
+                    if (mainImg && activeImage && mainImg.src === activeImage && remainingThumb) {
+                        remainingThumb.click();
+                    } else if (mainImg && activeImage && mainImg.src === activeImage) {
+                        mainImg.src = '';
+                        mainImg.classList.add('hidden');
+                        fallback?.classList.remove('hidden');
+                    }
+                } else {
+                    alert('Failed to delete: ' + (data.error || 'unknown error'));
+                    card.style.pointerEvents = 'auto';
+                    card.style.opacity = '1';
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('An error occurred while deleting the screenshot.');
+                card.style.pointerEvents = 'auto';
+                card.style.opacity = '1';
+            });
+        }
+        
+        // Auto-select first screen if no main image exists
+        document.addEventListener('DOMContentLoaded', () => {
+            const mainImg = document.getElementById('main-showcase-image');
+            const fallback = document.getElementById('main-showcase-fallback');
+            
+            if ((!mainImg || mainImg.classList.contains('hidden')) && fallback) {
+                // If fallback is visible, check if we have thumbnails (screens) to show by default
+                const thumbnails = document.querySelectorAll('button[onclick^="updateShowcase"]');
+                if (thumbnails.length > 0) {
+                    // Click the first thumbnail to make it active!
+                    thumbnails[0].click();
+                }
+            }
+        });
+    </script>
+{% endblock %}

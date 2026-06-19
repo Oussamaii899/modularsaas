@@ -1,0 +1,271 @@
+{% extends 'layouts/dashboard.html.twig' %}
+
+{% block title %}Client Details | {{ company_name ?? 'ModularSaaS' }}{% endblock %}
+
+{% block content_title %}Client Details{% endblock %}
+{% block content_subtitle %}{{ client.name }}{% endblock %}
+
+{% block content_actions %}
+    <a href="{{ path('app_clients_index') }}" class="inline-flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium text-slate-600 bg-white border border-slate-200 hover:bg-slate-50 rounded-md shadow-sm transition-colors">
+        <i data-lucide="arrow-left" class="w-4 h-4"></i>
+        <span>Return</span>
+    </a>
+    {% if is_granted('edit.clients') %}
+    <a href="{{ path('app_clients_edit', {'slug': client.slug}) }}" class="inline-flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded-md shadow-sm transition-colors">
+        <i data-lucide="pencil" class="w-4 h-4 text-white"></i>
+        <span>Edit</span>
+    </a>
+    {% endif %}
+    {% if is_granted('delete.clients') %}
+    <button type="button" onclick="document.getElementById('deleteClientModal').showModal()" class="inline-flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium text-white rounded-md shadow-sm transition-colors" style="background-color: #dc2626;">
+        <i data-lucide="trash-2" class="w-4 h-4 text-white"></i>
+        <span>Delete Account</span>
+    </button>
+    
+    <dialog id="deleteClientModal" style="margin:auto;" class="p-0 rounded-lg shadow-xl border border-slate-200 backdrop:bg-slate-600/20 backdrop:backdrop-blur-[2px] open:animate-in open:fade-in open:zoom-in-95 duration-200 overflow-hidden">
+        <div class="bg-white max-w-md w-full overflow-hidden text-left">
+            <div class="p-6">
+                <div class="flex items-start gap-4 mb-5">
+                    <div class="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center flex-shrink-0">
+                        <i data-lucide="alert-circle" class="w-5 h-5 text-red-600"></i>
+                    </div>
+                    <div class="flex-1">
+                        <h3 class="text-lg font-bold text-slate-900 leading-none mb-2">Delete {{ client.name }}?</h3>
+                        <p class="text-sm text-slate-500 leading-normal">This action cannot be undone. This record and all related data will be permanently removed.</p>
+                    </div>
+                </div>
+                <div class="flex justify-end gap-3 mt-6">
+                    <button type="button" onclick="document.getElementById('deleteClientModal').close()" class="px-4 py-2 text-sm font-semibold text-slate-700 bg-white border border-slate-200 hover:bg-slate-50 rounded-md transition-all">Cancel</button>
+                    <form method="post" action="{{ path('app_clients_delete', {'slug': client.slug}) }}" class="inline m-0">
+                        <input type="hidden" name="_token" value="{{ csrf_token('delete' ~ client.id) }}">
+                        <button type="submit" class="px-4 py-2 text-sm font-semibold text-white rounded-md shadow-sm transition-all border border-red-600" style="background-color: #dc2626;">Confirm Deletion</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </dialog>
+    {% endif %}
+{% endblock %}
+
+{% block main_content %}
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <!-- Main Info Card -->
+        <div class="lg:col-span-2 space-y-6">
+            <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                <div class="p-6 md:p-8">
+                    <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:2rem;">
+                        <div style="display:flex;align-items:center;gap:1rem;">
+                            {% if client.avatar %}
+                                <img src="{{ asset('uploads/avatars/' ~ client.avatar) }}" class="flex-shrink-0 rounded-full object-cover border border-slate-200 shadow-sm" style="width:4rem;height:4rem;min-width:4rem;min-height:4rem;border-radius:9999px;" alt="Avatar">
+                            {% else %}
+                                <div style="flex-shrink:0;width:4rem;height:4rem;border-radius:50%;background:#f1f5f9;display:flex;align-items:center;justify-content:center;color:#475569;font-size:1.5rem;font-weight:700;border:1px solid #e2e8f0;line-height:1;">
+                                    {{ client.name|slice(0, 2)|upper }}
+                                </div>
+                            {% endif %}
+                            <div>
+                                <h2 class="text-2xl font-bold text-slate-900 tracking-tight">{{ client.name }}</h2>
+                                <p class="text-xs font-medium text-slate-500" style="margin-top:0.25rem;">Client Profile</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                        <div>
+                            <h3 class="text-sm font-medium text-slate-900 border-b border-slate-100" style="margin-bottom:1rem;padding-bottom:0.5rem;">Contact Information</h3>
+                            <div class="space-y-4">
+                                <div class="flex items-center gap-3">
+                                    <i data-lucide="mail" class="w-4 h-4 text-slate-400"></i>
+                                    <div>
+                                        <div class="text-xs text-slate-500">Email</div>
+                                        <div class="text-sm font-medium text-slate-900">{{ client.email ?? 'No email provided' }}</div>
+                                    </div>
+                                </div>
+                                <div class="flex items-center gap-3">
+                                    <i data-lucide="phone" class="w-4 h-4 text-slate-400"></i>
+                                    <div>
+                                        <div class="text-xs text-slate-500">Phone</div>
+                                        <div class="text-sm font-medium text-slate-900">{{ client.phone ?? 'N/A' }}</div>
+                                    </div>
+                                </div>
+                                <div class="flex items-center gap-3">
+                                    <i data-lucide="globe" class="w-4 h-4 text-slate-400"></i>
+                                    <div>
+                                        <div class="text-xs text-slate-500">Website</div>
+                                        <div class="text-sm font-medium text-slate-900">
+                                            {% if client.website %}
+                                                <a href="{{ client.website starts with 'http' ? client.website : 'https://' ~ client.website }}" target="_blank" class="text-blue-600 hover:underline">{{ client.website }}</a>
+                                            {% else %}
+                                                N/A
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div>
+                            <h3 class="text-sm font-medium text-slate-900 border-b border-slate-100" style="margin-bottom:1rem;padding-bottom:0.5rem;">Mailing Address</h3>
+                            <div class="flex items-start gap-3">
+                                <i data-lucide="map-pin" class="flex-shrink-0 w-4 h-4 text-slate-400 mt-0.5"></i>
+                                <div class="text-sm text-slate-700 leading-relaxed">
+                                    {{ client.address ? client.address|nl2br : 'No address set' }}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- Recent Transactions for this Client -->
+            <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                <div class="p-6 md:p-8 border-b border-slate-100 flex items-center justify-between bg-slate-50/30">
+                    <div>
+                        <h3 class="text-lg font-bold text-slate-900 tracking-tight">Recent Sales History</h3>
+                        <p class="text-sm text-slate-500">Last transactions with this client</p>
+                    </div>
+                    <a href="{{ path('app_sales_index', {'contact_id': client.slug}) }}" class="text-sm font-bold text-indigo-600 hover:text-indigo-700 transition-colors">View All</a>
+                </div>
+                
+                <div class="divide-y divide-slate-100">
+                    {% for sale in recent_sales %}
+                        <a href="{{ path('app_sales_show', {'slug': sale.slug}) }}" class="flex items-center justify-between p-4 hover:bg-slate-50/50 transition-colors group">
+                            <div class="flex items-center gap-3 min-w-0 flex-1">
+                                <div class="w-10 h-10 rounded-lg bg-emerald-50 border border-emerald-100 text-emerald-600 flex items-center justify-center flex-shrink-0 shadow-sm">
+                                    <i data-lucide="receipt" class="w-5 h-5"></i>
+                                </div>
+                                <div class="min-w-0">
+                                    <div class="text-sm font-bold text-slate-900">Sale INV-{{ "%04d"|format(sale.id) }}</div>
+                                    <div class="text-xs text-slate-500">{{ sale.createdAt|date('M d, Y') }}</div>
+                                </div>
+                            </div>
+                            <div class="text-right flex flex-col items-end flex-shrink-0 ml-4" style="display: flex; flex-direction: column; align-items: flex-end; justify-content: center; text-align: right; flex-shrink: 0; margin-left: 16px;">
+                                <div class="text-sm font-bold text-slate-900">${{ sale.total|number_format(2) }}</div>
+                                
+                                {% set status = sale.paymentStatus|default('Unpaid') %}
+                                {% set style_map = {
+                                    'Paid': { 'text': '#059669', 'bg': '#10b981', 'light': '#ecfdf5' },
+                                    'Partial': { 'text': '#d97706', 'bg': '#f59e0b', 'light': '#fef3c7' },
+                                    'Unpaid': { 'text': '#e11d48', 'bg': '#f43f5e', 'light': '#fff1f2' },
+                                    'Overpaid': { 'text': '#7c3aed', 'bg': '#8b5cf6', 'light': '#f5f3ff' },
+                                    'Refunded': { 'text': '#475569', 'bg': '#64748b', 'light': '#f1f5f9' },
+                                    'Cancelled': { 'text': '#e11d48', 'bg': '#f43f5e', 'light': '#fff1f2' }
+                                } %}
+                                {% set status_style = style_map[status] ?? { 'text': '#475569', 'bg': '#64748b', 'light': '#f1f5f9' } %}
+                                
+                                <div style="color: {{ status_style.text }}; background-color: {{ status_style.light }}; font-size: 10px; font-weight: bold; padding: 2px 6px; border-radius: 4px; text-transform: uppercase; letter-spacing: 0.05em; display: inline-flex; align-items: center; gap: 4px; margin-top: 4px;">
+                                    <span style="width: 4px; height: 4px; border-radius: 9999px; display: inline-block; background-color: {{ status_style.bg }};"></span>
+                                    {{ status }}
+                                </div>
+                            </div>
+                        </a>
+                    {% else %}
+                        <div class="flex flex-col items-center justify-center py-12 text-slate-400">
+                            <div class="w-12 h-12 bg-slate-50 rounded-full flex items-center justify-center mb-4 border border-slate-100 shadow-sm">
+                                <i data-lucide="history" class="w-5 h-5 text-slate-400"></i>
+                            </div>
+                            <p class="text-sm font-medium text-slate-900">No sales transactions</p>
+                            <p class="text-xs text-slate-500 mt-1">Transactions will appear once a sale is registered</p>
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            {% if is_granted('see.purchases') %}
+            <!-- Recent Purchases History (as Vendor) -->
+            <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden mt-6">
+                <div class="p-6 md:p-8 border-b border-slate-100 flex items-center justify-between bg-slate-50/30">
+                    <div>
+                        <h3 class="text-lg font-bold text-slate-900 tracking-tight">Recent Purchases History</h3>
+                        <p class="text-sm text-slate-500">Last purchases from this contact (acting as supplier)</p>
+                    </div>
+                    <a href="{{ path('app_purchases_index', {'contact_id': client.slug}) }}" class="text-sm font-bold text-indigo-600 hover:text-indigo-700 transition-colors">View All</a>
+                </div>
+                
+                <div class="divide-y divide-slate-100">
+                    {% for purchase in recent_purchases %}
+                        <a href="{{ path('app_purchases_show', {'slug': purchase.slug}) }}" class="flex items-center justify-between p-4 hover:bg-slate-50/50 transition-colors group">
+                            <div class="flex items-center gap-3 min-w-0 flex-1">
+                                <div class="w-10 h-10 rounded-lg bg-rose-50 border border-rose-100 text-rose-600 flex items-center justify-center flex-shrink-0 shadow-sm">
+                                    <i data-lucide="shopping-bag" class="w-5 h-5"></i>
+                                </div>
+                                <div class="min-w-0">
+                                    <div class="text-sm font-bold text-slate-900">Purchase PUR-{{ "%04d"|format(purchase.id) }}</div>
+                                    <div class="text-xs text-slate-500">{{ purchase.createdAt|date('M d, Y') }}</div>
+                                </div>
+                            </div>
+                            <div class="text-right flex flex-col items-end flex-shrink-0 ml-4" style="display: flex; flex-direction: column; align-items: flex-end; justify-content: center; text-align: right; flex-shrink: 0; margin-left: 16px;">
+                                <div class="text-sm font-bold text-slate-900">${{ purchase.total|number_format(2) }}</div>
+                                
+                                {% set status = purchase.paymentStatus|default('Unpaid') %}
+                                {% set style_map = {
+                                    'Paid': { 'text': '#059669', 'bg': '#10b981', 'light': '#ecfdf5' },
+                                    'Partial': { 'text': '#d97706', 'bg': '#f59e0b', 'light': '#fef3c7' },
+                                    'Unpaid': { 'text': '#e11d48', 'bg': '#f43f5e', 'light': '#fff1f2' },
+                                    'Overpaid': { 'text': '#7c3aed', 'bg': '#8b5cf6', 'light': '#f5f3ff' },
+                                    'Refunded': { 'text': '#475569', 'bg': '#64748b', 'light': '#f1f5f9' },
+                                    'Cancelled': { 'text': '#e11d48', 'bg': '#f43f5e', 'light': '#fff1f2' }
+                                } %}
+                                {% set status_style = style_map[status] ?? { 'text': '#475569', 'bg': '#64748b', 'light': '#f1f5f9' } %}
+                                
+                                <div style="color: {{ status_style.text }}; background-color: {{ status_style.light }}; font-size: 10px; font-weight: bold; padding: 2px 6px; border-radius: 4px; text-transform: uppercase; letter-spacing: 0.05em; display: inline-flex; align-items: center; gap: 4px; margin-top: 4px;">
+                                    <span style="width: 4px; height: 4px; border-radius: 9999px; display: inline-block; background-color: {{ status_style.bg }};"></span>
+                                    {{ status }}
+                                </div>
+                            </div>
+                        </a>
+                    {% else %}
+                        <div class="flex flex-col items-center justify-center py-12 text-slate-400">
+                            <div class="w-12 h-12 bg-slate-50 rounded-full flex items-center justify-center mb-4 border border-slate-100 shadow-sm">
+                                <i data-lucide="history" class="w-5 h-5 text-slate-400"></i>
+                            </div>
+                            <p class="text-sm font-medium text-slate-900">No purchase transactions</p>
+                            <p class="text-xs text-slate-500 mt-1">Transactions will appear once a purchase is registered</p>
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+
+        <!-- Sidebar Actions/Stats -->
+        <div class="space-y-6">
+            <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-6">
+                <h3 class="text-sm font-semibold text-slate-900 mb-4">Intelligence Briefing</h3>
+                <div class="space-y-4">
+                    <div>
+                        <div class="text-xs font-medium text-slate-500 mb-1">Lifetime Revenue</div>
+                        <div class="text-3xl font-bold tracking-tight text-slate-900">${{ lifetime_revenue|number_format(2) }}</div>
+                    </div>
+                    <div class="pt-4 border-t border-slate-100">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <div class="text-xs font-medium text-slate-500 mb-1">Total Sales Orders</div>
+                                <div class="text-xl font-bold text-slate-900">{{ total_orders }}</div>
+                            </div>
+                            <div class="w-10 h-10 bg-slate-50 rounded-md border border-slate-100 flex items-center justify-center">
+                                <i data-lucide="bar-chart-3" class="w-5 h-5 text-slate-400"></i>
+                            </div>
+                        </div>
+                    </div>
+                    {% if lifetime_spending > 0 %}
+                    <div class="pt-4 border-t border-slate-100">
+                        <div>
+                            <div class="text-xs font-medium text-slate-500 mb-1">Lifetime Spending (as Vendor)</div>
+                            <div class="text-2xl font-bold tracking-tight text-slate-900">${{ lifetime_spending|number_format(2) }}</div>
+                        </div>
+                    </div>
+                    <div class="pt-4 border-t border-slate-100">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <div class="text-xs font-medium text-slate-500 mb-1">Total Purchase Orders</div>
+                                <div class="text-xl font-bold text-slate-900">{{ total_purchases }}</div>
+                            </div>
+                            <div class="w-10 h-10 bg-slate-50 rounded-md border border-slate-100 flex items-center justify-center">
+                                <i data-lucide="shopping-cart" class="w-5 h-5 text-slate-400"></i>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}

@@ -1,0 +1,1053 @@
+@import "tailwindcss";
+
+@theme {
+  --color-indigo-50: var(--primary-50);
+  --color-indigo-100: var(--primary-100);
+  --color-indigo-200: var(--primary-200);
+  --color-indigo-300: var(--primary-300);
+  --color-indigo-400: var(--primary-400);
+  --color-indigo-500: var(--primary-500);
+  --color-indigo-600: var(--primary-600);
+  --color-indigo-700: var(--primary-700);
+  --color-indigo-800: var(--primary-800);
+  --color-indigo-900: var(--primary-900);
+  --color-indigo-950: var(--primary-950);
+}
+
+/* ============================================
+   Enable class-based dark mode for Tailwind v4
+   ============================================ */
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* ============================================
+   PRIMARY COLOR CSS VARIABLES
+   These are set inline in base.html.twig
+   and consumed here to override indigo defaults
+   ============================================ */
+
+/* ============================================
+   GLOBAL DARK MODE OVERRIDES (Pure CSS)
+   Applied when <html class="dark">
+   ============================================ */
+
+/* Body & Main Background */
+html.dark {
+    background-color: #0f172a;
+    color-scheme: dark;
+}
+html.dark body {
+    background-color: #0f172a;
+    color: #e2e8f0;
+}
+
+/* --- Layout Containers --- */
+html.dark .bg-slate-50,
+html.dark .bg-slate-100,
+html.dark main {
+    background-color: #0f172a !important;
+}
+
+html.dark .bg-white {
+    background-color: #1e293b !important;
+}
+
+/* --- Header --- */
+html.dark header {
+    background-color: rgba(15, 23, 42, 0.85) !important;
+    backdrop-filter: blur(12px);
+    border-bottom-color: #1e293b !important;
+}
+html.dark header .text-slate-500,
+html.dark header .text-slate-400 {
+    color: #64748b !important;
+}
+html.dark header .text-slate-900 {
+    color: #f1f5f9 !important;
+}
+html.dark header .text-slate-700 {
+    color: #cbd5e1 !important;
+}
+html.dark header input {
+    background-color: #1e293b !important;
+    border-color: #334155 !important;
+    color: #e2e8f0 !important;
+}
+html.dark header button {
+    color: #94a3b8 !important;
+}
+html.dark header button:hover {
+    background-color: #1e293b !important;
+}
+html.dark header .border-slate-100,
+html.dark header .border-slate-200 {
+    border-color: #334155 !important;
+}
+
+/* --- Sidebar (when page theme is dark) --- */
+html.dark aside {
+    background-color: #0f172a !important;
+    border-right-color: #1e293b !important;
+}
+html.dark aside .text-xl {
+    color: #ffffff !important;
+}
+html.dark aside p.text-xs {
+    color: #475569 !important;
+}
+html.dark aside nav a {
+    color: #94a3b8 !important;
+}
+html.dark aside nav a:hover {
+    color: #e2e8f0 !important;
+    background-color: #1e293b !important;
+}
+html.dark aside .border-slate-100,
+html.dark aside .border-t {
+    border-color: #1e293b !important;
+}
+html.dark aside .bg-slate-50\/50 {
+    background-color: rgba(15, 23, 42, 0.5) !important;
+}
+html.dark aside .text-sm.font-semibold.text-slate-900 {
+    color: #f1f5f9 !important;
+}
+html.dark aside .text-xs.text-slate-500 {
+    color: #64748b !important;
+}
+
+/* Active sidebar items in dark mode */
+html.dark aside .text-indigo-600 {
+    color: var(--primary-400, #a5b4fc) !important;
+}
+html.dark aside .bg-indigo-50 {
+    background-color: rgba(99, 102, 241, 0.1) !important;
+}
+
+/* --- Sidebar Dark Style (independent of page theme) --- */
+aside.sidebar-dark {
+    background-color: #0f172a !important;
+    border-right-color: #1e293b !important;
+}
+aside.sidebar-dark .text-xl {
+    color: #ffffff !important;
+}
+aside.sidebar-dark p.text-xs {
+    color: #475569 !important;
+}
+aside.sidebar-dark nav a {
+    color: #94a3b8 !important;
+}
+aside.sidebar-dark nav a:hover {
+    color: #e2e8f0 !important;
+    background-color: #1e293b !important;
+}
+aside.sidebar-dark .border-slate-100,
+aside.sidebar-dark .border-t {
+    border-color: #1e293b !important;
+}
+aside.sidebar-dark .bg-slate-50\/50 {
+    background-color: rgba(15, 23, 42, 0.5) !important;
+}
+aside.sidebar-dark .text-sm.font-semibold.text-slate-900 {
+    color: #f1f5f9 !important;
+}
+aside.sidebar-dark .text-xs.text-slate-500 {
+    color: #64748b !important;
+}
+aside.sidebar-dark .text-indigo-600 {
+    color: var(--primary-400, #a5b4fc) !important;
+}
+aside.sidebar-dark .bg-indigo-50 {
+    background-color: rgba(99, 102, 241, 0.1) !important;
+}
+aside.sidebar-dark .text-slate-600 {
+    color: #94a3b8 !important;
+}
+aside.sidebar-dark .text-slate-500 {
+    color: #64748b !important;
+}
+aside.sidebar-dark .text-slate-400 {
+    color: #475569 !important;
+}
+aside.sidebar-dark button {
+    color: #94a3b8 !important;
+}
+
+/* --- Global Text Colors --- */
+html.dark .text-slate-900 { color: #f1f5f9 !important; }
+html.dark .text-slate-800 { color: #e2e8f0 !important; }
+html.dark .text-slate-700 { color: #cbd5e1 !important; }
+html.dark .text-slate-600 { color: #94a3b8 !important; }
+html.dark .text-slate-500 { color: #94a3b8 !important; }
+html.dark .text-slate-400 { color: #64748b !important; }
+
+/* Active/accent colors in dark */
+html.dark .text-indigo-600 { color: var(--primary-400, #a5b4fc) !important; }
+html.dark .bg-indigo-50 { background-color: rgba(99, 102, 241, 0.1) !important; }
+html.dark .bg-indigo-600 { background-color: var(--primary-600, #6366f1) !important; }
+html.dark .shadow-indigo-200 { box-shadow: none !important; }
+html.dark .shadow-indigo-100 { box-shadow: none !important; }
+
+/* --- Global Borders --- */
+html.dark .border,
+html.dark .border-slate-200,
+html.dark .border-slate-100,
+html.dark .border-slate-300 {
+    border-color: #334155 !important;
+}
+html.dark .divide-slate-100 > * + * {
+    border-color: #334155 !important;
+}
+
+/* --- Tables --- */
+html.dark table {
+    color: #e2e8f0;
+}
+html.dark thead tr {
+    background-color: #1e293b !important;
+    border-bottom-color: #334155 !important;
+}
+html.dark th {
+    color: #94a3b8 !important;
+    background-color: #1e293b !important;
+}
+html.dark tbody tr {
+    border-bottom-color: #334155 !important;
+}
+html.dark tbody tr:hover {
+    background-color: rgba(51, 65, 85, 0.25) !important;
+}
+html.dark td {
+    color: #e2e8f0;
+}
+
+/* --- Forms --- */
+html.dark input:not([type="radio"]):not([type="checkbox"]):not([type="file"]),
+html.dark select,
+html.dark textarea {
+    background-color: #0f172a !important;
+    color: #e2e8f0 !important;
+    border-color: #334155 !important;
+}
+html.dark input::placeholder,
+html.dark textarea::placeholder {
+    color: #475569 !important;
+}
+html.dark input:focus,
+html.dark select:focus,
+html.dark textarea:focus {
+    border-color: var(--primary-500, #6366f1) !important;
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15) !important;
+}
+
+/* --- Dialogs / Modals --- */
+html.dark dialog {
+    background-color: #1e293b !important;
+    border: 1px solid #334155 !important;
+}
+html.dark dialog h3 {
+    color: #f1f5f9 !important;
+}
+html.dark dialog p {
+    color: #94a3b8 !important;
+}
+
+/* --- Cards, Rounded Containers --- */
+html.dark .rounded-xl.border.bg-white,
+html.dark .rounded-xl.border.border-slate-200.bg-white,
+html.dark .rounded-2xl.border.border-slate-200.bg-white,
+html.dark .p-6.bg-white.border.border-slate-200.rounded-2xl {
+    background-color: #1e293b !important;
+    border-color: #334155 !important;
+}
+
+/* --- White Buttons & Interactive Hovers --- */
+html.dark .bg-white.border-slate-200,
+html.dark button.bg-white {
+    background-color: #1e293b !important;
+    border-color: #334155 !important;
+    color: #f1f5f9 !important;
+}
+
+html.dark .hover\:bg-slate-50:hover,
+html.dark .hover\:bg-slate-50\/50:hover,
+html.dark .hover\:bg-slate-100:hover,
+html.dark .hover\:bg-slate-200:hover,
+html.dark .hover\:border-slate-300:hover {
+    background-color: rgba(51, 65, 85, 0.4) !important;
+    border-color: #475569 !important;
+}
+
+/* --- Page Title Section --- */
+html.dark h1 {
+    color: #f1f5f9 !important;
+}
+
+/* --- Flash Messages in dark (keep as-is since they use inline styles) --- */
+
+/* --- Pagination --- */
+html.dark .pagination-container a,
+html.dark .pagination-container span {
+    color: #94a3b8 !important;
+    border-color: #334155 !important;
+}
+
+/* --- Badges/Pills --- */
+html.dark .bg-slate-100 {
+    background-color: #334155 !important;
+}
+
+/* ============================================
+   TOMSELECT CUSTOM DESIGN SYSTEM OVERRIDES
+   ============================================ */
+.ts-wrapper.single .ts-control,
+.ts-control {
+    background-color: #f8fafc !important; /* bg-slate-50 */
+    border: 1px solid #cbd5e1 !important; /* border-slate-300 */
+    border-radius: 0.5rem !important; /* rounded-lg (8px) */
+    padding: 0.625rem 1rem !important; /* px-4 py-2.5 */
+    font-size: 0.875rem !important; /* text-sm */
+    font-weight: 500 !important; /* font-medium */
+    color: #0f172a !important; /* text-slate-900 */
+    box-shadow: none !important;
+    transition: all 0.2s ease-in-out !important;
+    display: flex !important;
+    align-items: center !important;
+}
+
+.ts-wrapper.single.focus .ts-control,
+.ts-wrapper.focus .ts-control {
+    border-color: var(--primary-500, #6366f1) !important;
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15) !important; /* matches focus:ring-4 focus:ring-indigo-500/10 */
+}
+
+/* Dropdown styling */
+.ts-dropdown {
+    background-color: #ffffff !important;
+    border-radius: 0.5rem !important;
+    border: 1px solid #e2e8f0 !important;
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05) !important;
+    padding: 0.25rem 0 !important;
+    font-size: 0.875rem !important;
+    z-index: 50 !important;
+}
+
+.ts-dropdown .option {
+    padding: 0.5rem 1rem !important;
+    color: #334155 !important; /* text-slate-700 */
+    transition: background-color 0.15s, color 0.15s !important;
+}
+
+.ts-dropdown .option.active,
+.ts-dropdown .option:hover {
+    background-color: rgba(99, 102, 241, 0.08) !important;
+    color: var(--primary-700, #4f46e5) !important;
+}
+
+/* Arrow position adjustments */
+.ts-wrapper.single .ts-control::after {
+    right: 1.25rem !important;
+    border-color: #64748b transparent transparent transparent !important; /* slate-500 */
+    border-width: 5px 4px 0 4px !important;
+}
+.ts-wrapper.single.input-active .ts-control::after {
+    border-color: transparent transparent #64748b transparent !important;
+    border-width: 0 4px 5px 4px !important;
+}
+
+/* ============================================
+   TOMSELECT & DATERANGEPICKER DARK MODE OVERRIDES
+   ============================================ */
+
+
+/* 2. Class-Based Dark Mode Support (High Specificity) */
+html.dark .ts-control,
+.dark .ts-control,
+html.dark .ts-wrapper.single .ts-control,
+.dark .ts-wrapper.single .ts-control,
+html.dark .ts-wrapper .ts-control,
+.dark .ts-wrapper .ts-control {
+    background-color: #0f172a !important;
+    background: #0f172a !important;
+    color: #e2e8f0 !important;
+    border-color: #334155 !important;
+}
+
+html.dark .ts-control input,
+.dark .ts-control input,
+html.dark .ts-control .item,
+.dark .ts-control .item {
+    background-color: transparent !important;
+    background: transparent !important;
+    color: #e2e8f0 !important;
+}
+
+html.dark .ts-wrapper.single.focus .ts-control,
+.dark .ts-wrapper.single.focus .ts-control,
+html.dark .ts-wrapper.focus .ts-control,
+.dark .ts-wrapper.focus .ts-control {
+    border-color: var(--primary-500, #6366f1) !important;
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.25) !important;
+}
+
+html.dark .ts-dropdown,
+.dark .ts-dropdown {
+    background-color: #1e293b !important;
+    color: #e2e8f0 !important;
+    border-color: #334155 !important;
+}
+
+html.dark .ts-dropdown .option,
+.dark .ts-dropdown .option {
+    color: #cbd5e1 !important;
+}
+
+html.dark .ts-dropdown .option:hover,
+.dark .ts-dropdown .option:hover,
+html.dark .ts-dropdown .active,
+.dark .ts-dropdown .active {
+    background-color: rgba(99, 102, 241, 0.18) !important;
+    color: #ffffff !important;
+}
+
+html.dark .ts-wrapper.single .ts-control::after,
+.dark .ts-wrapper.single .ts-control::after {
+    border-color: #94a3b8 transparent transparent transparent !important;
+}
+
+html.dark .ts-wrapper.single.input-active .ts-control::after,
+.dark .ts-wrapper.single.input-active .ts-control::after {
+    border-color: transparent transparent #94a3b8 transparent !important;
+}
+
+/* Ensure the copied Tailwind wrapper classes don't color the background and conflict in dark mode */
+html.dark .ts-wrapper,
+html.dark .ts-wrapper.single,
+html.dark .tom-select-contact,
+html.dark .product-select {
+    background-color: transparent !important;
+    border-color: transparent !important;
+}
+
+/* Smaller TomSelect control sizing inside item rows to align with other inputs */
+.item-row .ts-control {
+    padding: 0.5rem 0.75rem !important; /* px-3 py-2 (38px height) */
+    font-size: 0.875rem !important;
+}
+.item-row .ts-wrapper.single .ts-control::after {
+    right: 0.75rem !important;
+}
+
+
+html.dark .daterangepicker {
+    background-color: #1e293b !important;
+    border: 1px solid #334155 !important;
+    color: #e2e8f0 !important;
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3), 0 8px 10px -6px rgba(0, 0, 0, 0.3) !important;
+}
+html.dark .daterangepicker .calendar-table {
+    background-color: #1e293b !important;
+    border-color: #334155 !important;
+}
+html.dark .daterangepicker .calendar-table th,
+html.dark .daterangepicker .calendar-table td {
+    color: #cbd5e1 !important;
+    background-color: #1e293b !important;
+}
+html.dark .daterangepicker td.available:hover,
+html.dark .daterangepicker th.available:hover {
+    background-color: #334155 !important;
+    color: #ffffff !important;
+}
+html.dark .daterangepicker td.off,
+html.dark .daterangepicker td.off.in-range {
+    background-color: transparent !important;
+    color: #475569 !important;
+}
+html.dark .daterangepicker td.in-range {
+    background-color: rgba(99, 102, 241, 0.15) !important;
+    color: #a5b4fc !important;
+}
+html.dark .daterangepicker td.active,
+html.dark .daterangepicker td.active:hover {
+    background-color: var(--primary-600, #4f46e5) !important;
+    color: #ffffff !important;
+}
+html.dark .daterangepicker .ranges li {
+    color: #cbd5e1 !important;
+    background-color: transparent !important;
+}
+html.dark .daterangepicker .ranges li:hover {
+    background-color: #334155 !important;
+    color: #ffffff !important;
+}
+html.dark .daterangepicker .ranges li.active {
+    background-color: rgba(99, 102, 241, 0.15) !important;
+    color: #a5b4fc !important;
+}
+html.dark .daterangepicker .drp-buttons {
+    border-top-color: #334155 !important;
+    background-color: #1e293b !important;
+}
+html.dark .daterangepicker .drp-selected {
+    color: #94a3b8 !important;
+}
+html.dark .daterangepicker .cancelBtn {
+    background-color: #334155 !important;
+    color: #e2e8f0 !important;
+}
+html.dark .daterangepicker .cancelBtn:hover {
+    background-color: #475569 !important;
+}
+
+/* ============================================
+   PAGINATION DARK MODE OVERRIDES
+   ============================================ */
+html.dark .pagination-container {
+    background-color: rgba(30, 41, 59, 0.4) !important;
+    border-top-color: #334155 !important;
+}
+html.dark .pagination-container .text-slate-500 {
+    color: #94a3b8 !important;
+}
+html.dark .pagination-container .text-slate-200 {
+    color: #475569 !important;
+}
+html.dark .pagination-container span.bg-indigo-600 {
+    box-shadow: none !important;
+}
+html.dark .pagination-container a:hover {
+    background-color: #334155 !important;
+    color: #a5b4fc !important;
+    border-color: #475569 !important;
+}
+
+/* ============================================
+   UPLOAD ZONE & PREVIEW CARDS (LIGHT/DARK)
+   ============================================ */
+.upload-zone {
+    border: 2px dashed #cbd5e1;
+    background-color: #f8fafc;
+    transition: all 0.2s ease;
+}
+.upload-zone:hover {
+    border-color: var(--primary-500, #6366f1);
+}
+html.dark .upload-zone {
+    border-color: #475569;
+    background-color: rgba(15, 23, 42, 0.3);
+}
+html.dark .upload-zone:hover {
+    border-color: var(--primary-400, #818cf8);
+}
+
+.preview-card {
+    border: 1px solid #e2e8f0;
+    background-color: #ffffff;
+    box-shadow: 0 1px 2px rgba(15,23,42,0.06);
+}
+html.dark .preview-card {
+    border-color: #334155;
+    background-color: #1e293b;
+}
+
+/* ============================================
+   ADMIN ROLE BANNER & GRANULAR PERMISSIONS
+   ============================================ */
+.admin-role-banner {
+    background-color: #f5f7ff;
+    border-radius: 0.75rem;
+    padding: 1.25rem;
+}
+html.dark .admin-role-banner {
+    background-color: rgba(99, 102, 241, 0.08) !important;
+}
+
+.permission-column {
+    background-color: #f8fafc;
+    border-radius: 0.75rem;
+    padding: 1.25rem;
+}
+html.dark .permission-column {
+    background-color: rgba(15, 23, 42, 0.25) !important;
+    border: 1px solid #334155;
+}
+
+/* ============================================
+   DIALOG INNER CONTENT DARK MODE
+   Overrides inline style="background:#fff" etc.
+   ============================================ */
+html.dark dialog > div {
+    background-color: #1e293b !important;
+}
+html.dark dialog h3 {
+    color: #f1f5f9 !important;
+}
+html.dark dialog p {
+    color: #94a3b8 !important;
+}
+html.dark dialog .s-label {
+    color: #94a3b8 !important;
+}
+/* Dialog cancel buttons with inline background:#fff */
+html.dark dialog button[style*="background:#fff"],
+html.dark dialog button[style*="background: #fff"] {
+    background-color: #334155 !important;
+    color: #e2e8f0 !important;
+    border-color: #475569 !important;
+}
+/* Dialog icon backgrounds */
+html.dark dialog div[style*="background:#eef2ff"] {
+    background-color: rgba(99, 102, 241, 0.15) !important;
+}
+html.dark dialog div[style*="background:#fee2e2"] {
+    background-color: rgba(220, 38, 38, 0.15) !important;
+}
+
+/* ============================================
+   FLASH MESSAGES DARK MODE
+   (inline: background:#f0fdf4 or #fff1f2)
+   ============================================ */
+html.dark div[style*="background:#f0fdf4"],
+html.dark div[style*="background-color: #f0fdf4"] {
+    background-color: rgba(22, 101, 52, 0.15) !important;
+    color: #86efac !important;
+    border-color: rgba(22, 101, 52, 0.3) !important;
+}
+html.dark div[style*="background:#fff1f2"],
+html.dark div[style*="background-color: #fff1f2"] {
+    background-color: rgba(159, 18, 57, 0.15) !important;
+    color: #fda4af !important;
+    border-color: rgba(159, 18, 57, 0.3) !important;
+}
+
+/* ============================================
+   FILE INPUT DARK MODE
+   ============================================ */
+html.dark input[type="file"] {
+    background-color: #0f172a !important;
+    color: #94a3b8 !important;
+    border-color: #334155 !important;
+}
+html.dark input[type="file"]::file-selector-button {
+    background-color: #334155;
+    color: #e2e8f0;
+    border: 1px solid #475569;
+    border-radius: 0.375rem;
+    padding: 0.25rem 0.75rem;
+    cursor: pointer;
+}
+
+/* ============================================
+   LOGO PREVIEW BOXES DARK MODE
+   (settings page: inline bg:#f8fafc, border #e2e8f0)
+   ============================================ */
+html.dark div[style*="background:#f8fafc"],
+html.dark div[style*="background-color:#f8fafc"] {
+    background-color: #0f172a !important;
+}
+html.dark div[style*="border:1px solid #e2e8f0"],
+html.dark div[style*="border: 1px solid #e2e8f0"] {
+    border-color: #334155 !important;
+}
+
+/* ============================================
+   PERMISSION BADGES DARK MODE (users index)
+   ============================================ */
+html.dark span[style*="background:#eef2ff"] {
+    background-color: rgba(67, 56, 202, 0.15) !important;
+    color: #a5b4fc !important;
+}
+html.dark span[style*="background:#f0fdf4"] {
+    background-color: rgba(21, 128, 61, 0.15) !important;
+    color: #86efac !important;
+}
+html.dark span[style*="background:#fffbeb"] {
+    background-color: rgba(180, 83, 9, 0.15) !important;
+    color: #fcd34d !important;
+}
+html.dark span[style*="background:#fff1f2"] {
+    background-color: rgba(190, 18, 60, 0.15) !important;
+    color: #fda4af !important;
+}
+html.dark span[style*="background:#f8fafc"] {
+    background-color: rgba(71, 85, 105, 0.15) !important;
+    color: #94a3b8 !important;
+}
+
+/* Users index role badge */
+html.dark span[style*="background-color:#eef2ff"] {
+    background-color: rgba(67, 56, 202, 0.15) !important;
+    color: #a5b4fc !important;
+}
+
+/* ============================================
+   MAINTENANCE ICON CONTAINER DARK MODE
+   ============================================ */
+html.dark div[style*="background:#fef2f2"] {
+    background-color: rgba(220, 38, 38, 0.15) !important;
+}
+
+/* ============================================
+   CANCEL STATUS BANNER DARK MODE
+   (purchases/sales show: inline background:#fff1f2)
+   ============================================ */
+html.dark div[style*="padding: 16px 20px"][style*="background-color: #fff1f2"] {
+    background-color: rgba(225, 29, 72, 0.12) !important;
+    border-color: rgba(225, 29, 72, 0.25) !important;
+}
+
+/* ============================================
+   DIALOG BACKDROP DARK MODE
+   ============================================ */
+html.dark dialog::backdrop {
+    background-color: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(4px);
+}
+
+/* ============================================
+   SIDEBAR BADGE BG FOR DARK
+   ============================================ */
+html.dark .bg-slate-50\/50 {
+    background-color: rgba(15, 23, 42, 0.5) !important;
+}
+
+/* ============================================
+   SETTINGS MAINTENANCE ROW BORDER IN DARK
+   ============================================ */
+html.dark div[style*="border-top:1px solid #f1f5f9"] {
+    border-top-color: #334155 !important;
+}
+html.dark .s-maint-row {
+    border-bottom-color: #334155 !important;
+}
+
+/* ============================================
+   NATIVE CALENDAR PICKER DARK MODE INDICATORS
+   ============================================ */
+html.dark input[type="date"]::-webkit-calendar-picker-indicator,
+html.dark input[type="datetime-local"]::-webkit-calendar-picker-indicator {
+    filter: invert(1) grayscale(1) brightness(0.9);
+    cursor: pointer;
+}
+
+/* ============================================
+   JQUERY DATERANGEPICKER DROPDOWNS IN DARK
+   ============================================ */
+html.dark .daterangepicker select.monthselect,
+html.dark .daterangepicker select.yearselect {
+    background-color: #0f172a !important;
+    color: #e2e8f0 !important;
+    border-color: #334155 !important;
+}
+html.dark .daterangepicker .prev span,
+html.dark .daterangepicker .next span {
+    border-color: #e2e8f0 !important;
+}
+
+/* ============================================
+   CIRCULAR AVATAR CONTAINER IN DARK
+   ============================================ */
+html.dark label[style*="width:5rem;height:5rem"] {
+    border-color: #334155 !important;
+    background-color: #0f172a !important;
+}
+
+/* ============================================
+   INLINE STYLED CARD / FILE PREVIEWS IN DARK
+   ============================================ */
+html.dark #image-preview-card {
+    background-color: #1e293b !important;
+    border-color: #334155 !important;
+}
+html.dark #image-filename {
+    color: #e2e8f0 !important;
+}
+html.dark #image-filesize {
+    color: #94a3b8 !important;
+}
+
+/* Screenshot checkbox button container overlay */
+html.dark label[title="Select screenshot"] {
+    background-color: rgba(30, 41, 59, 0.9) !important;
+    border-color: #475569 !important;
+}
+
+/* Global style overrides for inline background:#fee2e2 buttons (clear buttons) */
+html.dark button[style*="background:#fee2e2"],
+html.dark button[style*="background: #fee2e2"],
+html.dark a[style*="background:#fee2e2"],
+html.dark a[style*="background: #fee2e2"] {
+    background-color: rgba(220, 38, 38, 0.15) !important;
+    color: #fda4af !important;
+}
+
+/* Disabled pagination color matching */
+html.dark .pagination-container .text-slate-200 {
+    color: #334155 !important;
+}
+
+/* ============================================
+   UNIFIED FILTER BAR STYLES (Light/Dark Mode)
+   ============================================ */
+.unified-filter-form {
+    background-color: #ffffff;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05);
+}
+html.dark .unified-filter-form {
+    background-color: #1e293b !important;
+    border-color: #334155 !important;
+    box-shadow: none !important;
+}
+
+.unified-filter-input,
+.unified-filter-select {
+    background-color: #f8fafc;
+    border: 1px solid #e2e8f0;
+    color: #0f172a;
+}
+html.dark .unified-filter-input,
+html.dark .unified-filter-select {
+    background-color: #0f172a !important;
+    border-color: #334155 !important;
+    color: #e2e8f0 !important;
+}
+html.dark .unified-filter-input::placeholder {
+    color: #475569 !important;
+}
+
+.unified-filter-reset {
+    background-color: #f1f5f9;
+    color: #334155;
+    transition: all 0.2s ease-in-out;
+}
+.unified-filter-reset:hover {
+    background-color: #e2e8f0;
+    color: #0f172a;
+}
+html.dark .unified-filter-reset {
+    background-color: #334155 !important;
+    color: #cbd5e1 !important;
+}
+html.dark .unified-filter-reset:hover {
+    background-color: #475569 !important;
+    color: #ffffff !important;
+}
+
+.unified-filter-submit {
+    background-color: #4f46e5;
+    color: #ffffff;
+    transition: all 0.2s ease-in-out;
+}
+.unified-filter-submit:hover {
+    background-color: #4338ca;
+}
+html.dark .unified-filter-submit {
+    background-color: #6366f1 !important;
+}
+html.dark .unified-filter-submit:hover {
+    background-color: #4f46e5 !important;
+}
+
+/* ============================================
+   MAINTENANCE PAGE STYLES (Light/Dark Mode)
+   ============================================ */
+.maint-container {
+    background-color: #f8fafc;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: Inter, system-ui, sans-serif;
+    position: relative;
+    overflow: hidden;
+    padding: 1.5rem;
+}
+html.dark .maint-container {
+    background-color: #0f172a !important;
+}
+
+.maint-card {
+    background-color: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 1.25rem;
+    padding: 3rem 2rem;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+    text-align: center;
+}
+html.dark .maint-card {
+    background-color: #1e293b !important;
+    border-color: #334155 !important;
+    box-shadow: none !important;
+}
+
+.maint-icon-container {
+    width: 5rem;
+    height: 5rem;
+    background-color: #fef2f2;
+    border: 1px solid #fee2e2;
+    border-radius: 1.25rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 2rem auto;
+}
+html.dark .maint-icon-container {
+    background-color: rgba(220, 38, 38, 0.15) !important;
+    border-color: rgba(220, 38, 38, 0.25) !important;
+}
+
+.maint-title {
+    font-size: 1.75rem;
+    font-weight: 800;
+    color: #0f172a;
+    letter-spacing: -0.03em;
+    margin-bottom: 0.75rem;
+    line-height: 1.25;
+}
+html.dark .maint-title {
+    color: #f1f5f9 !important;
+}
+
+.maint-desc {
+    color: #64748b;
+    font-size: 0.925rem;
+    line-height: 1.6;
+    margin-bottom: 2.25rem;
+    max-width: 26rem;
+    margin-left: auto;
+    margin-right: auto;
+}
+html.dark .maint-desc {
+    color: #94a3b8 !important;
+}
+
+.maint-alert {
+    background-color: #fffbeb;
+    border: 1px solid #fef3c7;
+    border-radius: 0.75rem;
+    padding: 0.85rem 1.1rem;
+    font-size: 0.825rem;
+    color: #b45309;
+    text-align: left;
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+    margin-bottom: 2.5rem;
+}
+html.dark .maint-alert {
+    background-color: rgba(180, 83, 9, 0.15) !important;
+    border-color: rgba(180, 83, 9, 0.25) !important;
+    color: #fcd34d !important;
+}
+
+.maint-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    height: 3rem;
+    padding: 0 2rem;
+    font-size: 0.875rem;
+    font-weight: 700;
+    color: #ffffff;
+    background-color: var(--primary-600, #4f46e5);
+    border: none;
+    border-radius: 0.75rem;
+    cursor: pointer;
+    text-decoration: none;
+    transition: background-color 0.2s;
+}
+.maint-btn:hover {
+    background-color: var(--primary-700, #4338ca) !important;
+}
+
+/* ============================================
+   STATUS BADGES DARK MODE OVERRIDES
+   ============================================ */
+/* Paid (Green) */
+html.dark div[style*="background-color: #ecfdf5"],
+html.dark span[style*="background-color: #ecfdf5"],
+html.dark div[style*="background-color:#ecfdf5"],
+html.dark span[style*="background-color:#ecfdf5"] {
+    background-color: rgba(16, 185, 129, 0.15) !important;
+    color: #34d399 !important;
+}
+
+/* Partial (Amber) */
+html.dark div[style*="background-color: #fef3c7"],
+html.dark span[style*="background-color: #fef3c7"],
+html.dark div[style*="background-color:#fef3c7"],
+html.dark span[style*="background-color:#fef3c7"] {
+    background-color: rgba(245, 158, 11, 0.15) !important;
+    color: #fbbf24 !important;
+}
+
+/* Unpaid / Cancelled (Rose) */
+html.dark div[style*="background-color: #fff1f2"],
+html.dark span[style*="background-color: #fff1f2"],
+html.dark div[style*="background-color:#fff1f2"],
+html.dark span[style*="background-color:#fff1f2"] {
+    background-color: rgba(244, 63, 94, 0.15) !important;
+    color: #fca5a5 !important;
+}
+
+/* Overpaid (Purple/Violet) */
+html.dark div[style*="background-color: #f5f3ff"],
+html.dark span[style*="background-color: #f5f3ff"],
+html.dark div[style*="background-color:#f5f3ff"],
+html.dark span[style*="background-color:#f5f3ff"] {
+    background-color: rgba(139, 92, 246, 0.15) !important;
+    color: #c084fc !important;
+}
+
+/* Refunded (Slate/Grey) */
+html.dark div[style*="background-color: #f1f5f9"],
+html.dark span[style*="background-color: #f1f5f9"],
+html.dark div[style*="background-color:#f1f5f9"],
+html.dark span[style*="background-color:#f1f5f9"] {
+    background-color: rgba(100, 116, 139, 0.2) !important;
+    color: #cbd5e1 !important;
+}
+
+/* ============================================
+   AVATAR PLACEHOLDER DARK MODE OVERRIDES
+   ============================================ */
+html.dark div[style*="background:#f1f5f9"][style*="color:#475569"],
+html.dark div[style*="background:#f1f5f9;"][style*="color:#475569;"] {
+    background-color: #1e293b !important;
+    color: #94a3b8 !important;
+    border-color: #334155 !important;
+}
+
+/* ============================================
+   PRODUCT EDIT / NEW DARK MODE INLINE OVERRIDES
+   ============================================ */
+html.dark p[style*="color:#334155"],
+html.dark p[style*="color: #334155"] {
+    color: #cbd5e1 !important;
+}
+html.dark textarea[style*="border: 1px solid #e2e8f0"],
+html.dark textarea[style*="border:1px solid #e2e8f0"] {
+    border-color: #334155 !important;
+    background-color: #0f172a !important;
+    color: #e2e8f0 !important;
+}
+
+/* ============================================
+   PRIMARY COLOR SYSTEM
+   ============================================ */
+:root {
+    --primary-50: #eef2ff;
+    --primary-100: #e0e7ff;
+    --primary-200: #c7d2fe;
+    --primary-300: #a5b4fc;
+    --primary-400: #818cf8;
+    --primary-500: #6366f1;
+    --primary-600: #4f46e5;
+    --primary-700: #4338ca;
+    --primary-800: #3730a3;
+    --primary-900: #312e81;
+    --primary-950: #1e1b4b;
+}

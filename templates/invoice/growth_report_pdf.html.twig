@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>AI CFO Growth Report</title>
+    <style>
+        body {
+            font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+            color: #334155;
+            margin: 0;
+            padding: 20px;
+            font-size: 13px;
+            line-height: 1.6;
+        }
+        .invoice-header {
+            margin-bottom: 35px;
+            border-bottom: 2px solid #f1f5f9;
+            padding-bottom: 20px;
+        }
+        .invoice-header table {
+            width: 100%;
+        }
+        .logo {
+            font-size: 22px;
+            font-weight: bold;
+            color: #4f46e5;
+        }
+        .company-info {
+            text-align: right;
+            font-size: 11px;
+            color: #64748b;
+        }
+        .meta-info {
+            margin-bottom: 30px;
+            background-color: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 15px;
+        }
+        .meta-info table {
+            width: 100%;
+        }
+        .meta-label {
+            font-weight: bold;
+            color: #64748b;
+            text-transform: uppercase;
+            font-size: 10px;
+            letter-spacing: 0.5px;
+        }
+        .meta-val {
+            font-size: 13px;
+            color: #0f172a;
+            font-weight: 600;
+        }
+        .report-body {
+            color: #334155;
+        }
+        .report-body h2 {
+            font-size: 16px;
+            color: #0f172a;
+            margin-top: 25px;
+            border-bottom: 1px solid #e2e8f0;
+            padding-bottom: 5px;
+        }
+        .report-body h3 {
+            font-size: 13px;
+            color: #4f46e5;
+            margin-top: 18px;
+        }
+        .report-body p {
+            margin-bottom: 12px;
+        }
+        .report-body ul {
+            margin-top: 5px;
+            margin-bottom: 15px;
+            padding-left: 20px;
+        }
+        .footer {
+            margin-top: 60px;
+            border-top: 1px solid #f1f5f9;
+            padding-top: 20px;
+            text-align: center;
+            font-size: 10px;
+            color: #94a3b8;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="invoice-header">
+        <table>
+            <tr>
+                <td>
+                    <div class="logo">AI CFO Insights</div>
+                    <div style="font-size: 13px; color: #64748b; margin-top: 4px;">ModularSaaS Intelligence Report</div>
+                </td>
+                <td class="company-info">
+                    <strong>{{ company_name ?? 'ModularSaaS' }}</strong><br>
+                    {{ company_address ?? '123 Business Rd, suite 100' }}<br>
+                    {{ company_email ?? 'billing@modularsaas.com' }}
+                </td>
+            </tr>
+        </table>
+    </div>
+
+    <div class="meta-info">
+        <table>
+            <tr>
+                <td>
+                    <div class="meta-label">Analyzed Period</div>
+                    <div class="meta-val">{{ start_date|date('M d, Y') }} &mdash; {{ end_date|date('M d, Y') }}</div>
+                </td>
+                <td style="text-align: right;">
+                    <div class="meta-label">Generated On</div>
+                    <div class="meta-val">{{ 'now'|date('M d, Y H:i') }}</div>
+                </td>
+            </tr>
+        </table>
+    </div>
+
+    <div class="report-body">
+        {{ content|raw }}
+    </div>
+
+    <div class="footer">
+        Confidential CFO Advisory Report &bull; Powered by ModularSaaS AI.
+    </div>
+
+</body>
+</html>

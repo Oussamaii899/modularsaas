@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Invoice {{ sale.slug }}</title>
+    <style>
+        body {
+            font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+            color: #334155;
+            margin: 0;
+            padding: 20px;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+        .invoice-header {
+            margin-bottom: 40px;
+            border-bottom: 2px solid #f1f5f9;
+            padding-bottom: 20px;
+        }
+        .invoice-header table {
+            width: 100%;
+        }
+        .logo {
+            font-size: 24px;
+            font-weight: bold;
+            color: #4f46e5;
+        }
+        .company-info {
+            text-align: right;
+            font-size: 12px;
+            color: #64748b;
+        }
+        .invoice-details {
+            margin-bottom: 40px;
+        }
+        .invoice-details table {
+            width: 100%;
+        }
+        .details-col {
+            width: 50%;
+            vertical-align: top;
+        }
+        .section-title {
+            font-size: 11px;
+            font-weight: bold;
+            text-transform: uppercase;
+            color: #64748b;
+            margin-bottom: 8px;
+            letter-spacing: 0.5px;
+        }
+        .party-info {
+            font-size: 13px;
+        }
+        .party-name {
+            font-size: 16px;
+            font-weight: bold;
+            color: #0f172a;
+            margin-bottom: 4px;
+        }
+        .meta-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            font-size: 13px;
+        }
+        .meta-list li {
+            margin-bottom: 6px;
+        }
+        .meta-label {
+            color: #64748b;
+            font-weight: 500;
+        }
+        .items-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 30px;
+        }
+        .items-table th {
+            background-color: #f8fafc;
+            color: #475569;
+            text-align: left;
+            padding: 10px 12px;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            border-bottom: 2px solid #e2e8f0;
+        }
+        .items-table td {
+            padding: 12px;
+            border-bottom: 1px solid #f1f5f9;
+            vertical-align: top;
+        }
+        .text-right {
+            text-align: right !important;
+        }
+        .badge {
+            display: inline-block;
+            padding: 4px 8px;
+            font-size: 11px;
+            font-weight: 600;
+            border-radius: 9999px;
+            text-transform: uppercase;
+        }
+        .badge-paid { background-color: #dcfce7; color: #15803d; }
+        .badge-unpaid { background-color: #fee2e2; color: #b91c1c; }
+        .badge-partial { background-color: #fef3c7; color: #b45309; }
+        .badge-refunded { background-color: #f1f5f9; color: #475569; }
+        .totals-section {
+            width: 100%;
+            margin-top: 20px;
+        }
+        .totals-table {
+            width: 40%;
+            float: right;
+            border-collapse: collapse;
+        }
+        .totals-table td {
+            padding: 6px 12px;
+            font-size: 13px;
+        }
+        .totals-table tr.grand-total td {
+            font-size: 16px;
+            font-weight: bold;
+            color: #0f172a;
+            border-top: 2px solid #e2e8f0;
+            padding-top: 10px;
+        }
+        .footer {
+            margin-top: 60px;
+            border-top: 1px solid #f1f5f9;
+            padding-top: 20px;
+            text-align: center;
+            font-size: 11px;
+            color: #94a3b8;
+            clear: both;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="invoice-header">
+        <table>
+            <tr>
+                <td>
+                    <div class="logo">{{ company_name ?? 'ModularSaaS' }}</div>
+                </td>
+                <td class="company-info">
+                    <strong>{{ company_name ?? 'ModularSaaS' }}</strong><br>
+                    {{ company_address ?? '123 Business Rd, suite 100' }}<br>
+                    {{ company_email ?? 'billing@modularsaas.com' }}
+                </td>
+            </tr>
+        </table>
+    </div>
+
+    <div class="invoice-details">
+        <table>
+            <tr>
+                <td class="details-col">
+                    <div class="section-title">Billed To</div>
+                    <div class="party-info">
+                        <div class="party-name">{{ sale.contact.name }}</div>
+                        {% if sale.contact.address %}
+                            {{ sale.contact.address|nl2br }}<br>
+                        {% endif %}
+                        {% if sale.contact.email %}
+                            Email: {{ sale.contact.email }}<br>
+                        {% endif %}
+                        {% if sale.contact.phone %}
+                            Phone: {{ sale.contact.phone }}
+                        {% endif %}
+                    </div>
+                </td>
+                <td class="details-col" style="text-align: right;">
+                    <div class="section-title" style="text-align: right;">Invoice Meta</div>
+                    <ul class="meta-list">
+                        <li><span class="meta-label">Invoice Slug:</span> {{ sale.slug }}</li>
+                        <li><span class="meta-label">Date:</span> {{ sale.createdAt|date('M d, Y') }}</li>
+                        <li>
+                            <span class="meta-label">Status:</span> 
+                            <span class="badge 
+                                {% if sale.paymentStatus == 'Paid' or sale.paymentStatus == 'Overpaid' %}badge-paid
+                                {% elseif sale.paymentStatus == 'Unpaid' or sale.paymentStatus == 'Cancelled' %}badge-unpaid
+                                {% elseif sale.paymentStatus == 'Partial' %}badge-partial
+                                {% else %}badge-refunded{% endif %}">
+                                {{ sale.paymentStatus }}
+                            </span>
+                        </li>
+                    </ul>
+                </td>
+            </tr>
+        </table>
+    </div>
+
+    <table class="items-table">
+        <thead>
+            <tr>
+                <th>Product / SKU</th>
+                <th class="text-right" style="width: 100px;">Qty</th>
+                <th class="text-right" style="width: 120px;">Unit Price</th>
+                <th class="text-right" style="width: 120px;">Total</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in sale.saleItems %}
+                <tr>
+                    <td>
+                        <strong>{{ item.pName }}</strong><br>
+                        <span style="font-size: 11px; color: #64748b;">SKU: {{ item.pSku }}</span>
+                    </td>
+                    <td class="text-right">{{ item.quantity }}</td>
+                    <td class="text-right">${{ item.price|number_format(2) }}</td>
+                    <td class="text-right">${{ (item.price * item.quantity)|number_format(2) }}</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <div class="totals-section">
+        <table class="totals-table">
+            <tr>
+                <td>Subtotal</td>
+                <td class="text-right">${{ sale.total|number_format(2) }}</td>
+            </tr>
+            <tr>
+                <td>Paid Amount</td>
+                <td class="text-right">${{ sale.getPaidAmount|number_format(2) }}</td>
+            </tr>
+            <tr class="grand-total">
+                <td>Balance Due</td>
+                <td class="text-right">${{ sale.getBalance|number_format(2) }}</td>
+            </tr>
+        </table>
+    </div>
+
+    <div class="footer">
+        Thank you for your business! If you have any questions, please contact {{ company_email ?? 'billing@modularsaas.com' }}.
+    </div>
+
+</body>
+</html>

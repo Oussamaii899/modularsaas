@@ -1,0 +1,46 @@
+{% macro dropdown(title, icon, items, current_route) %}
+    {% set is_open = false %}
+    {% set has_badge = false %}
+    {% set badge_html = '' %}
+    {% for item in items %}
+        {% if current_route in item.active_routes|default([]) %}
+            {% set is_open = true %}
+        {% endif %}
+        {% if item.badge is defined and item.badge %}
+            {% set has_badge = true %}
+            {% set badge_html = item.badge %}
+        {% endif %}
+    {% endfor %}
+    <details class="group" {{ is_open ? 'open' : '' }}>
+        <summary class="flex items-center justify-between gap-3 px-3 py-2 text-sm font-medium {{ is_open ? 'text-indigo-600 bg-indigo-50' : 'text-slate-600 hover:text-indigo-600 hover:bg-slate-50' }} rounded-lg cursor-pointer transition-all list-none [&::-webkit-details-marker]:hidden">
+            <div class="flex items-center gap-3">
+                <i data-lucide="{{ icon }}" class="w-5 h-5 transition-colors {{ is_open ? 'text-indigo-600' : 'text-slate-400 group-hover:text-indigo-600' }}"></i>
+                {{ title }}
+            </div>
+            <div class="flex items-center gap-2">
+                {% if not is_open and has_badge %}
+                    {{ badge_html|raw }}
+                {% endif %}
+                <i data-lucide="chevron-down" class="w-4 h-4 transition-transform {{ is_open ? 'text-indigo-600' : 'text-slate-400 group-hover:text-indigo-600 group-open:rotate-180' }}"></i>
+            </div>
+        </summary>
+        <div class="mt-1 space-y-1 pl-3 pr-3 ml-5 border-l border-slate-200 relative">
+            {% for item in items %}
+                {% set is_active = current_route in item.active_routes|default([]) %}
+                <a href="{{ item.url|default('#') }}" class="group/item flex items-center justify-between gap-3 px-3 py-2 text-sm font-medium {{ is_active ? 'text-indigo-600 bg-indigo-50' : 'text-slate-500 hover:text-indigo-600 hover:bg-slate-50' }} rounded-lg transition-all">
+                    <div class="flex items-center gap-3">
+                        {% if item.icon is defined and item.icon %}
+                            <i data-lucide="{{ item.icon }}" class="w-4 h-4 {{ is_active ? 'text-indigo-600' : 'text-slate-400 group-hover/item:text-indigo-600' }} transition-colors"></i>
+                        {% else %}
+                            <span class="w-1.5 h-1.5 rounded-full {{ is_active ? 'bg-indigo-600' : 'bg-slate-300 group-hover/item:bg-indigo-600' }} transition-colors"></span>
+                        {% endif %}
+                        {{ item.label }}
+                    </div>
+                    {% if item.badge is defined and item.badge %}
+                        {{ item.badge|raw }}
+                    {% endif %}
+                </a>
+            {% endfor %}
+        </div>
+    </details>
+{% endmacro %}

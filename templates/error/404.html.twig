@@ -1,0 +1,93 @@
+{% extends app.user ? 'layouts/dashboard.html.twig' : 'base.html.twig' %}
+
+{% block title %}Page Not Found | {{ company_name ?? 'ModularSaaS' }}{% endblock %}
+
+{# If logged in (dashboard layout) #}
+{% block content_title %}Page Not Found{% endblock %}
+{% block content_subtitle %}The page you requested could not be found or you do not have permission to view it.{% endblock %}
+
+{% block content_actions %}
+{% endblock %}
+
+{% block main_content %}
+    {# Render the light-themed error card inside the dashboard content area #}
+    <div style="background-color: #ffffff; border: 1px solid #e2e8f0; border-radius: 1rem; padding: 3rem 2rem; box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px -1px rgba(0, 0, 0, 0.1); text-align: center; max-width: 32rem; margin: 2rem auto;">
+        <!-- Big Code -->
+        <div style="font-size: 4rem; font-weight: 900; color: #ef4444; line-height: 1; margin-bottom: 1.5rem; letter-spacing: -0.05em;">404</div>
+
+        <!-- Icon -->
+        <div style="width: 4.5rem; height: 4.5rem; background-color: #fef2f2; border: 1px solid #fee2e2; border-radius: 1rem; display: flex; align-items: center; justify-content: center; margin: 0 auto 1.5rem auto;">
+            <i data-lucide="alert-octagon" style="width: 2.25rem; height: 2.25rem; color: #ef4444;"></i>
+        </div>
+
+        <!-- Title -->
+        <h2 style="font-size: 1.5rem; font-weight: 700; color: #0f172a; letter-spacing: -0.025em; margin-bottom: 0.75rem; line-height: 1.25;">
+            Access Denied / Not Found
+        </h2>
+
+        <!-- Description -->
+        <p style="color: #64748b; font-size: 0.875rem; line-height: 1.5; margin-bottom: 2rem;">
+            The page you are looking for does not exist, has been removed, or your account does not have sufficient permission to access it.
+        </p>
+
+        <!-- Actions -->
+        <div>
+            <a href="{{ path('app_dashboard') }}" style="display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem; height: 2.75rem; padding: 0 2rem; font-size: 0.875rem; font-weight: 600; color: #ffffff; background-color: #4f46e5; border: none; border-radius: 0.75rem; cursor: pointer; text-decoration: none; transition: background-color 0.2s;" onmouseover="this.style.backgroundColor='#4338ca'" onmouseout="this.style.backgroundColor='#4f46e5'">
+                <i data-lucide="home" style="width: 1rem; height: 1rem; color: #ffffff;"></i>
+                <span>Back to Dashboard</span>
+            </a>
+        </div>
+    </div>
+{% endblock %}
+
+{# If not logged in (standalone layout) #}
+{% block body %}
+    {% if app.user %}
+        {{ parent() }}
+    {% else %}
+        <div class="min-h-screen flex items-center justify-center px-4 relative overflow-hidden" style="background-color: #f8fafc; min-height: 100vh; display: flex; align-items: center; justify-content: center; font-family: Inter, system-ui, sans-serif; position: relative;">
+            <!-- Decorative background elements -->
+            <div style="position: absolute; top: 20%; left: 20%; width: 24rem; height: 24rem; background-color: rgba(99, 102, 241, 0.04); border-radius: 9999px; filter: blur(64px);"></div>
+            <div style="position: absolute; bottom: 20%; right: 20%; width: 24rem; height: 24rem; background-color: rgba(239, 68, 68, 0.04); border-radius: 9999px; filter: blur(64px);"></div>
+
+            <div style="max-width: 28rem; width: 100%; position: relative; z-index: 10; padding: 1rem;">
+                <div style="background-color: #ffffff; border: 1px solid #e2e8f0; border-radius: 1rem; padding: 2.5rem 2rem; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04); text-align: center;">
+                    <!-- 404 Big Badge -->
+                    <div style="font-size: 5rem; font-weight: 900; color: #ef4444; line-height: 1; margin-bottom: 1rem; letter-spacing: -0.05em;">
+                        404
+                    </div>
+
+                    <!-- Icon -->
+                    <div style="width: 4rem; height: 4rem; background-color: #fef2f2; border: 1px solid #fee2e2; border-radius: 1rem; display: flex; align-items: center; justify-content: center; margin: 0 auto 1.5rem auto;">
+                        <i data-lucide="alert-octagon" style="width: 2rem; height: 2rem; color: #ef4444;"></i>
+                    </div>
+
+                    <!-- Title -->
+                    <h1 style="font-size: 1.5rem; font-weight: 700; color: #0f172a; letter-spacing: -0.025em; margin-bottom: 0.75rem; line-height: 1.25;">
+                        Page Not Found
+                    </h1>
+
+                    <!-- Description -->
+                    <p style="color: #64748b; font-size: 0.875rem; line-height: 1.5; margin-bottom: 2rem;">
+                        The page you are looking for does not exist, has been removed, or you do not have permission to view it.
+                    </p>
+
+                    <!-- Actions -->
+                    <div>
+                        <a href="{{ path('app_dashboard') }}" style="display: inline-flex; width: 100%; align-items: center; justify-content: center; gap: 0.5rem; height: 2.75rem; padding: 0 1rem; font-size: 0.875rem; font-weight: 600; color: #ffffff; background-color: #4f46e5; border: none; border-radius: 0.75rem; cursor: pointer; text-decoration: none; transition: background-color 0.2s;" onmouseover="this.style.backgroundColor='#4338ca'" onmouseout="this.style.backgroundColor='#4f46e5'">
+                            <i data-lucide="home" style="width: 1rem; height: 1rem; color: #ffffff;"></i>
+                            <span>Back to Dashboard</span>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    {% endif %}
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            if (typeof lucide !== 'undefined') {
+                lucide.createIcons();
+            }
+        });
+    </script>
+{% endblock %}

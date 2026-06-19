@@ -1,0 +1,460 @@
+{% extends 'layouts/dashboard.html.twig' %}
+
+{% block title %}Sales Overview | {{ company_name ?? 'ModularSaaS' }}{% endblock %}
+
+{% block content_title %}Sales Analytics{% endblock %}
+{% block content_subtitle %}Performance and Revenue Tracking{% endblock %}
+
+{% block stylesheets %}
+    {{ parent() }}
+    <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.css" />
+    <link rel="stylesheet" href="{{ asset('styles/dashboard.css') }}">
+{% endblock %}
+
+{% block javascripts %}
+    {{ parent() }}
+    <!-- Core JS Dependencies -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jquery/dist/jquery.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/moment/min/moment.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.min.js"></script>
+    
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            const overviewContainer = document.getElementById('sales-overview-container');
+            if (!overviewContainer) return;
+
+            const dataUrl = overviewContainer.getAttribute('data-data-url');
+
+            // Initialize Chart.js
+            const ctx = document.getElementById('salesOverviewChart').getContext('2d');
+            const getChartColors = () => {
+                const isDark = document.documentElement.classList.contains('dark');
+                return {
+                    grid: isDark ? '#334155' : '#f1f5f9',
+                    text: isDark ? '#94a3b8' : '#64748b'
+                };
+            };
+
+            const initialColors = getChartColors();
+
+            const salesOverviewChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: [],
+                    datasets: [{
+                        label: 'Revenue Collected ($)',
+                        data: [],
+                        borderColor: '#4f46e5',
+                        backgroundColor: 'rgba(79, 70, 229, 0.05)',
+                        borderWidth: 2.5,
+                        fill: true,
+                        tension: 0.35,
+                        pointBackgroundColor: '#4f46e5',
+                        pointBorderColor: '#ffffff',
+                        pointBorderWidth: 1.5,
+                        pointRadius: 4,
+                        pointHoverRadius: 6
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            backgroundColor: '#1e293b',
+                            titleFont: { family: "'Inter', sans-serif" },
+                            bodyFont: { family: "'Inter', sans-serif" },
+                            padding: 12,
+                            cornerRadius: 8,
+                            callbacks: {
+                                label: function(context) {
+                                    return ' Revenue: $' + Number(context.raw).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            grid: { color: initialColors.grid },
+                            ticks: {
+                                color: initialColors.text,
+                                font: { family: "'Inter', sans-serif" },
+                                callback: function(value) { return '$' + value.toLocaleString(); }
+                            },
+                            border: { dash: [4, 4], display: false }
+                        },
+                        x: {
+                            grid: { display: false },
+                            ticks: { color: initialColors.text, font: { family: "'Inter', sans-serif" } }
+                        }
+                    }
+                }
+            });
+
+            // Update chart theme on class changes
+            const updateChartTheme = () => {
+                const colors = getChartColors();
+                if (salesOverviewChart) {
+                    salesOverviewChart.options.scales.y.grid.color = colors.grid;
+                    salesOverviewChart.options.scales.y.ticks.color = colors.text;
+                    salesOverviewChart.options.scales.x.ticks.color = colors.text;
+                    salesOverviewChart.update();
+                }
+            };
+
+            const themeObserver = new MutationObserver((mutations) => {
+                mutations.forEach((mutation) => {
+                    if (mutation.attributeName === 'class') {
+                        updateChartTheme();
+                    }
+                });
+            });
+            themeObserver.observe(document.documentElement, { attributes: true });
+
+            // Initialize Daterangepicker
+            var start = moment().subtract(29, 'days');
+            var end = moment();
+
+            function updateDateRangeDisplay(start, end, label) {
+                $('#reportrange span').html(start.format('MMMM D, YYYY') + ' - ' + end.format('MMMM D, YYYY'));
+                
+                const params = new URLSearchParams({
+                    date: start.format('YYYY-MM-DD'),
+                    end: end.format('YYYY-MM-DD')
+                });
+                
+                fetch(`${dataUrl}?${params.toString()}`, {
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    // Update Stats Widgets
+                    const totalGrossVal = parseFloat(data.total_gross_30) || 0;
+                    const totalRefundsVal = parseFloat(data.total_refunds_30) || 0;
+                    const totalNetVal = parseFloat(data.total_net_30) || 0;
+                    const totalOutstandingVal = parseFloat(data.total_outstanding) || 0;
+
+                    const formatCurrency = val => (val < 0 ? '-$' : '$') + Math.abs(val).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
+
+                    document.getElementById('total-gross-value').innerText = formatCurrency(totalGrossVal);
+                    document.getElementById('total-refunds-value').innerText = '-$' + totalRefundsVal.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
+                    document.getElementById('total-net-value').innerText = formatCurrency(totalNetVal);
+                    document.getElementById('total-outstanding-value').innerText = formatCurrency(totalOutstandingVal);
+
+                    const netValueEl = document.getElementById('total-net-value');
+                    const netIconEl = document.getElementById('total-net-change-icon');
+                    const netContainerEl = document.getElementById('total-net-change-container');
+                    
+                    if (totalNetVal < 0) {
+                        if (netValueEl) netValueEl.className = 'text-2xl font-bold tracking-tight text-rose-600';
+                        if (netContainerEl) netContainerEl.className = 'flex items-center text-xs font-medium text-rose-600 mt-1';
+                        if (netIconEl) { netIconEl.setAttribute('data-lucide', 'trending-down'); netIconEl.innerHTML = ''; }
+                    } else {
+                        if (netValueEl) netValueEl.className = 'text-2xl font-bold tracking-tight text-slate-900';
+                        if (netContainerEl) netContainerEl.className = 'flex items-center text-xs font-medium text-emerald-600 mt-1';
+                        if (netIconEl) { netIconEl.setAttribute('data-lucide', 'trending-up'); netIconEl.innerHTML = ''; }
+                    }
+                    if (window.lucide) window.lucide.createIcons();
+
+                    // Update widget titles/timeframes if needed
+                    const timeframeText = label || (start.format('MMM D') + ' - ' + end.format('MMM D'));
+                    document.getElementById('total-gross-change-text').innerText = timeframeText;
+                    document.getElementById('total-refunds-change-text').innerText = timeframeText;
+                    document.getElementById('total-net-change-text').innerText = timeframeText;
+                    document.getElementById('total-outstanding-change-text').innerText = timeframeText;
+
+                    // Process trend chart
+                    const dailyTotals = {};
+                    const totalDays = moment(end).diff(moment(start), 'days');
+                    const groupMode = totalDays > 60 ? 'month' : 'day';
+                    const keyFormat = groupMode === 'month' ? 'YYYY-MM' : 'YYYY-MM-DD';
+                    const labelFormat = groupMode === 'month' ? 'MMM YYYY' : 'MMM D';
+                    
+                    let currDate = moment(start).startOf(groupMode);
+                    const endDate = moment(end).endOf(groupMode);
+                    while (currDate.isBefore(endDate)) {
+                        const dateKey = currDate.format(keyFormat);
+                        dailyTotals[dateKey] = { sales: 0, label: currDate.format(labelFormat) };
+                        currDate.add(1, groupMode + 's');
+                        if (Object.keys(dailyTotals).length > 365) break;
+                    }
+
+                    if (data.sales && Array.isArray(data.sales)) {
+                        data.sales.forEach(item => {
+                            const dateVal = item.created_at && item.created_at.date ? item.created_at.date : item.created_at;
+                            const dateKey = moment(dateVal).format(keyFormat);
+                            if (dailyTotals[dateKey]) {
+                                dailyTotals[dateKey].sales += parseFloat(item.total || 0);
+                            }
+                        });
+                    }
+
+                    const sortedKeys = Object.keys(dailyTotals).sort();
+                    const labels = sortedKeys.map(k => dailyTotals[k].label);
+                    const salesData = sortedKeys.map(k => dailyTotals[k].sales);
+
+                    salesOverviewChart.data.labels = labels;
+                    salesOverviewChart.data.datasets[0].data = salesData;
+                    salesOverviewChart.update();
+                })
+                .catch(err => console.error('Error fetching sales analytics:', err));
+            }
+
+            $('#reportrange').daterangepicker({
+                startDate: start,
+                endDate: end,
+                ranges: {
+                   'Today': [moment(), moment()],
+                   'Yesterday': [moment().subtract(1, 'days'), moment().subtract(1, 'days')],
+                   'Last 7 Days': [moment().subtract(6, 'days'), moment()],
+                   'Last 30 Days': [moment().subtract(29, 'days'), moment()],
+                   'This Month': [moment().startOf('month'), moment().endOf('month')],
+                   'Last Month': [moment().subtract(1, 'month').startOf('month'), moment().subtract(1, 'month').endOf('month')]
+                },
+                opens: 'left',
+                buttonClasses: 'px-3 py-1.5 text-xs font-semibold rounded-lg transition-colors border-transparent',
+                applyButtonClasses: 'bg-indigo-600 text-white hover:bg-indigo-700',
+                cancelClass: 'bg-slate-100 text-slate-600 hover:bg-slate-200',
+            }, updateDateRangeDisplay);
+
+            updateDateRangeDisplay(start, end, 'Last 30 Days');
+
+            const generateBtn = document.getElementById('generate-report-btn');
+            if (generateBtn) {
+                generateBtn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    
+                    const container = document.getElementById('report-content-container');
+                    
+                    // Show loading spinner
+                    container.innerHTML = `
+                        <div class="flex flex-col items-center justify-center py-8 w-full">
+                            <svg class="animate-spin h-8 w-8 text-indigo-600 mb-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" style="height: 32px; width: 32px;">
+                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" style="opacity: 0.25;"></circle>
+                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" style="opacity: 0.75;"></path>
+                            </svg>
+                            <p class="text-sm font-semibold text-slate-600 text-center">Analyzing financial data and compiling CFO growth insights...</p>
+                        </div>
+                    `;
+                    
+                    const params = new URLSearchParams({
+                        date: start.format('YYYY-MM-DD'),
+                        end: end.format('YYYY-MM-DD')
+                    });
+                    
+                    fetch(`/sales/overview/growth-report?${params.toString()}`)
+                        .then(res => res.json())
+                        .then(data => {
+                            if (data.success) {
+                                container.innerHTML = `
+                                    <div class="flex flex-col items-center justify-center text-center py-4 w-full">
+                                        <div class="w-12 h-12 rounded-full bg-emerald-50 flex items-center justify-center text-emerald-600 mb-4 border border-emerald-100 shadow-sm animate-pulse">
+                                            <i data-lucide="file-text" class="w-6 h-6"></i>
+                                        </div>
+                                        <h4 class="text-base font-bold text-slate-900 mb-1">AI CFO Report Ready</h4>
+                                        <p class="text-xs text-slate-500 max-w-xs mb-6">
+                                            Detailed health metrics, risk analysis, 30-day forecast, and top 3 actions are ready.
+                                        </p>
+                                    </div>
+                                    <div class="w-full flex flex-col gap-2 mt-auto">
+                                        <a href="/sales/overview/growth-report/download" class="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white shadow hover:bg-emerald-700 transition-all">
+                                            <i data-lucide="download" class="w-4 h-4"></i>
+                                            <span>Download PDF Report</span>
+                                        </a>
+                                        <button id="regenerate-report-btn" class="w-full inline-flex items-center justify-center rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-600 hover:bg-slate-50 transition-all" style="cursor: pointer;">
+                                            Regenerate
+                                        </button>
+                                    </div>
+                                `;
+                                
+                                // Re-initialize icons
+                                if (window.lucide) window.lucide.createIcons();
+                                
+                                // Hook up regenerate
+                                document.getElementById('regenerate-report-btn').addEventListener('click', () => {
+                                    generateBtn.click();
+                                });
+                            } else {
+                                container.innerHTML = `
+                                    <div class="text-center py-4 w-full">
+                                        <p class="text-sm text-rose-600 font-semibold mb-3">${data.report}</p>
+                                        <button id="retry-report-btn" class="inline-flex items-center justify-center rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow hover:bg-indigo-700 transition-colors" style="cursor: pointer;">
+                                            Retry
+                                        </button>
+                                    </div>
+                                `;
+                                document.getElementById('retry-report-btn').addEventListener('click', () => {
+                                    generateBtn.click();
+                                });
+                            }
+                        })
+                        .catch(err => {
+                            container.innerHTML = `
+                                <div class="text-center py-4 w-full">
+                                    <p class="text-sm text-rose-600 font-semibold mb-3">Failed to connect to server.</p>
+                                    <button id="retry-report-btn" class="inline-flex items-center justify-center rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow hover:bg-indigo-700 transition-colors" style="cursor: pointer;">
+                                        Retry
+                                    </button>
+                                </div>
+                            `;
+                            document.getElementById('retry-report-btn').addEventListener('click', () => {
+                                generateBtn.click();
+                            });
+                        });
+                });
+            }
+        });
+    </script>
+{% endblock %}
+
+{% block content_actions %}
+    <div class="flex flex-col sm:flex-row items-stretch sm:items-center w-full sm:w-auto gap-2 sm:gap-3">
+        <!-- Datepicker -->
+        <div id="reportrange" class="flex items-center gap-2 bg-white border border-slate-200 hover:border-slate-300 rounded-xl px-4 py-2.5 text-sm font-semibold text-slate-700 cursor-pointer shadow-sm transition-all">
+            <i data-lucide="calendar" class="w-4 h-4 text-indigo-600"></i>
+            <span></span>
+            <i data-lucide="chevron-down" class="w-4 h-4 text-slate-400 ml-1"></i>
+        </div>
+
+        {% if is_granted('add.sales') %}
+        <a href="{{ path('app_sales_new') }}" class="inline-flex h-10 items-center justify-center gap-2 rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow hover:bg-indigo-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 transition-colors">
+            <i data-lucide="plus" class="w-4 h-4 text-white"></i>
+            <span>Register Sale</span>
+        </a>
+        {% endif %}
+    </div>
+{% endblock %}
+
+{% block main_content %}
+    <div class="space-y-6" id="sales-overview-container" data-data-url="{{ path('app_sales_overview_data') }}">
+        <!-- 1. Stats Widgets -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            {% include 'components/widget.html.twig' with {
+                title: 'Gross Revenue',
+                value: '$' ~ total_gross_30|number_format(2),
+                value_id: 'total-gross-value',
+                icon: 'banknote',
+                change_type: 'neutral',
+                change_text: 'All Incoming Payments',
+                change_text_id: 'total-gross-change-text',
+                change_icon: 'check-circle'
+            } %}
+
+            {% include 'components/widget.html.twig' with {
+                title: 'Refunds Issued',
+                value: '-$' ~ total_refunds_30|number_format(2),
+                value_id: 'total-refunds-value',
+                icon: 'rotate-ccw',
+                change_type: (total_refunds_30 > 0 ? 'down' : 'neutral'),
+                change_text: 'Returned to Clients',
+                change_text_id: 'total-refunds-change-text',
+                change_icon: 'alert-circle',
+                value_class: (total_refunds_30 > 0 ? 'text-rose-600' : 'text-slate-900')
+            } %}
+
+            {% include 'components/widget.html.twig' with {
+                title: 'Net Revenue',
+                value: '$' ~ total_net_30|number_format(2),
+                value_id: 'total-net-value',
+                icon: 'piggy-bank',
+                change_type: (total_net_30 < 0 ? 'down' : 'up'),
+                change_text: 'Actual Money Kept',
+                change_text_id: 'total-net-change-text',
+                change_icon: (total_net_30 < 0 ? 'trending-down' : 'trending-up'),
+                change_icon_id: 'total-net-change-icon',
+                change_container_id: 'total-net-change-container',
+                value_class: (total_net_30 < 0 ? 'text-rose-600' : 'text-slate-900')
+            } %}
+
+            {% include 'components/widget.html.twig' with {
+                title: 'Outstanding Balance',
+                value: '$' ~ total_outstanding|number_format(2),
+                value_id: 'total-outstanding-value',
+                icon: 'clock',
+                change_type: (total_outstanding > 0 ? 'down' : 'up'),
+                change_text: (total_outstanding > 0 ? 'Requires Collection' : 'Accounts Settled'),
+                change_text_id: 'total-outstanding-change-text',
+                change_icon: (total_outstanding > 0 ? 'alert-circle' : 'check-circle')
+            } %}
+        </div>
+
+        <!-- 2. Revenue Trend Graph (Full Width) -->
+        <div class="p-6 bg-white border border-slate-200 rounded-2xl shadow-sm flex flex-col hover:shadow-md transition-shadow">
+            <div class="flex items-center justify-between mb-6">
+                <div>
+                    <h3 class="text-lg font-bold text-slate-900 tracking-tight">Revenue Trend</h3>
+                    <p class="text-sm text-slate-500">Daily breakdown of collected revenue for the selected timeframe</p>
+                </div>
+            </div>
+            <div class="relative w-full min-h-[300px]">
+                <canvas id="salesOverviewChart"></canvas>
+            </div>
+        </div>
+
+        <!-- 3. Bottom Panels -->
+        <div class="flex flex-col gap-6">
+            <div>
+                <h2 class="text-lg font-semibold text-slate-900">Recent Client Activity</h2>
+                <p class="text-sm text-slate-500">Tracking the latest accounts and transactions</p>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div class="rounded-xl border border-slate-200 bg-white shadow-sm flex flex-col">
+                    <div class="p-6 border-b border-slate-100 flex items-center justify-between">
+                        <h3 class="font-semibold text-slate-900">Recent Customer Activity</h3>
+                        <i data-lucide="star" class="w-4 h-4 text-amber-500 fill-amber-500"></i>
+                    </div>
+                    <div class="flex-1 p-2">
+                        {% for client in top_clients %}
+                            <div class="flex items-center justify-between p-3 hover:bg-slate-50/80 rounded-lg transition-colors group">
+                                <div class="flex items-center gap-3">
+                                    <div class="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-slate-600 font-semibold text-sm border border-slate-200">
+                                        {{ client.name|first|upper }}
+                                    </div>
+                                    <div class="flex flex-col">
+                                        <div class="text-sm font-semibold text-slate-900">{{ client.name }}</div>
+                                        <div class="text-xs text-slate-500">{{ client.email }}</div>
+                                    </div>
+                                </div>
+                                <a href="{{ path('app_clients_show', {'slug': client.slug}) }}" class="p-2 inline-flex text-slate-400 hover:text-slate-900 transition-colors">
+                                    <i data-lucide="chevron-right" class="w-4 h-4"></i>
+                                </a>
+                            </div>
+                        {% else %}
+                            <div class="p-10 text-center text-slate-500 text-sm">No client data available</div>
+                        {% endfor %}
+                    </div>
+                    <div class="p-4 border-t border-slate-100 text-center">
+                        <a href="{{ path('app_clients_index') }}" class="text-sm font-medium text-indigo-600 hover:text-indigo-700 hover:underline transition-colors">View All Customers</a>
+                    </div>
+                </div>
+
+                <!-- Actionable Insights -->
+                <div class="rounded-xl border border-slate-200 bg-white shadow-sm flex flex-col overflow-hidden relative">
+                    <div class="p-6 border-b border-slate-100 flex items-center justify-between z-10 relative bg-white">
+                        <h3 class="font-semibold text-slate-900">Actionable Insights</h3>
+                        <i data-lucide="sparkles" class="w-4 h-4 text-indigo-500"></i>
+                    </div>
+                    <div class="p-6 flex flex-col items-start h-full z-10 relative w-full" id="report-content-container">
+                        <div class="inline-flex items-center rounded-full border border-indigo-200 bg-indigo-50 px-4 py-1.5 text-xs font-bold text-indigo-700 transition-colors self-start shadow-sm" style="width: max-content; margin-bottom: 2rem;">
+                            <i data-lucide="trending-up" class="w-3 h-3 mr-1.5"></i>
+                            Growth Indicator
+                        </div>
+                        <h3 class="text-xl font-bold tracking-tight text-slate-900 mb-3">Maximize your Revenue</h3>
+                        <p class="text-sm text-slate-500 max-w-sm mb-12 leading-relaxed">Your average transaction value has increased by 12% this month. Keep track of your key accounts to maintain momentum.</p>
+                        
+                        <div class="mt-8 w-full">
+                            <button id="generate-report-btn" class="w-full inline-flex items-center justify-center rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow hover:bg-indigo-700 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-indigo-950 transition-colors">
+                                Generate Growth Report
+                            </button>
+                            <p class="text-center text-xs text-slate-400 mt-3 font-medium">Next report available in 3 days</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}

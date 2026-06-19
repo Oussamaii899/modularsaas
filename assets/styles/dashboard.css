@@ -1,0 +1,86 @@
+/* Tailwind Theme Overrides for Daterangepicker */
+.daterangepicker {
+    border: 1px solid #e2e8f0;
+    border-radius: 1rem;
+    box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.05), 0 4px 6px -4px rgb(0 0 0 / 0.05);
+    font-family: inherit;
+    margin-top: 0.5rem;
+    z-index: 50;
+}
+.daterangepicker::before, .daterangepicker::after {
+    display: none !important;
+}
+.daterangepicker .ranges li {
+    font-size: 0.875rem;
+    border-radius: 0.5rem;
+    margin: 0.25rem 0.5rem;
+    padding: 0.5rem 1rem;
+    color: #475569;
+    transition: all 0.2s ease;
+}
+.daterangepicker .ranges li:hover {
+    background-color: #f8fafc;
+    color: #4f46e5;
+}
+.daterangepicker .ranges li.active {
+    background-color: #eef2ff !important;
+    color: #4f46e5 !important;
+    font-weight: 700;
+}
+.daterangepicker td.active, .daterangepicker td.active:hover {
+    background-color: #4f46e5 !important;
+    color: #ffffff !important;
+    font-weight: 600;
+}
+.daterangepicker td.in-range {
+    background-color: #eef2ff !important;
+    color: #334155;
+}
+.daterangepicker .calendar-table th, .daterangepicker .calendar-table td {
+    font-size: 0.875rem;
+    border-radius: 0.5rem !important;
+    width: 36px;
+    height: 36px;
+    color: #334155;
+    font-weight: 500;
+}
+.daterangepicker .drp-buttons {
+    border-top: 1px solid #f1f5f9;
+    padding: 1rem;
+}
+.daterangepicker .drp-selected {
+    font-size: 0.875rem;
+    color: #64748b;
+    font-weight: 600;
+}
+.daterangepicker .cancelBtn, .daterangepicker .applyBtn {
+    border-radius: 0.5rem !important;
+    padding: 0.5rem 1rem !important;
+    font-weight: 600 !important;
+    border: none;
+    box-shadow: none !important;
+}
+.daterangepicker .applyBtn {
+    background-color: #4f46e5 !important;
+}
+.daterangepicker .applyBtn:hover {
+    background-color: #4338ca !important;
+}
+.daterangepicker .cancelBtn {
+    background-color: #f1f5f9 !important;
+    color: #475569 !important;
+}
+.daterangepicker .cancelBtn:hover {
+    background-color: #e2e8f0 !important;
+}
+.daterangepicker .calendar-table .next span, .daterangepicker .calendar-table .prev span {
+    border-color: #64748b !important;
+    border-width: 0 2px 2px 0 !important;
+}
+.daterangepicker td.off, .daterangepicker td.off.in-range, .daterangepicker td.off.start-date, .daterangepicker td.off.end-date {
+    background-color: transparent !important;
+    color: #cbd5e1 !important;
+}
+.daterangepicker .calendar-table {
+    border: none !important;
+}

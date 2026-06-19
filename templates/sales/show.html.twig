@@ -1,0 +1,378 @@
+{% extends 'layouts/dashboard.html.twig' %}
+
+{% block title %}Sale Details | {{ company_name ?? 'ModularSaaS' }}{% endblock %}
+
+{% block content_title %}Sale Details{% endblock %}
+{% block content_subtitle %}INV-{{ "%04d"|format(sale.id) }}{% endblock %}
+
+{% block content_actions %}
+    <a href="{{ path('app_sales_index') }}" class="inline-flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium text-slate-600 bg-white border border-slate-200 hover:bg-slate-50 rounded-md shadow-sm transition-colors">
+        <i data-lucide="arrow-left" class="w-4 h-4"></i>
+        <span>Return</span>
+    </a>
+    <a href="{{ path('app_sale_invoice', {'slug': sale.slug}) }}" class="inline-flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium text-slate-600 bg-white border border-slate-200 hover:bg-slate-50 rounded-md shadow-sm transition-colors">
+        <i data-lucide="download" class="w-4 h-4"></i>
+        <span>Invoice</span>
+    </a>
+    {% if sale.paymentStatus != 'Cancelled' and sale.paymentStatus != 'Refunded' and is_granted('edit.sales') %}
+        <a href="{{ path('app_sales_edit', {'slug': sale.slug}) }}" class="inline-flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded-md shadow-sm transition-colors">
+            <i data-lucide="pencil" class="w-4 h-4 text-white"></i>
+            <span>Edit Sale</span>
+        </a>
+        <button onclick="document.getElementById('cancel-modal').showModal()" class="inline-flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium rounded-md shadow-sm transition-colors" style="background-color: #ef4444; color: #ffffff; cursor: pointer; border: none; font-family: inherit;">
+            <i data-lucide="ban" class="w-4 h-4"></i>
+            <span>Cancel Sale</span>
+        </button>
+    {% endif %}
+{% endblock %}
+{% block main_content %}
+    {% set is_overdue = false %}
+    {% if sale.paymentStatus == 'Unpaid' or sale.paymentStatus == 'Partial' %}
+        {% set difference = date('now').diff(date(sale.createdAt)) %}
+        {% if difference.days > 10 %}
+            {% set is_overdue = true %}
+        {% endif %}
+    {% endif %}
+
+    {% if is_overdue %}
+        <div class="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 shadow-sm animate-in fade-in duration-300" style="background-color: #fff1f2; padding: 16px 20px; border-radius: 12px; margin-bottom: 24px; border: 1px solid #ffe4e6;">
+            <div class="flex items-start gap-3">
+                <div class="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0" style="background-color: rgba(225, 29, 72, 0.1); color: #e11d48;">
+                    <i data-lucide="alert-triangle" class="w-5 h-5"></i>
+                </div>
+                <div>
+                    <h4 class="text-sm font-bold" style="color: #9f1239; margin: 0 0 2px 0; font-family: inherit;">Overdue Payment Alert</h4>
+                    <p class="text-xs mt-0.5" style="color: #be123c; margin: 0; font-family: inherit;">This invoice has been unpaid/partially paid for more than 10 days since its creation on <span class="font-bold">{{ sale.createdAt|date('M d, Y') }}</span>. Please secure payment from the customer immediately.</p>
+                </div>
+            </div>
+        </div>
+    {% endif %}
+
+    {% if sale.paymentStatus == 'Overpaid' %}
+        {% set overpaid_amount = sale.getPaidAmount() - sale.total %}
+        <div class="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 shadow-sm animate-in fade-in duration-300" style="background-color: #fff1f2; padding: 16px 20px; border-radius: 12px; margin-bottom: 24px; border: 1px solid #ffe4e6;">
+            <div class="flex items-start gap-3">
+                <div class="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0" style="background-color: rgba(225, 29, 72, 0.1); color: #e11d48;">
+                    <i data-lucide="alert-circle" class="w-5 h-5"></i>
+                </div>
+                <div>
+                    <h4 class="text-sm font-bold" style="color: #9f1239; margin: 0 0 2px 0; font-family: inherit;">Overpaid Balance Alert</h4>
+                    <p class="text-xs mt-0.5" style="color: #be123c; margin: 0; font-family: inherit;">This invoice has an overpaid balance of <span class="font-bold">${{ overpaid_amount|number_format(2) }}</span> due to item changes. Click below to instantly refund this overpayment.</p>
+                </div>
+            </div>
+            <form action="{{ path('app_payment_sale_refund_overpayment', {'id': sale.id}) }}" method="POST" class="flex-shrink-0" style="margin: 0;">
+                <button type="submit" class="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 px-3.5 py-1.5 text-xs font-bold text-white rounded-lg shadow transition-colors" style="background-color: #e11d48; color: #ffffff; padding: 8px 14px; border-radius: 8px; border: none; cursor: pointer; font-family: inherit;">
+                    <i data-lucide="badge-dollar-sign" class="w-3.5 h-3.5"></i>
+                    <span>Refund Overpaid ${{ overpaid_amount|number_format(2) }}</span>
+                </button>
+            </form>
+        </div>
+    {% endif %}
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <!-- Main Transaction Card -->
+        <div class="lg:col-span-2 space-y-6">
+            <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                <div class="p-6 md:p-8 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-slate-100 bg-slate-50/50">
+                    <div class="flex items-center gap-3 text-sm font-medium text-slate-600">
+                        <i data-lucide="hash" class="w-4 h-4 text-slate-400"></i>
+                        <span>Invoice: <span class="font-bold text-slate-900">INV-{{ "%04d"|format(sale.id) }}</span></span>
+                    </div>
+                    {% set status_colors = {
+                        'Paid': 'emerald',
+                        'Partial': 'amber',
+                        'Unpaid': 'rose',
+                        'Overpaid': 'rose',
+                        'Refunded': 'slate',
+                        'Cancelled': 'rose'
+                    } %}
+                    {% set color = status_colors[sale.paymentStatus] ?? 'slate' %}
+                    
+                    <div class="flex items-center gap-2 text-xs font-bold text-{{ color }}-700 uppercase tracking-wider bg-{{ color }}-50 px-3 py-1 rounded border border-{{ color }}-100">
+                        <span class="w-1.5 h-1.5 rounded-full bg-{{ color }}-500 {% if sale.paymentStatus != 'Paid' %}animate-pulse{% endif %}"></span>
+                        {{ sale.paymentStatus }}
+                    </div>
+                </div>
+                
+                <div class="p-6 md:p-8">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-12">
+                        <div>
+                            <h3 class="text-sm font-medium text-slate-900 mb-4 border-b border-slate-100 pb-2">Customer Details</h3>
+                            <div class="flex items-start gap-4 p-4 rounded-lg bg-slate-50 border border-slate-100">
+                                <div class="w-12 h-12 rounded-lg bg-emerald-50 flex items-center justify-center text-emerald-600 font-bold border border-emerald-100 shadow-sm text-lg">
+                                    {{ sale.contact.name|first|upper }}
+                                </div>
+                                <div>
+                                    <div class="text-base font-bold text-slate-900 mb-1">{{ sale.contact.name }}</div>
+                                    <a href="{{ path('app_clients_show', {'slug': sale.contact.slug}) }}" class="text-xs font-medium text-indigo-600 hover:text-indigo-700 flex items-center gap-1">
+                                        <span>View Profile</span>
+                                        <i data-lucide="arrow-up-right" class="w-3 h-3"></i>
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div>
+                            <h3 class="text-sm font-medium text-slate-900 mb-4 border-b border-slate-100 pb-2">Invoice Info</h3>
+                            <div class="flex items-center gap-3 mb-3">
+                                <i data-lucide="calendar" class="w-4 h-4 text-slate-400"></i>
+                                <div>
+                                    <div class="text-xs text-slate-500">Date</div>
+                                    <div class="text-sm font-medium text-slate-900">{{ sale.createdAt|date('M d, Y') }}</div>
+                                </div>
+                            </div>
+                            <div class="flex items-center gap-3">
+                                <i data-lucide="clock" class="w-4 h-4 text-slate-400"></i>
+                                <div>
+                                    <div class="text-xs text-slate-500">Time</div>
+                                    <div class="text-sm font-medium text-slate-900">{{ sale.createdAt|date('H:i A') }}</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Financial Summary block -->
+                    <div class="bg-white rounded-lg border border-slate-200 p-6 mt-8">
+                        <h3 class="text-sm font-medium text-slate-900 mb-8 pb-3 border-b border-slate-100">Financial Summary</h3>
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-6">
+                            <div>
+                                <div class="text-xs text-slate-500 mb-1">Total Invoiced</div>
+                                <div class="text-xl font-bold text-slate-900">${{ sale.total|number_format(2) }}</div>
+                            </div>
+                            <div>
+                                <div class="text-xs text-slate-500 mb-1">Paid Amount</div>
+                                <div class="text-xl font-bold text-emerald-600">${{ sale.getPaidAmount()|number_format(2) }}</div>
+                            </div>
+                            <div>
+                                <div class="text-xs text-slate-500 mb-1">Outstanding Balance</div>
+                                <div class="text-xl font-bold text-rose-600">${{ sale.getBalance()|number_format(2) }}</div>
+                            </div>
+                        </div>
+                        <div class="mt-6 pt-4 border-t border-slate-100 flex justify-end">
+                            {% if sale.paymentStatus == 'Cancelled' %}
+                                <div class="inline-flex items-center gap-2 text-sm font-medium text-rose-600 px-4 py-2 bg-rose-50 rounded-md border border-rose-100">
+                                    <i data-lucide="ban" class="w-4 h-4"></i>
+                                    <span>Cancelled</span>
+                                </div>
+                            {% elseif sale.paymentStatus == 'Refunded' %}
+                                <div class="inline-flex items-center gap-2 text-sm font-medium text-slate-600 px-4 py-2 bg-slate-100 rounded-md border border-slate-200">
+                                    <i data-lucide="corner-up-left" class="w-4 h-4"></i>
+                                    <span>Refunded</span>
+                                </div>
+                            {% elseif sale.getBalance() > 0 %}
+                                {% if is_granted('edit.sales') %}
+                                <button onclick="document.getElementById('payment-modal').showModal()" class="inline-flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded-md shadow-sm transition-colors">
+                                    <i data-lucide="plus" class="w-4 h-4"></i>
+                                    <span>Record Payment</span>
+                                </button>
+                                {% endif %}
+                            {% else %}
+                                <div class="inline-flex items-center gap-2 text-sm font-medium text-emerald-600 px-4 py-2 bg-emerald-50 rounded-md border border-emerald-100">
+                                    <i data-lucide="check-circle" class="w-4 h-4"></i>
+                                    <span>Fully Paid</span>
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Transaction Items -->
+            <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                <div class="p-6 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+                    <h3 class="text-sm font-bold text-slate-900">Sale Items</h3>
+                    <span class="text-xs font-medium text-slate-600 bg-white px-2 py-1 rounded border border-slate-200">{{ sale.saleItems|length }} Item(s)</span>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-sm">
+                        <thead>
+                            <tr class="bg-white border-b border-slate-100">
+                                <th class="px-6 py-4 font-medium text-slate-500 text-center">Product</th>
+                                <th class="px-6 py-4 font-medium text-slate-500 text-center">Quantity</th>
+                                <th class="px-6 py-4 font-medium text-slate-500 text-center">Unit Price</th>
+                                <th class="px-6 py-4 font-medium text-slate-500 text-center">Subtotal</th>
+                                <th class="px-6 py-4 font-medium text-slate-500 text-center">Status / Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-50">
+                            {% for item in sale.saleItems %}
+                                <tr class="hover:bg-slate-50 transition-colors {% if item.status == 'Refunded' or item.status == 'Cancelled' %}bg-slate-50/50 text-slate-400{% endif %}">
+                                    <td class="px-6 py-4 text-center">
+                                        <span class="font-medium {% if item.status == 'Refunded' or item.status == 'Cancelled' %}line-through text-slate-400{% else %}text-slate-900{% endif %}">
+                                            {{ item.pName ?? 'Unknown Product' }}
+                                        </span>
+                                    </td>
+                                    <td class="px-6 py-4 text-center">
+                                        <span class="font-medium {% if item.status == 'Refunded' or item.status == 'Cancelled' %}text-slate-400{% else %}text-slate-900{% endif %}">{{ item.quantity }}</span>
+                                    </td>
+                                    <td class="px-6 py-4 text-center {% if item.status == 'Refunded' or item.status == 'Cancelled' %}text-slate-400{% else %}text-slate-600{% endif %}">${{ item.price|number_format(2) }}</td>
+                                    <td class="px-6 py-4 text-center font-bold {% if item.status == 'Refunded' or item.status == 'Cancelled' %}text-slate-400 line-through{% else %}text-slate-900{% endif %}">${{ (item.price * item.quantity)|number_format(2) }}</td>
+                                    <td class="px-6 py-4 text-center">
+                                        {% if item.status == 'Refunded' %}
+                                            <span class="inline-flex items-center gap-1 text-[10px] font-bold text-rose-700 bg-rose-50 px-2 py-0.5 rounded uppercase tracking-wide border border-rose-100/50">
+                                                Refunded
+                                            </span>
+                                        {% elseif item.status == 'Cancelled' %}
+                                            <span class="inline-flex items-center gap-1 text-[10px] font-bold text-slate-600 bg-slate-100 px-2 py-0.5 rounded uppercase tracking-wide border border-slate-200">
+                                                Cancelled
+                                            </span>
+                                        {% else %}
+                                            {% if sale.paymentStatus != 'Cancelled' and sale.paymentStatus != 'Refunded' and sale.paymentStatus != 'Unpaid' %}
+                                                {% if is_granted('edit.sales') %}
+                                                <form action="{{ path('app_sales_item_refund', {'id': item.id}) }}" method="POST" class="inline" onsubmit="return confirm('Are you sure you want to cancel & refund this item? Product stock will be returned, and grand total will be reduced.');">
+                                                    <button type="submit" class="inline-flex items-center gap-1 text-xs font-medium text-rose-600 hover:text-rose-700 bg-rose-50 hover:bg-rose-100/80 px-2 py-1 rounded transition-colors" style="cursor: pointer; border: none; font-family: inherit;">
+                                                        <i data-lucide="corner-up-left" class="w-3.5 h-3.5"></i>
+                                                        <span>Refund</span>
+                                                    </button>
+                                                </form>
+                                                {% endif %}
+                                            {% elseif sale.paymentStatus == 'Unpaid' %}
+                                                <span class="text-xs text-slate-400 font-medium">—</span>
+                                            {% else %}
+                                                <span class="text-xs text-slate-400 font-medium">Inactive</span>
+                                            {% endif %}
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                            {% else %}
+                                <tr>
+                                    <td colspan="5" class="px-6 py-12 text-center text-slate-500">No items linked to this transaction</td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Sidebar Summary & Ledger -->
+        <div class="space-y-6">
+            <!-- Payment History only in sidebar -->
+            
+            <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                <div class="p-6 border-b border-slate-100 bg-slate-50/50">
+                    <h3 class="text-sm font-bold text-slate-900">Payment Ledger</h3>
+                </div>
+                <div class="divide-y divide-slate-100 max-h-[300px] overflow-y-auto">
+                    {% for payment in sale.payments %}
+                        <div class="p-4 hover:bg-slate-50 transition-colors {% if payment.type == 'Refund' %}bg-rose-50/20{% endif %}">
+                            <div class="flex justify-between items-start mb-1">
+                                <div class="text-sm font-bold {% if payment.type == 'Refund' %}text-rose-600{% else %}text-slate-900{% endif %}">
+                                    {% if payment.type == 'Refund' %}-{% endif %}${{ (payment.amount|abs)|number_format(2) }}
+                                </div>
+                                <div class="flex gap-1.5 items-center">
+                                    {% if payment.type == 'Refund' %}
+                                        <span class="text-[10px] font-bold text-rose-700 bg-rose-50 px-1.5 py-0.5 rounded uppercase tracking-wide border border-rose-100">Refund</span>
+                                    {% endif %}
+                                    <div class="text-xs font-medium text-slate-500 bg-white px-2 py-0.5 rounded border border-slate-200">{{ payment.method }}</div>
+                                </div>
+                            </div>
+                            <div class="flex justify-between items-center text-xs text-slate-500 mt-2">
+                                <div>{{ payment.createdAt|date('M d, Y') }}</div>
+                                {% if payment.reference %}
+                                    <div class="font-mono">{{ payment.reference }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    {% else %}
+                        <div class="p-8 text-center text-slate-500">
+                            <i data-lucide="credit-card" class="w-8 h-8 text-slate-300 mx-auto mb-2"></i>
+                            <p class="text-sm font-medium">No payments recorded</p>
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Payment Recording Modal -->
+    <dialog id="payment-modal" style="margin:auto;" class="p-0 rounded-lg shadow-xl border border-slate-200 backdrop:bg-slate-600/20 backdrop:backdrop-blur-[2px] open:animate-in open:fade-in open:zoom-in-95 duration-200 w-full max-w-md">
+        <div class="bg-white text-left overflow-hidden">
+            <div class="p-6 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+                <h3 class="text-lg font-bold text-slate-900">Record Payment</h3>
+                <button onclick="document.getElementById('payment-modal').close()" class="text-slate-400 hover:text-slate-600 transition-colors">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+
+            <form action="{{ path('app_payment_sale_record', {'id': sale.id}) }}" method="POST" class="p-6 space-y-4">
+                <input type="hidden" name="payment[_token]" value="{{ csrf_token('payment') }}">
+                <div class="space-y-1.5">
+                    <label class="text-sm font-semibold text-slate-700">Amount ($)</label>
+                    <input type="number" name="payment[amount]" step="0.01" required 
+                           value="{{ sale.getBalance() }}"
+                           class="block w-full px-3 py-2 text-sm bg-white border border-slate-200 rounded-md focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-colors">
+                </div>
+
+                <div class="space-y-1.5">
+                    <label class="text-sm font-semibold text-slate-700">Payment Method</label>
+                    <select name="payment[method]" required 
+                            class="block w-full px-3 py-2 text-sm bg-white border border-slate-200 rounded-md focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-colors">
+                        <option value="Cash">Cash</option>
+                        <option value="Bank Transfer">Bank Transfer</option>
+                        <option value="Stripe">Stripe</option>
+                        <option value="Credit Card">Credit Card</option>
+                        <option value="Other">Other</option>
+                    </select>
+                </div>
+
+                <div class="space-y-1.5">
+                    <label class="text-sm font-semibold text-slate-700">Reference (Optional)</label>
+                    <input type="text" name="payment[reference]" 
+                           placeholder="Check #, TX ID, etc."
+                           class="block w-full px-3 py-2 text-sm bg-white border border-slate-200 rounded-md focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-colors">
+                </div>
+
+                <div class="pt-4 flex justify-end gap-3">
+                    <button type="button" onclick="document.getElementById('payment-modal').close()" 
+                            class="px-4 py-2 text-sm font-semibold text-slate-700 bg-white border border-slate-200 hover:bg-slate-50 rounded-md transition-all">
+                        Cancel
+                    </button>
+                    <button type="submit" class="px-4 py-2 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded-md shadow-sm transition-colors">
+                        Confirm Payment
+                    </button>
+                </div>
+            </form>
+        </div>
+    </dialog>
+
+    <!-- Cancel Confirmation Modal -->
+    <dialog id="cancel-modal" style="margin:auto;" class="p-0 rounded-lg shadow-xl border border-slate-200 backdrop:bg-slate-600/20 backdrop:backdrop-blur-[2px] open:animate-in open:fade-in open:zoom-in-95 duration-200 w-full max-w-md">
+        <div class="bg-white text-left overflow-hidden">
+            <div class="p-6 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+                <h3 class="text-lg font-bold text-slate-900 flex items-center gap-2">
+                    <i data-lucide="alert-triangle" class="w-5 h-5 text-rose-600"></i>
+                    <span>Cancel Sale Invoice?</span>
+                </h3>
+                <button onclick="document.getElementById('cancel-modal').close()" class="text-slate-400 hover:text-slate-600 transition-colors">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+
+            <div class="p-6 space-y-4">
+                <p class="text-sm text-slate-500 leading-relaxed">
+                    Are you sure you want to cancel **INV-{{ "%04d"|format(sale.id) }}**? 
+                    This action will:
+                </p>
+                <ul class="text-xs text-slate-600 space-y-2 list-disc pl-5">
+                    <li>Mark the transaction status permanently as <span class="font-bold text-rose-600">Cancelled</span>.</li>
+                    <li>Automatically <span class="font-bold text-slate-900">return all sold items</span> to product stock.</li>
+                    <li>Prevent any future payments or changes to this invoice.</li>
+                </ul>
+                <p class="text-xs font-semibold text-slate-500">
+                    This action cannot be undone.
+                </p>
+            </div>
+
+            <form action="{{ path('app_sales_cancel', {'slug': sale.slug}) }}" method="POST" class="p-6 pt-0 flex justify-end gap-3" style="padding-top:1.5rem; border: none; border-top: none;">
+                <button type="button" onclick="document.getElementById('cancel-modal').close()" 
+                        class="px-4 py-2 text-sm font-semibold text-slate-700 bg-white border border-slate-200 hover:bg-slate-50 rounded-md transition-all" style="cursor: pointer; font-family: inherit;">
+                    No, Keep Active
+                </button>
+                <button type="submit" class="px-4 py-2 text-sm font-medium text-white rounded-md shadow-sm transition-colors" style="background-color: #ef4444; color: #ffffff; cursor: pointer; border: none; font-family: inherit;">
+                    Yes, Cancel Sale
+                </button>
+            </form>
+        </div>
+    </dialog>
+{% endblock %}

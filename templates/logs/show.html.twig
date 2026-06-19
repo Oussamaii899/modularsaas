@@ -1,0 +1,200 @@
+{% extends 'layouts/dashboard.html.twig' %}
+
+{% block title %}Log Details | {{ company_name ?? 'ModularSaaS' }}{% endblock %}
+
+{% block content_title %}<span style="font-size:1.75rem;font-weight:800;letter-spacing:-0.02em;">Audit Log Details</span>{% endblock %}
+{% block content_subtitle %}<span style="font-size:0.95rem;">Inspect field-level changes and who made them</span>{% endblock %}
+
+{% block content_actions %}
+    <div class="flex items-center gap-2">
+        <a href="{{ path('app_logs_index') }}" class="inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-white border border-slate-200 px-4 text-sm font-semibold text-slate-700 hover:bg-slate-50 transition-colors shadow-sm">
+            <i data-lucide="arrow-left" class="w-4 h-4"></i>
+            <span>Back to Logs</span>
+        </a>
+    </div>
+{% endblock %}
+
+{% block main_content %}
+    {% macro format_value(value) %}
+        {% if value is null %}
+            <span class="text-slate-400 italic font-mono text-xs">null</span>
+        {% elseif value is same as(true) %}
+            <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-100">true</span>
+        {% elseif value is same as(false) %}
+            <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-bold bg-rose-50 text-rose-700 border border-rose-100">false</span>
+        {% elseif value is iterable %}
+            {% if value.label is defined %}
+                <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold bg-indigo-50 text-indigo-700 border border-indigo-100" title="{{ value.class }} (ID: {{ value.id }})">
+                    {{ value.label }}
+                </span>
+            {% else %}
+                <code class="text-xs text-slate-600 bg-slate-100 px-1 py-0.5 rounded font-mono">{{ value|json_encode }}</code>
+            {% endif %}
+        {% else %}
+            <span class="text-slate-700 font-medium text-xs">{{ value }}</span>
+        {% endif %}
+    {% endmacro %}
+    
+    {% import _self as formatter %}
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start" style="padding: 0.5rem 0;">
+        <!-- Log Summary Information -->
+        <div class="lg:col-span-1 flex flex-col gap-6">
+            <div class="bg-white rounded-xl border border-slate-200 shadow-sm" style="padding: 1.75rem;">
+                <h3 class="font-bold text-slate-900 border-b border-slate-100" style="font-size:1.05rem; margin-bottom:1.25rem; padding-bottom:0.85rem;">Log Overview</h3>
+                
+                <div class="flex flex-col" style="gap:1.35rem;">
+                    <div>
+                        <span class="text-[10px] uppercase font-bold tracking-wider text-slate-400 block mb-1">Timestamp</span>
+                        <span class="text-sm font-semibold text-slate-800 font-mono">{{ log.createdAt|date('Y-m-d H:i:s') }}</span>
+                    </div>
+
+                    <div>
+                        <span class="text-[10px] uppercase font-bold tracking-wider text-slate-400 block mb-1">Action Type</span>
+                        {% if log.action == 'CREATE' %}
+                            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-100">
+                                CREATE
+                            </span>
+                        {% elseif log.action == 'UPDATE' %}
+                            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-bold bg-amber-50 text-amber-700 border border-amber-100">
+                                UPDATE
+                            </span>
+                        {% elseif log.action == 'DELETE' %}
+                            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-bold bg-rose-50 text-rose-700 border border-rose-100">
+                                DELETE
+                            </span>
+                        {% else %}
+                            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-slate-50 text-slate-700 border border-slate-100">
+                                {{ log.action }}
+                            </span>
+                        {% endif %}
+                    </div>
+
+                    <div>
+                        <span class="text-[10px] uppercase font-bold tracking-wider text-slate-400 block mb-1">Executed By</span>
+                        {% if log.user %}
+                            <div class="flex items-center gap-2 mt-1">
+                                <div class="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-500 font-semibold border border-slate-200 overflow-hidden flex-shrink-0">
+                                    <img src="{{ log.user.avatar ? asset('uploads/avatars/' ~ log.user.avatar) : 'https://ui-avatars.com/api/?name=' ~ log.user.username ~ '&background=6366f1&color=fff' }}" alt="Avatar" class="w-full h-full object-cover">
+                                </div>
+                                <div class="flex flex-col">
+                                    <span class="text-sm font-semibold text-slate-900 leading-none">{{ log.user.username }}</span>
+                                    <span class="text-[10px] text-slate-500 mt-0.5">{{ log.user.email }}</span>
+                                </div>
+                            </div>
+                        {% else %}
+                            <span class="text-slate-400 italic text-sm">System / CLI Command</span>
+                        {% endif %}
+                    </div>
+
+                    <div>
+                        <span class="text-[10px] uppercase font-bold tracking-wider text-slate-400 block mb-1">Target Resource</span>
+                        <div class="flex flex-col bg-slate-50 border border-slate-100 rounded-lg" style="padding:0.85rem; margin-top:0.35rem; gap:0.3rem;">
+                            <span class="font-bold text-slate-800" style="font-size:0.85rem;">{{ entityHumanName }}</span>
+                            <span class="text-slate-400 font-mono break-all" style="font-size:0.68rem;">{{ log.entityClass }}</span>
+                            {% if log.entityId %}
+                                <span class="font-mono font-bold text-indigo-600" style="font-size:0.7rem;">ID: {{ log.entityId }}</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="bg-slate-900 rounded-xl text-white shadow-sm flex flex-col" style="padding:1.5rem; gap:0.65rem;">
+                <div class="flex items-center gap-2 text-indigo-400">
+                    <i data-lucide="info" class="w-5 h-5 flex-shrink-0"></i>
+                    <h4 class="text-xs font-bold uppercase tracking-wider">Log Message</h4>
+                </div>
+                <p class="text-sm text-slate-300 font-medium leading-relaxed">
+                    {{ log.details }}
+                </p>
+            </div>
+        </div>
+
+        <!-- Detail Diff Table -->
+        <div class="lg:col-span-2">
+            <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                <div class="border-b border-slate-100 flex items-center justify-between" style="padding:1.5rem 1.75rem;">
+                    <h3 class="font-bold text-slate-900" style="font-size:1.05rem;">Resource Payload Comparison</h3>
+                    <span class="font-medium text-slate-400" style="font-size:0.78rem;">Field-level changes</span>
+                </div>
+
+                <div class="overflow-x-auto">
+                    {% if log.action == 'CREATE' %}
+                        <!-- CREATE Table -->
+                        <table class="w-full text-left border-collapse text-sm">
+                            <thead>
+                                <tr class="bg-slate-50/50 border-b border-slate-100 text-slate-500 font-bold uppercase tracking-wider text-[11px] pointer-events-none">
+                                    <th class="h-10 px-6 align-middle">Field</th>
+                                    <th class="h-10 px-6 align-middle">Initial Value</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-slate-100">
+                                {% for field, value in log.afterData %}
+                                    <tr class="hover:bg-slate-50/50 transition-colors">
+                                        <td class="px-6 py-3 font-semibold text-slate-800 text-xs font-mono w-1/3">{{ field }}</td>
+                                        <td class="px-6 py-3 bg-emerald-50/20">
+                                            {{ formatter.format_value(value) }}
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    {% elseif log.action == 'DELETE' %}
+                        <!-- DELETE Table -->
+                        <table class="w-full text-left border-collapse text-sm">
+                            <thead>
+                                <tr class="bg-slate-50/50 border-b border-slate-100 text-slate-500 font-bold uppercase tracking-wider text-[11px] pointer-events-none">
+                                    <th class="h-10 px-6 align-middle">Field</th>
+                                    <th class="h-10 px-6 align-middle">Deleted Value</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-slate-100">
+                                {% for field, value in log.beforeData %}
+                                    <tr class="hover:bg-slate-50/50 transition-colors">
+                                        <td class="px-6 py-3 font-semibold text-slate-400 text-xs font-mono w-1/3">{{ field }}</td>
+                                        <td class="px-6 py-3 bg-rose-50/20 line-through text-slate-400">
+                                            {{ formatter.format_value(value) }}
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    {% elseif log.action == 'UPDATE' %}
+                        <!-- UPDATE Table -->
+                        <table class="w-full text-left border-collapse text-sm">
+                            <thead>
+                                <tr class="bg-slate-50/50 border-b border-slate-100 text-slate-500 font-bold uppercase tracking-wider text-[11px] pointer-events-none">
+                                    <th class="h-10 px-6 align-middle">Field Name</th>
+                                    <th class="h-10 px-6 align-middle">Before Change (Old)</th>
+                                    <th class="h-10 px-6 align-middle">After Change (New)</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-slate-100">
+                                {% for field in fields %}
+                                    {% set beforeVal = log.beforeData[field] ?? null %}
+                                    {% set afterVal = log.afterData[field] ?? null %}
+                                    <tr class="hover:bg-slate-50/50 transition-colors">
+                                        <td class="px-6 py-3 font-semibold text-slate-800 text-xs font-mono w-1/4">{{ field }}</td>
+                                        <td class="px-6 py-3 bg-rose-50/10 line-through text-slate-500">
+                                            {{ formatter.format_value(beforeVal) }}
+                                        </td>
+                                        <td class="px-6 py-3 bg-emerald-50/10 font-bold">
+                                            {{ formatter.format_value(afterVal) }}
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    {% else %}
+                        <!-- Default details view fallback -->
+                        <div class="p-8 text-center text-slate-500">
+                            <i data-lucide="info" class="w-8 h-8 mx-auto text-slate-300 mb-2"></i>
+                            <p class="text-sm font-medium">No comparison details are available for this action.</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}

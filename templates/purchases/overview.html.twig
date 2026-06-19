@@ -1,0 +1,363 @@
+{% extends 'layouts/dashboard.html.twig' %}
+
+{% block title %}Purchases Overview | {{ company_name ?? 'ModularSaaS' }}{% endblock %}
+
+{% block content_title %}Purchases Analytics{% endblock %}
+{% block content_subtitle %}Acquisitions and Inventory Status{% endblock %}
+
+{% block stylesheets %}
+    {{ parent() }}
+    <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.css" />
+    <link rel="stylesheet" href="{{ asset('styles/dashboard.css') }}">
+{% endblock %}
+
+{% block javascripts %}
+    {{ parent() }}
+    <!-- Core JS Dependencies -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jquery/dist/jquery.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/moment/min/moment.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.min.js"></script>
+    
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            const overviewContainer = document.getElementById('purchases-overview-container');
+            if (!overviewContainer) return;
+
+            const dataUrl = overviewContainer.getAttribute('data-data-url');
+
+            // Initialize Chart.js
+            const ctx = document.getElementById('purchasesOverviewChart').getContext('2d');
+            const getChartColors = () => {
+                const isDark = document.documentElement.classList.contains('dark');
+                return {
+                    grid: isDark ? '#334155' : '#f1f5f9',
+                    text: isDark ? '#94a3b8' : '#64748b'
+                };
+            };
+
+            const initialColors = getChartColors();
+
+            const purchasesOverviewChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: [],
+                    datasets: [{
+                        label: 'Spending Disbursed ($)',
+                        data: [],
+                        borderColor: '#3b82f6', // beautiful blue-500
+                        backgroundColor: 'rgba(59, 130, 246, 0.05)',
+                        borderWidth: 2.5,
+                        fill: true,
+                        tension: 0.35,
+                        pointBackgroundColor: '#3b82f6',
+                        pointBorderColor: '#ffffff',
+                        pointBorderWidth: 1.5,
+                        pointRadius: 4,
+                        pointHoverRadius: 6
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            backgroundColor: '#1e293b',
+                            titleFont: { family: "'Inter', sans-serif" },
+                            bodyFont: { family: "'Inter', sans-serif" },
+                            padding: 12,
+                            cornerRadius: 8,
+                            callbacks: {
+                                label: function(context) {
+                                    return ' Spending: $' + Number(context.raw).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            grid: { color: initialColors.grid },
+                            ticks: {
+                                color: initialColors.text,
+                                font: { family: "'Inter', sans-serif" },
+                                callback: function(value) { return '$' + value.toLocaleString(); }
+                            },
+                            border: { dash: [4, 4], display: false }
+                        },
+                        x: {
+                            grid: { display: false },
+                            ticks: { color: initialColors.text, font: { family: "'Inter', sans-serif" } }
+                        }
+                    }
+                }
+            });
+
+            // Update chart theme on class changes
+            const updateChartTheme = () => {
+                const colors = getChartColors();
+                if (purchasesOverviewChart) {
+                    purchasesOverviewChart.options.scales.y.grid.color = colors.grid;
+                    purchasesOverviewChart.options.scales.y.ticks.color = colors.text;
+                    purchasesOverviewChart.options.scales.x.ticks.color = colors.text;
+                    purchasesOverviewChart.update();
+                }
+            };
+
+            const themeObserver = new MutationObserver((mutations) => {
+                mutations.forEach((mutation) => {
+                    if (mutation.attributeName === 'class') {
+                        updateChartTheme();
+                    }
+                });
+            });
+            themeObserver.observe(document.documentElement, { attributes: true });
+
+            // Initialize Daterangepicker
+            var start = moment().subtract(29, 'days');
+            var end = moment();
+
+            function updateDateRangeDisplay(start, end, label) {
+                $('#reportrange span').html(start.format('MMMM D, YYYY') + ' - ' + end.format('MMMM D, YYYY'));
+                
+                const params = new URLSearchParams({
+                    date: start.format('YYYY-MM-DD'),
+                    end: end.format('YYYY-MM-DD')
+                });
+                
+                fetch(`${dataUrl}?${params.toString()}`, {
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    // Update Stats Widgets
+                    const totalGrossVal = parseFloat(data.total_gross_30) || 0;
+                    const totalRefundsVal = parseFloat(data.total_refunds_30) || 0;
+                    const totalNetVal = parseFloat(data.total_net_30) || 0;
+                    const totalOutstandingVal = parseFloat(data.total_outstanding) || 0;
+
+                    const formatCurrency = val => (val < 0 ? '-$' : '$') + Math.abs(val).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
+
+                    document.getElementById('total-gross-value').innerText = formatCurrency(totalGrossVal);
+                    document.getElementById('total-refunds-value').innerText = '-$' + totalRefundsVal.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
+                    document.getElementById('total-net-value').innerText = formatCurrency(totalNetVal);
+                    document.getElementById('total-outstanding-value').innerText = formatCurrency(totalOutstandingVal);
+
+                    const netValueEl = document.getElementById('total-net-value');
+                    const netIconEl = document.getElementById('total-net-change-icon');
+                    const netContainerEl = document.getElementById('total-net-change-container');
+                    
+                    if (totalNetVal < 0) {
+                        if (netValueEl) netValueEl.className = 'text-2xl font-bold tracking-tight text-rose-600';
+                        if (netContainerEl) netContainerEl.className = 'flex items-center text-xs font-medium text-rose-600 mt-1';
+                        if (netIconEl) { netIconEl.setAttribute('data-lucide', 'trending-down'); netIconEl.innerHTML = ''; }
+                    } else {
+                        if (netValueEl) netValueEl.className = 'text-2xl font-bold tracking-tight text-slate-900';
+                        if (netContainerEl) netContainerEl.className = 'flex items-center text-xs font-medium text-emerald-600 mt-1';
+                        if (netIconEl) { netIconEl.setAttribute('data-lucide', 'trending-up'); netIconEl.innerHTML = ''; }
+                    }
+                    if (window.lucide) window.lucide.createIcons();
+
+                    // Update widget titles/timeframes
+                    const timeframeText = label || (start.format('MMM D') + ' - ' + end.format('MMM D'));
+                    document.getElementById('total-gross-change-text').innerText = timeframeText;
+                    document.getElementById('total-refunds-change-text').innerText = timeframeText;
+                    document.getElementById('total-net-change-text').innerText = timeframeText;
+                    document.getElementById('total-outstanding-change-text').innerText = timeframeText;
+
+                    // Process trend chart
+                    const dailyTotals = {};
+                    const totalDays = moment(end).diff(moment(start), 'days');
+                    const groupMode = totalDays > 60 ? 'month' : 'day';
+                    const keyFormat = groupMode === 'month' ? 'YYYY-MM' : 'YYYY-MM-DD';
+                    const labelFormat = groupMode === 'month' ? 'MMM YYYY' : 'MMM D';
+                    
+                    let currDate = moment(start).startOf(groupMode);
+                    const endDate = moment(end).endOf(groupMode);
+                    while (currDate.isBefore(endDate)) {
+                        const dateKey = currDate.format(keyFormat);
+                        dailyTotals[dateKey] = { purchases: 0, label: currDate.format(labelFormat) };
+                        currDate.add(1, groupMode + 's');
+                        if (Object.keys(dailyTotals).length > 365) break;
+                    }
+
+                    if (data.purchases && Array.isArray(data.purchases)) {
+                        data.purchases.forEach(item => {
+                            const dateVal = item.created_at && item.created_at.date ? item.created_at.date : item.created_at;
+                            const dateKey = moment(dateVal).format(keyFormat);
+                            if (dailyTotals[dateKey]) {
+                                dailyTotals[dateKey].purchases += parseFloat(item.total || 0);
+                            }
+                        });
+                    }
+
+                    const sortedKeys = Object.keys(dailyTotals).sort();
+                    const labels = sortedKeys.map(k => dailyTotals[k].label);
+                    const purchasesData = sortedKeys.map(k => dailyTotals[k].purchases);
+
+                    purchasesOverviewChart.data.labels = labels;
+                    purchasesOverviewChart.data.datasets[0].data = purchasesData;
+                    purchasesOverviewChart.update();
+                })
+                .catch(err => console.error('Error fetching purchases analytics:', err));
+            }
+
+            $('#reportrange').daterangepicker({
+                startDate: start,
+                endDate: end,
+                ranges: {
+                   'Today': [moment(), moment()],
+                   'Yesterday': [moment().subtract(1, 'days'), moment().subtract(1, 'days')],
+                   'Last 7 Days': [moment().subtract(6, 'days'), moment()],
+                   'Last 30 Days': [moment().subtract(29, 'days'), moment()],
+                   'This Month': [moment().startOf('month'), moment().endOf('month')],
+                   'Last Month': [moment().subtract(1, 'month').startOf('month'), moment().subtract(1, 'month').endOf('month')]
+                },
+                opens: 'left',
+                buttonClasses: 'px-3 py-1.5 text-xs font-semibold rounded-lg transition-colors border-transparent',
+                applyButtonClasses: 'bg-indigo-600 text-white hover:bg-indigo-700',
+                cancelClass: 'bg-slate-100 text-slate-600 hover:bg-slate-200',
+            }, updateDateRangeDisplay);
+
+            updateDateRangeDisplay(start, end, 'Last 30 Days');
+        });
+    </script>
+{% endblock %}
+
+{% block content_actions %}
+    <div class="flex flex-col sm:flex-row items-stretch sm:items-center w-full sm:w-auto gap-2 sm:gap-3">
+        <!-- Datepicker -->
+        <div id="reportrange" class="flex items-center gap-2 bg-white border border-slate-200 hover:border-slate-300 rounded-xl px-4 py-2.5 text-sm font-semibold text-slate-700 cursor-pointer shadow-sm transition-all">
+            <i data-lucide="calendar" class="w-4 h-4 text-indigo-600"></i>
+            <span></span>
+            <i data-lucide="chevron-down" class="w-4 h-4 text-slate-400 ml-1"></i>
+        </div>
+
+        {% if is_granted('add.purchases') %}
+        <a href="{{ path('app_purchases_new') }}" class="inline-flex h-10 items-center justify-center gap-2 rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow hover:bg-indigo-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 transition-colors">
+            <i data-lucide="plus" class="w-4 h-4 text-white"></i>
+            <span>New Purchase</span>
+        </a>
+        {% endif %}
+    </div>
+{% endblock %}
+
+{% block main_content %}
+    <div class="space-y-6" id="purchases-overview-container" data-data-url="{{ path('app_purchases_overview_data') }}">
+        <!-- 1. Stats Widgets -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            {% include 'components/widget.html.twig' with {
+                title: 'Gross Spending',
+                value: '$' ~ total_gross_30|number_format(2),
+                value_id: 'total-gross-value',
+                icon: 'banknote',
+                change_type: 'neutral',
+                change_text: 'All Outgoing Payments',
+                change_text_id: 'total-gross-change-text',
+                change_icon: 'check-circle'
+            } %}
+
+            {% include 'components/widget.html.twig' with {
+                title: 'Refunds Received',
+                value: '-$' ~ total_refunds_30|number_format(2),
+                value_id: 'total-refunds-value',
+                icon: 'rotate-ccw',
+                change_type: (total_refunds_30 > 0 ? 'down' : 'neutral'),
+                change_text: 'Returned from Suppliers',
+                change_text_id: 'total-refunds-change-text',
+                change_icon: 'alert-circle',
+                value_class: (total_refunds_30 > 0 ? 'text-emerald-600' : 'text-slate-900')
+            } %}
+
+            {% include 'components/widget.html.twig' with {
+                title: 'Net Spending',
+                value: '$' ~ total_net_30|number_format(2),
+                value_id: 'total-net-value',
+                icon: 'piggy-bank',
+                change_type: (total_net_30 < 0 ? 'down' : 'up'),
+                change_text: 'Actual Money Paid',
+                change_text_id: 'total-net-change-text',
+                change_icon: (total_net_30 < 0 ? 'trending-down' : 'trending-up'),
+                change_icon_id: 'total-net-change-icon',
+                change_container_id: 'total-net-change-container',
+                value_class: (total_net_30 < 0 ? 'text-rose-600' : 'text-slate-900')
+            } %}
+
+            {% include 'components/widget.html.twig' with {
+                title: 'Outstanding Debt',
+                value: '$' ~ total_outstanding|number_format(2),
+                value_id: 'total-outstanding-value',
+                icon: 'clock',
+                change_type: (total_outstanding > 0 ? 'down' : 'up'),
+                change_text: (total_outstanding > 0 ? 'Payment Required' : 'Accounts Settled'),
+                change_text_id: 'total-outstanding-change-text',
+                change_icon: (total_outstanding > 0 ? 'alert-triangle' : 'check-circle')
+            } %}
+        </div>
+
+        <!-- 2. Spending Trend Graph (Full Width) -->
+        <div class="p-6 bg-white border border-slate-200 rounded-2xl shadow-sm flex flex-col hover:shadow-md transition-shadow">
+            <div class="flex items-center justify-between mb-6">
+                <div>
+                    <h3 class="text-lg font-bold text-slate-900 tracking-tight">Spending Trend</h3>
+                    <p class="text-sm text-slate-500">Daily breakdown of inventory acquisition costs for the selected timeframe</p>
+                </div>
+            </div>
+            <div class="relative w-full min-h-[300px]">
+                <canvas id="purchasesOverviewChart"></canvas>
+            </div>
+        </div>
+
+        <!-- 3. Bottom Stock Analysis Table -->
+        <div class="flex flex-col gap-6">
+            <div class="flex items-center justify-between gap-4">
+                <div>
+                    <h2 class="text-lg font-semibold text-slate-900">Full Stock Analysis</h2>
+                    <p class="text-sm text-slate-500">Real-time inventory levels across all products</p>
+                </div>
+            </div>
+
+            <div class="rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden flex flex-col">
+                <div class="overflow-x-auto">
+                    <table class="w-full text-center border-collapse">
+                        <thead>
+                            <tr class="bg-slate-50/50 border-b border-slate-200">
+                                <th class="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider text-center">Product Catalog</th>
+                                <th class="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider text-center">Description</th>
+                                <th class="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider text-center">Qty in Stock</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-100">
+                            {% for product in all_products|slice(0, 5) %}
+                                <tr class="hover:bg-slate-50/50 transition-colors">
+                                    <td class="px-6 py-4 text-center">
+                                        <div class="text-sm font-medium text-slate-900">{{ product.name }}</div>
+                                        <div class="text-xs text-slate-500 mt-1">SKU: {{ product.sku|default('NO-SKU') }}</div>
+                                    </td>
+                                    <td class="px-6 py-4 text-center">
+                                        <div class="text-sm text-slate-500 max-w-xs mx-auto truncate">{{ product.description|default('No description provided') }}</div>
+                                    </td>
+                                    <td class="px-6 py-4 text-center">
+                                        <div class="text-sm font-bold {{ product.stockQuantity <= 10 ? 'text-rose-600' : 'text-slate-900' }}">{{ product.stockQuantity|number_format }} units</div>
+                                    </td>
+                                </tr>
+                            {% else %}
+                                <tr>
+                                    <td colspan="3" class="px-6 py-12 text-center text-slate-500 text-sm">No products configured in inventory</td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                
+                <div class="p-4 border-t border-slate-100 text-center bg-slate-50/20">
+                    <a href="{{ path('app_products_index') }}" class="inline-flex h-9 items-center justify-center gap-1.5 rounded-lg border border-slate-200 bg-white px-4 text-xs font-semibold text-slate-700 shadow-sm hover:bg-slate-50 hover:text-slate-900 transition-colors">
+                        <span>View All Inventory Products</span>
+                        <i data-lucide="arrow-right" class="w-3.5 h-3.5"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}

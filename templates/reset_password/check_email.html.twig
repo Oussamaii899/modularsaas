@@ -1,0 +1,42 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Password Reset Email Sent{% endblock %}
+
+{% block body %}
+<div class="min-h-screen flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 bg-gradient-to-br from-slate-50 to-indigo-50/30">
+    <div class="max-w-md w-full space-y-8 bg-white p-8 rounded-2xl shadow-xl border border-slate-100 backdrop-blur-sm">
+        <div>
+            <div class="flex justify-center">
+                <div class="h-12 w-12 bg-emerald-100 rounded-xl flex items-center justify-center shadow-lg shadow-emerald-50">
+                    <svg class="h-8 w-8 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 0 00-2 2v10a2 2 0 002 2z" />
+                    </svg>
+                </div>
+            </div>
+            <h2 class="mt-6 text-center text-3xl font-extrabold text-slate-900 tracking-tight">Check your email</h2>
+            <p class="mt-4 text-center text-sm text-slate-600 leading-relaxed">
+                If an account matching your email exists, then an email was just sent that contains a link that you can use to reset your password.
+            </p>
+            <p class="mt-2 text-center text-xs text-slate-400">
+                This link will expire in {{ resetToken.expirationMessageKey|trans(resetToken.expirationMessageData, 'ResetPasswordBundle') }}.
+            </p>
+        </div>
+
+        <div class="pt-6 border-t border-slate-100">
+            <p class="text-center text-sm text-slate-500 font-medium">
+                If you don't receive an email, please check your spam folder or 
+                <a href="{{ path('app_forgot_password_request') }}" class="font-semibold text-indigo-600 hover:text-indigo-500 transition-colors">try again</a>.
+            </p>
+        </div>
+
+        <div class="text-center mt-6">
+            <a href="{{ path('app_login') }}" class="inline-flex items-center text-sm font-medium text-indigo-600 hover:text-indigo-500 transition-colors">
+                <svg class="mr-2 h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                </svg>
+                Back to sign in
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}
