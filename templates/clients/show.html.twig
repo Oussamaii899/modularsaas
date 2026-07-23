@@ -1,8 +1,8 @@
 {% extends 'layouts/dashboard.html.twig' %}
 
-{% block title %}Client Details | {{ company_name ?? 'ModularSaaS' }}{% endblock %}
+{% block title %}{{ 'Client Details'|module_term }} | {{ company_name ?? 'ModularSaaS' }}{% endblock %}
 
-{% block content_title %}Client Details{% endblock %}
+{% block content_title %}{{ 'Client Details'|module_term }}{% endblock %}
 {% block content_subtitle %}{{ client.name }}{% endblock %}
 
 {% block content_actions %}
@@ -64,7 +64,7 @@
                             {% endif %}
                             <div>
                                 <h2 class="text-2xl font-bold text-slate-900 tracking-tight">{{ client.name }}</h2>
-                                <p class="text-xs font-medium text-slate-500" style="margin-top:0.25rem;">Client Profile</p>
+                                <p class="text-xs font-medium text-slate-500" style="margin-top:0.25rem;">{{ 'Client'|module_term }} Profile</p>
                             </div>
                         </div>
                     </div>
@@ -113,14 +113,50 @@
                             </div>
                         </div>
                     </div>
+
+                    {% if active_module == 'doctor' and patient_profile is not null %}
+                        <div class="mt-8 pt-8 border-t border-slate-100">
+                            <h3 class="text-sm font-semibold text-slate-900 uppercase tracking-wider mb-4">Medical File Summary</h3>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div class="p-4 rounded-xl bg-slate-50 border border-slate-100">
+                                    <div class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Disease Category</div>
+                                    <div class="text-sm font-semibold text-slate-800">{{ patient_profile.diseaseCategory|default('Unclassified') }}</div>
+                                </div>
+                                <div class="p-4 rounded-xl bg-slate-50 border border-slate-100">
+                                    <div class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Chronic Illnesses</div>
+                                    <div class="text-sm font-semibold text-slate-800">{{ patient_profile.chronicDiseases|default('None Declared') }}</div>
+                                </div>
+                            </div>
+                            <div class="mt-4 p-4 rounded-xl bg-slate-50 border border-slate-100">
+                                <div class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">General Medical Notes</div>
+                                <div class="text-sm text-slate-700 leading-relaxed whitespace-pre-line">{{ patient_profile.generalMedicalNotes|default('No history notes added.') }}</div>
+                            </div>
+
+                            <h3 class="text-sm font-semibold text-slate-900 uppercase tracking-wider mb-4 mt-6">Emergency Contact</h3>
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                <div class="p-4 rounded-xl bg-slate-50 border border-slate-100">
+                                    <div class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Name</div>
+                                    <div class="text-sm font-semibold text-slate-800">{{ patient_profile.emergencyContactName|default('N/A') }}</div>
+                                </div>
+                                <div class="p-4 rounded-xl bg-slate-50 border border-slate-100">
+                                    <div class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Relationship</div>
+                                    <div class="text-sm font-semibold text-slate-800">{{ patient_profile.emergencyContactRelation|default('N/A') }}</div>
+                                </div>
+                                <div class="p-4 rounded-xl bg-slate-50 border border-slate-100">
+                                    <div class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Phone Number</div>
+                                    <div class="text-sm font-semibold text-slate-800">{{ patient_profile.emergencyContactPhone|default('N/A') }}</div>
+                                </div>
+                            </div>
+                        </div>
+                    {% endif %}
                 </div>
             </div>
             <!-- Recent Transactions for this Client -->
             <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
                 <div class="p-6 md:p-8 border-b border-slate-100 flex items-center justify-between bg-slate-50/30">
                     <div>
-                        <h3 class="text-lg font-bold text-slate-900 tracking-tight">Recent Sales History</h3>
-                        <p class="text-sm text-slate-500">Last transactions with this client</p>
+                        <h3 class="text-lg font-bold text-slate-900 tracking-tight">Recent {{ 'Sales'|module_term }} History</h3>
+                        <p class="text-sm text-slate-500">Last transactions with this {{ 'client'|module_term }}</p>
                     </div>
                     <a href="{{ path('app_sales_index', {'contact_id': client.slug}) }}" class="text-sm font-bold text-indigo-600 hover:text-indigo-700 transition-colors">View All</a>
                 </div>
@@ -133,12 +169,14 @@
                                     <i data-lucide="receipt" class="w-5 h-5"></i>
                                 </div>
                                 <div class="min-w-0">
-                                    <div class="text-sm font-bold text-slate-900">Sale INV-{{ "%04d"|format(sale.id) }}</div>
+                                    <div class="text-sm font-bold text-slate-900">{{ 'Sale'|module_term }} INV-{{ "%04d"|format(sale.id) }}</div>
                                     <div class="text-xs text-slate-500">{{ sale.createdAt|date('M d, Y') }}</div>
                                 </div>
                             </div>
                             <div class="text-right flex flex-col items-end flex-shrink-0 ml-4" style="display: flex; flex-direction: column; align-items: flex-end; justify-content: center; text-align: right; flex-shrink: 0; margin-left: 16px;">
+                                {% if active_module != 'doctor' %}
                                 <div class="text-sm font-bold text-slate-900">${{ sale.total|number_format(2) }}</div>
+                                {% endif %}
                                 
                                 {% set status = sale.paymentStatus|default('Unpaid') %}
                                 {% set style_map = {
@@ -162,20 +200,20 @@
                             <div class="w-12 h-12 bg-slate-50 rounded-full flex items-center justify-center mb-4 border border-slate-100 shadow-sm">
                                 <i data-lucide="history" class="w-5 h-5 text-slate-400"></i>
                             </div>
-                            <p class="text-sm font-medium text-slate-900">No sales transactions</p>
-                            <p class="text-xs text-slate-500 mt-1">Transactions will appear once a sale is registered</p>
+                            <p class="text-sm font-medium text-slate-900">No {{ 'sales'|module_term }} transactions</p>
+                            <p class="text-xs text-slate-500 mt-1">Transactions will appear once a {{ 'sale'|module_term }} is registered</p>
                         </div>
                     {% endfor %}
                 </div>
             </div>
 
-            {% if is_granted('see.purchases') %}
+            {% if active_module != 'doctor' and is_granted('see.purchases') %}
             <!-- Recent Purchases History (as Vendor) -->
             <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden mt-6">
                 <div class="p-6 md:p-8 border-b border-slate-100 flex items-center justify-between bg-slate-50/30">
                     <div>
-                        <h3 class="text-lg font-bold text-slate-900 tracking-tight">Recent Purchases History</h3>
-                        <p class="text-sm text-slate-500">Last purchases from this contact (acting as supplier)</p>
+                        <h3 class="text-lg font-bold text-slate-900 tracking-tight">Recent {{ 'Purchases'|module_term }} History</h3>
+                        <p class="text-sm text-slate-500">Last purchases from this contact (acting as {{ 'supplier'|module_term }})</p>
                     </div>
                     <a href="{{ path('app_purchases_index', {'contact_id': client.slug}) }}" class="text-sm font-bold text-indigo-600 hover:text-indigo-700 transition-colors">View All</a>
                 </div>
@@ -188,12 +226,14 @@
                                     <i data-lucide="shopping-bag" class="w-5 h-5"></i>
                                 </div>
                                 <div class="min-w-0">
-                                    <div class="text-sm font-bold text-slate-900">Purchase PUR-{{ "%04d"|format(purchase.id) }}</div>
+                                    <div class="text-sm font-bold text-slate-900">{{ 'Purchase'|module_term }} PUR-{{ "%04d"|format(purchase.id) }}</div>
                                     <div class="text-xs text-slate-500">{{ purchase.createdAt|date('M d, Y') }}</div>
                                 </div>
                             </div>
                             <div class="text-right flex flex-col items-end flex-shrink-0 ml-4" style="display: flex; flex-direction: column; align-items: flex-end; justify-content: center; text-align: right; flex-shrink: 0; margin-left: 16px;">
+                                {% if active_module != 'doctor' %}
                                 <div class="text-sm font-bold text-slate-900">${{ purchase.total|number_format(2) }}</div>
+                                {% endif %}
                                 
                                 {% set status = purchase.paymentStatus|default('Unpaid') %}
                                 {% set style_map = {
@@ -217,27 +257,127 @@
                             <div class="w-12 h-12 bg-slate-50 rounded-full flex items-center justify-center mb-4 border border-slate-100 shadow-sm">
                                 <i data-lucide="history" class="w-5 h-5 text-slate-400"></i>
                             </div>
-                            <p class="text-sm font-medium text-slate-900">No purchase transactions</p>
-                            <p class="text-xs text-slate-500 mt-1">Transactions will appear once a purchase is registered</p>
+                            <p class="text-sm font-medium text-slate-900">No {{ 'purchase'|module_term }} transactions</p>
+                            <p class="text-xs text-slate-500 mt-1">Transactions will appear once a {{ 'purchase'|module_term }} is registered</p>
                         </div>
                     {% endfor %}
                 </div>
             </div>
             {% endif %}
 
+            {% if active_module == 'doctor' %}
+            <!-- Attached Documents / Medical Files -->
+            <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden mt-6">
+                <div class="p-6 md:p-8 border-b border-slate-100 flex items-center justify-between bg-slate-50/30">
+                    <div>
+                        <h3 class="text-lg font-bold text-slate-900 tracking-tight">Attached Documents & Medical Files</h3>
+                        <p class="text-sm text-slate-500">Scans, lab reports, and other patient attachments</p>
+                    </div>
+                    <button type="button" onclick="document.getElementById('uploadDocDialog').showModal()" class="inline-flex h-9 items-center justify-center gap-2 rounded-md bg-indigo-600 px-4 py-2 text-xs font-semibold text-white shadow hover:bg-indigo-700 transition-colors">
+                        <i data-lucide="plus-circle" class="w-4 h-4"></i>
+                        <span>Upload File</span>
+                    </button>
+                </div>
+                
+                <div class="divide-y divide-slate-100">
+                    {% for doc in attached_documents %}
+                        <div class="flex items-center justify-between p-4 hover:bg-slate-50/50 transition-colors group">
+                            <div class="flex items-center gap-3 min-w-0 flex-1">
+                                <div class="w-10 h-10 rounded-lg bg-indigo-50 border border-indigo-100 text-indigo-600 flex items-center justify-center flex-shrink-0 shadow-sm">
+                                    <i data-lucide="file-text" class="w-5 h-5"></i>
+                                </div>
+                                <div class="min-w-0">
+                                    <div class="text-sm font-bold text-slate-900">{{ doc.label }}</div>
+                                    {% if doc.description %}
+                                        <div class="text-xs text-slate-500 truncate max-w-md">{{ doc.description }}</div>
+                                    {% endif %}
+                                    <div class="text-[10px] text-slate-400 mt-1">Uploaded on {{ doc.createdAt|date('M d, Y') }} by {{ doc.uploadedBy ? doc.uploadedBy.username : 'Unknown' }}</div>
+                                </div>
+                            </div>
+                            <div class="flex items-center gap-2 ml-4 flex-shrink-0">
+                                <a href="{{ path('app_patient_document_download', {id: doc.id}) }}" class="p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-all" title="Download">
+                                    <i data-lucide="download" class="w-4.5 h-4.5"></i>
+                                </a>
+                                <button type="button" onclick="document.getElementById('deleteDocDialog_{{ doc.id }}').showModal()" class="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-all" title="Delete">
+                                    <i data-lucide="trash-2" class="w-4.5 h-4.5"></i>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Delete Document Dialog -->
+                        <dialog id="deleteDocDialog_{{ doc.id }}" style="margin:auto;" class="p-0 rounded-lg shadow-xl border border-slate-200 backdrop:bg-slate-600/20 backdrop:backdrop-blur-[2px] overflow-hidden">
+                            <div class="bg-white max-w-sm w-full p-6 text-left">
+                                <h3 class="text-lg font-bold text-slate-900 mb-2">Delete Document?</h3>
+                                <p class="text-sm text-slate-500 mb-6">Are you sure you want to permanently delete "{{ doc.label }}"?</p>
+                                <div class="flex justify-end gap-3">
+                                    <button type="button" onclick="document.getElementById('deleteDocDialog_{{ doc.id }}').close()" class="px-4 py-2 text-sm font-semibold text-slate-700 bg-white border border-slate-200 hover:bg-slate-50 rounded-md transition-all">Cancel</button>
+                                    <form method="post" action="{{ path('app_patient_document_delete', {id: doc.id}) }}" class="inline m-0">
+                                        <button type="submit" class="px-4 py-2 text-sm font-semibold text-white rounded-md shadow-sm transition-all border border-red-600" style="background-color: #dc2626;">Delete</button>
+                                    </form>
+                                </div>
+                            </div>
+                        </dialog>
+                    {% else %}
+                        <div class="flex flex-col items-center justify-center py-12 text-slate-400">
+                            <div class="w-12 h-12 bg-slate-50 rounded-full flex items-center justify-center mb-4 border border-slate-100 shadow-sm">
+                                <i data-lucide="file-text" class="w-5 h-5 text-slate-400"></i>
+                            </div>
+                            <p class="text-sm font-medium text-slate-900">No attachments uploaded</p>
+                            <p class="text-xs text-slate-500 mt-1">Upload records, prescription scans, or test outcomes</p>
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- Upload Document Dialog -->
+            <dialog id="uploadDocDialog" style="margin:auto;" class="p-0 rounded-lg shadow-xl border border-slate-200 backdrop:bg-slate-600/20 backdrop:backdrop-blur-[2px] overflow-hidden">
+                <div class="bg-white max-w-md w-full p-6 text-left">
+                    <h3 class="text-lg font-bold text-slate-900 mb-4">Upload New Patient File</h3>
+                    <form method="post" action="{{ path('app_patient_document_upload', {id: client.id}) }}" enctype="multipart/form-data" class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-semibold text-slate-900 mb-1">Document Name / Label</label>
+                            <input type="text" name="label" required placeholder="e.g. Blood Test Result, MRI Scan" class="w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 text-sm">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-semibold text-slate-900 mb-1">Description (Optional)</label>
+                            <textarea name="description" rows="2" placeholder="Summary notes on this document..." class="w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 text-sm"></textarea>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-semibold text-slate-900 mb-1">Select File</label>
+                            <input type="file" name="document" required class="w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-xs file:font-semibold file:bg-indigo-50 file:text-indigo-700 file:cursor-pointer hover:file:bg-indigo-100">
+                        </div>
+                        <div class="flex justify-end gap-3 pt-4 border-t border-slate-100">
+                            <button type="button" onclick="document.getElementById('uploadDocDialog').close()" class="px-4 py-2 text-sm font-semibold text-slate-700 bg-white border border-slate-200 hover:bg-slate-50 rounded-md transition-all">Cancel</button>
+                            <button type="submit" class="px-4 py-2 text-sm font-semibold text-white bg-indigo-600 hover:bg-indigo-700 rounded-md shadow-sm transition-colors">Upload</button>
+                        </div>
+                    </form>
+                </div>
+            </dialog>
+            {% endif %}
+
+            {# General Notes Section #}
+            {{ include('components/_notes_section.html.twig', {
+                'targetType': 'contact',
+                'targetId': client.id,
+                'notes': get_notes('contact', client.id),
+                'redirectUrl': path('app_clients_show', {'slug': client.slug})
+            }) }}
+        </div>
+        
         <!-- Sidebar Actions/Stats -->
         <div class="space-y-6">
             <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-6">
                 <h3 class="text-sm font-semibold text-slate-900 mb-4">Intelligence Briefing</h3>
                 <div class="space-y-4">
+                    {% if active_module != 'doctor' %}
                     <div>
-                        <div class="text-xs font-medium text-slate-500 mb-1">Lifetime Revenue</div>
+                        <div class="text-xs font-medium text-slate-500 mb-1">Lifetime {{ 'Revenue'|module_term }}</div>
                         <div class="text-3xl font-bold tracking-tight text-slate-900">${{ lifetime_revenue|number_format(2) }}</div>
                     </div>
                     <div class="pt-4 border-t border-slate-100">
                         <div class="flex items-center justify-between">
                             <div>
-                                <div class="text-xs font-medium text-slate-500 mb-1">Total Sales Orders</div>
+                                <div class="text-xs font-medium text-slate-500 mb-1">Total {{ 'Sales'|module_term }} Orders</div>
                                 <div class="text-xl font-bold text-slate-900">{{ total_orders }}</div>
                             </div>
                             <div class="w-10 h-10 bg-slate-50 rounded-md border border-slate-100 flex items-center justify-center">
@@ -245,7 +385,8 @@
                             </div>
                         </div>
                     </div>
-                    {% if lifetime_spending > 0 %}
+                    {% endif %}
+                    {% if active_module != 'doctor' and lifetime_spending > 0 %}
                     <div class="pt-4 border-t border-slate-100">
                         <div>
                             <div class="text-xs font-medium text-slate-500 mb-1">Lifetime Spending (as Vendor)</div>
@@ -255,7 +396,7 @@
                     <div class="pt-4 border-t border-slate-100">
                         <div class="flex items-center justify-between">
                             <div>
-                                <div class="text-xs font-medium text-slate-500 mb-1">Total Purchase Orders</div>
+                                <div class="text-xs font-medium text-slate-500 mb-1">Total {{ 'Purchase'|module_term }} Orders</div>
                                 <div class="text-xl font-bold text-slate-900">{{ total_purchases }}</div>
                             </div>
                             <div class="w-10 h-10 bg-slate-50 rounded-md border border-slate-100 flex items-center justify-center">
@@ -266,6 +407,69 @@
                     {% endif %}
                 </div>
             </div>
+
+            {% if active_module == 'doctor' %}
+            <!-- Current Active Prescriptions Card -->
+            <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-6 mt-6">
+                <h3 class="text-sm font-semibold text-slate-900 mb-4 flex items-center gap-2">
+                    <i data-lucide="pill" class="w-4 h-4 text-indigo-500"></i>
+                    <span>Currently Prescribed</span>
+                </h3>
+                <div class="space-y-4">
+                    {% for pi in active_prescriptions %}
+                        <div class="p-3 rounded-lg bg-slate-50 border border-slate-100">
+                            <div class="text-sm font-bold text-slate-800">{{ pi.medicationName }}</div>
+                            <div class="text-xs text-slate-500 mt-1 flex flex-wrap gap-x-2 gap-y-1">
+                                <span><strong>Dosage:</strong> {{ pi.dosage|default('N/A') }}</span>
+                                <span>•</span>
+                                <span><strong>Freq:</strong> {{ pi.frequency|default('N/A') }}</span>
+                                <span>•</span>
+                                <span><strong>Dur:</strong> {{ pi.duration|default('N/A') }}</span>
+                            </div>
+                            {% if pi.instructions %}
+                                <div class="text-[11px] text-slate-400 mt-1 italic">"{{ pi.instructions }}"</div>
+                            {% endif %}
+                        </div>
+                    {% else %}
+                        <div class="text-center py-6 text-slate-400 text-xs">
+                            No active prescriptions found.
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- Upcoming Appointments Card -->
+            <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-6 mt-6">
+                <h3 class="text-sm font-semibold text-slate-900 mb-4 flex items-center gap-2">
+                    <i data-lucide="calendar" class="w-4 h-4 text-indigo-500"></i>
+                    <span>Upcoming Appointments</span>
+                </h3>
+                <div class="space-y-4">
+                    {% for apt in upcoming_appointments %}
+                        <div class="p-3 rounded-lg bg-slate-50 border border-slate-100 flex items-start gap-3">
+                            <div class="w-8 h-8 rounded-lg bg-indigo-50 border border-indigo-100 text-indigo-600 flex items-center justify-center flex-shrink-0">
+                                <i data-lucide="clock" class="w-4 h-4"></i>
+                            </div>
+                            <div class="min-w-0 flex-1">
+                                <div class="text-xs font-bold text-slate-800">{{ apt.startAt|date('M d, Y @ H:i') }}</div>
+                                {% if apt.reason %}
+                                    <div class="text-[11px] text-slate-500 truncate">{{ apt.reason }}</div>
+                                {% endif %}
+                                <div class="text-[10px] text-slate-400 mt-1 flex items-center gap-1">
+                                    <span class="w-1.5 h-1.5 rounded-full" style="background-color: {% if apt.status == 'confirmed' %}#10b981{% elseif apt.status == 'cancelled' %}#ef4444{% else %}#6366f1{% endif %};"></span>
+                                    <span class="capitalize">{{ apt.status }}</span>
+                                </div>
+                            </div>
+                        </div>
+                    {% else %}
+                        <div class="text-center py-6 text-slate-400 text-xs">
+                            No upcoming appointments.
+                        </div>
+                    {% endfor %}
+                    <a href="{{ path('app_appointments_index') }}" class="block text-center text-xs font-bold text-indigo-600 hover:text-indigo-700 transition-colors pt-2 border-t border-slate-100">Go to Calendar</a>
+                </div>
+            </div>
+            {% endif %}
         </div>
     </div>
 {% endblock %}

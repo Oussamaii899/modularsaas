@@ -2,7 +2,7 @@
 <html>
 <head>
     <meta charset="utf-8">
-    <title>Purchase Order {{ purchase.slug }}</title>
+    <title>{{ 'Purchase'|module_term }} Order {{ purchase.slug }}</title>
     <style>
         body {
             font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
@@ -142,7 +142,7 @@
         <table>
             <tr>
                 <td>
-                    <div class="logo">Purchase Order</div>
+                    <div class="logo">{% if active_module == 'doctor' %}Medicine Stock Intake{% else %}{{ 'Purchase'|module_term }} Order{% endif %}</div>
                 </td>
                 <td class="company-info">
                     <strong>{{ company_name ?? 'ModularSaaS' }}</strong><br>
@@ -157,7 +157,7 @@
         <table>
             <tr>
                 <td class="details-col">
-                    <div class="section-title">Supplier / Vendor</div>
+                    <div class="section-title">{{ 'Supplier'|module_term }} / Vendor</div>
                     <div class="party-info">
                         <div class="party-name">{{ purchase.contact.name }}</div>
                         {% if purchase.contact.address %}
@@ -174,7 +174,7 @@
                 <td class="details-col" style="text-align: right;">
                     <div class="section-title" style="text-align: right;">Reference Details</div>
                     <ul class="meta-list">
-                        <li><span class="meta-label">Purchase Slug:</span> {{ purchase.slug }}</li>
+                        <li><span class="meta-label">{{ 'Purchase'|module_term }} Slug:</span> {{ purchase.slug }}</li>
                         <li><span class="meta-label">Date:</span> {{ purchase.createdAt|date('M d, Y') }}</li>
                         <li>
                             <span class="meta-label">Status:</span> 
@@ -195,10 +195,12 @@
     <table class="items-table">
         <thead>
             <tr>
-                <th>Product / SKU</th>
+                <th>{% if active_module == 'doctor' %}Medication / Stock Item{% else %}{{ 'Product'|module_term }} / SKU{% endif %}</th>
                 <th class="text-right" style="width: 100px;">Qty</th>
+                {% if active_module != 'doctor' %}
                 <th class="text-right" style="width: 120px;">Unit Cost</th>
                 <th class="text-right" style="width: 120px;">Total</th>
+                {% endif %}
             </tr>
         </thead>
         <tbody>
@@ -209,13 +211,16 @@
                         <span style="font-size: 11px; color: #64748b;">SKU: {{ item.pSku }}</span>
                     </td>
                     <td class="text-right">{{ item.quantity }}</td>
+                    {% if active_module != 'doctor' %}
                     <td class="text-right">${{ item.price|number_format(2) }}</td>
                     <td class="text-right">${{ (item.price * item.quantity)|number_format(2) }}</td>
+                    {% endif %}
                 </tr>
             {% endfor %}
         </tbody>
     </table>
 
+    {% if active_module != 'doctor' %}
     <div class="totals-section">
         <table class="totals-table">
             <tr>
@@ -232,6 +237,7 @@
             </tr>
         </table>
     </div>
+    {% endif %}
 
     <div class="footer">
         Internal Purchase Record - Confidential.

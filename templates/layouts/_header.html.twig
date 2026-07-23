@@ -1,55 +1,297 @@
-<header class="sticky top-0 z-40 w-full bg-white/80 backdrop-blur-md border-b border-slate-200">
-    <div class="h-16 px-4 sm:px-6 lg:px-8 flex items-center justify-between">
-        <div class="flex items-center gap-4">
-            <!-- Mobile Menu Toggle -->
-            <button type="button" id="mobile-menu-toggle" class="inline-flex items-center p-2 text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg lg:hidden transition-all duration-200">
-                <i data-lucide="menu" class="w-6 h-6"></i>
+<header class="sticky top-0 z-40 w-full bg-white/80 backdrop-blur-md border-b border-slate-200 dark:bg-slate-900/80 dark:border-slate-700">
+    <div class="h-16 px-4 sm:px-6 lg:px-8 flex items-center justify-between gap-4">
+
+        {# Left side: mobile toggle + breadcrumbs #}
+        <div class="flex items-center gap-3 min-w-0 flex-1">
+            <button type="button" id="mobile-menu-toggle"
+                    class="inline-flex items-center p-2 text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg lg:hidden transition-all duration-200 flex-shrink-0">
+                <i data-lucide="menu" class="w-5 h-5"></i>
             </button>
-            <div class="flex items-center gap-2 text-sm text-slate-500 font-medium">
-                <a href="{{ path('app_dashboard') }}" class="hover:text-indigo-600 transition-colors">App</a>
+
+            {# Breadcrumbs #}
+            <div class="flex items-center gap-1.5 text-sm text-slate-500 font-medium min-w-0">
+                <a href="{{ path('app_dashboard') }}" class="hover:text-indigo-600 transition-colors flex-shrink-0">App</a>
                 {% for crumb in breadcrumbs|default([]) %}
-                    <i data-lucide="chevron-right" class="w-4 h-4 text-slate-400"></i>
+                    <i data-lucide="chevron-right" class="w-3.5 h-3.5 text-slate-400 flex-shrink-0"></i>
                     {% if not loop.last %}
-                        <a href="{{ crumb.url }}" class="hover:text-indigo-600 transition-colors">{{ crumb.label }}</a>
+                        <a href="{{ crumb.url }}" class="hover:text-indigo-600 transition-colors truncate">{{ crumb.label }}</a>
                     {% else %}
-                        <span class="text-slate-900 font-semibold">{{ crumb.label }}</span>
+                        <span class="text-slate-900 dark:text-slate-100 font-semibold truncate">{{ crumb.label }}</span>
                     {% endif %}
                 {% endfor %}
                 {% if breadcrumbs|default([]) is empty %}
-                    <i data-lucide="chevron-right" class="w-4 h-4 text-slate-400"></i>
-                    <span class="text-slate-900 font-semibold">{% block header_title %}Dashboard{% endblock %}</span>
+                    <i data-lucide="chevron-right" class="w-3.5 h-3.5 text-slate-400 flex-shrink-0"></i>
+                    <span class="text-slate-900 dark:text-slate-100 font-semibold truncate">{{ header_title|default('Dashboard') }}</span>
                 {% endif %}
             </div>
         </div>
 
-        <div class="flex items-center gap-3 sm:gap-6">
-            <!-- Search -->
-            <div class="relative hidden sm:block">
-                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <i data-lucide="search" class="w-4 h-4 text-slate-400"></i>
+        {# Right side: search + notifications + theme + user #}
+        <div class="flex items-center gap-2 sm:gap-3 flex-shrink-0">
+
+            {# ── Global Search ── #}
+            <div id="search-wrapper" class="relative flex items-center gap-2">
+                {# Category selector — hidden on xs, visible md+ #}
+                <div class="relative hidden md:block">
+                    <select id="search-category"
+                            class="h-9 w-32 py-0 pl-3 pr-7 border border-slate-200 dark:border-slate-700 rounded-lg bg-slate-50 dark:bg-slate-800 text-xs text-slate-600 dark:text-slate-300 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 appearance-none cursor-pointer">
+                        <option value="">All</option>
+                        <option value="sale">Sales</option>
+                        <option value="product">Products</option>
+                        <option value="contact">Contacts</option>
+                        <option value="user">Users</option>
+                        <option value="purchase">Purchases</option>
+                    </select>
+                    <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-2 text-slate-400">
+                        <i data-lucide="chevron-down" class="w-3 h-3"></i>
+                    </div>
                 </div>
-                <input type="text" name="search" id="search" class="block w-64 pl-10 pr-3 py-2 border border-slate-200 rounded-lg bg-slate-50 text-sm placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all duration-200" placeholder="Search anything...">
+
+                {# Search input #}
+                <div class="relative">
+                    <div class="pointer-events-none absolute inset-y-0 left-0 pl-3 flex items-center">
+                        <i data-lucide="search" class="w-4 h-4 text-slate-400"></i>
+                    </div>
+                    <input type="text" id="global-search-input" autocomplete="off"
+                           placeholder="Search…"
+                           class="h-9 w-36 sm:w-52 lg:w-64 pl-9 pr-3 border border-slate-200 dark:border-slate-700 rounded-lg bg-slate-50 dark:bg-slate-800 text-sm text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all duration-200">
+                    {# Results dropdown #}
+                    <div id="search-results-dropdown"
+                         class="absolute right-0 top-full mt-2 w-80 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-xl hidden z-[60] max-h-80 overflow-y-auto divide-y divide-slate-100 dark:divide-slate-700">
+                    </div>
+                </div>
             </div>
 
-            <!-- Notifications -->
-            <button type="button" class="relative p-2 text-slate-500 hover:text-indigo-600 hover:bg-slate-50 rounded-lg transition-all duration-200">
-                <i data-lucide="bell" class="w-5 h-5"></i>
-                <span class="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full border-2 border-white"></span>
-            </button>
+            {# ── Notification Bell ── #}
+            {% if is_granted('ROLE_ADMIN') or is_granted('see.notifications') %}
+            <div class="relative" id="notification-container">
+                <button type="button" id="notification-bell-btn"
+                        class="relative p-2 text-slate-500 hover:text-indigo-600 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-all duration-200">
+                    <i data-lucide="bell" class="w-5 h-5"></i>
+                    <span id="notification-badge"
+                          class="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full border-2 border-white dark:border-slate-900 hidden"></span>
+                </button>
 
-            <!-- Theme Toggle -->
-            <button type="button" id="theme-toggle" class="p-2 text-slate-500 hover:text-indigo-600 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-lg transition-all duration-200" aria-label="Toggle theme">
+                {# Dropdown #}
+                <div id="notification-dropdown"
+                     class="absolute right-0 top-full mt-2 w-80 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-xl hidden z-[60] overflow-hidden">
+                    <div class="px-4 py-3 border-b border-slate-100 dark:border-slate-700 flex items-center justify-between">
+                        <span class="font-semibold text-slate-900 dark:text-slate-100 text-sm">Notifications</span>
+                        <button type="button" id="mark-all-read-btn"
+                                class="text-xs text-indigo-600 hover:text-indigo-800 font-medium">Mark all read</button>
+                    </div>
+                    <div id="notification-items" class="max-h-72 overflow-y-auto divide-y divide-slate-100 dark:divide-slate-700">
+                        <div class="p-4 text-center text-slate-400 text-xs">Loading…</div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            {# ── Theme Toggle ── #}
+            <button type="button" id="theme-toggle"
+                    class="p-2 text-slate-500 hover:text-indigo-600 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-all duration-200"
+                    aria-label="Toggle theme">
                 <i data-lucide="sun" class="w-5 h-5 hidden dark:block"></i>
                 <i data-lucide="moon" class="w-5 h-5 block dark:hidden"></i>
             </button>
 
-            <!-- User Menu Button -->
-            <button type="button" class="flex items-center gap-2 p-1 pl-2 text-slate-700 hover:bg-slate-100 rounded-full transition-all duration-200 border border-slate-100 shadow-sm sm:shadow-none bg-white sm:bg-transparent">
-                <span class="hidden sm:inline-block text-xs font-semibold mr-1">{{ app.user.username }}</span>
-                <div class="w-8 h-8 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600 overflow-hidden flex-shrink-0">
-                    <img src="{{ app.user.avatar ? asset('uploads/avatars/' ~ app.user.avatar) : 'https://ui-avatars.com/api/?name=' ~ app.user.username ~ '&background=6366f1&color=fff' }}" alt="Avatar" class="w-full h-full object-cover">
+            {# ── User Avatar ── #}
+            <button type="button" id="user-menu-btn"
+                    class="flex items-center gap-2 p-1 pl-2 text-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full transition-all duration-200 border border-slate-200 dark:border-slate-700">
+                <span class="hidden sm:inline-block text-xs font-semibold text-slate-700 dark:text-slate-200 mr-0.5">{{ app.user.username }}</span>
+                <div class="w-7 h-7 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600 overflow-hidden flex-shrink-0">
+                    <img src="{{ app.user.avatar
+                        ? asset('uploads/avatars/' ~ app.user.avatar)
+                        : 'https://ui-avatars.com/api/?name=' ~ app.user.username ~ '&background=6366f1&color=fff'
+                    }}" alt="Avatar" class="w-full h-full object-cover">
                 </div>
             </button>
         </div>
     </div>
 </header>
+
+<script>
+(function () {
+    'use strict';
+
+    document.addEventListener('DOMContentLoaded', function () {
+
+        // ─── 1. Live Global Search ─────────────────────────────────────────────
+        const searchInput    = document.getElementById('global-search-input');
+        const searchCategory = document.getElementById('search-category');
+        const searchDrop     = document.getElementById('search-results-dropdown');
+
+        if (searchInput && searchDrop) {
+            const ICON_MAP = {
+                sale:     'receipt',
+                product:  'package',
+                contact:  'users',
+                user:     'user',
+                purchase: 'shopping-cart',
+            };
+
+            let debounce = null;
+
+            function doSearch() {
+                const q   = searchInput.value.trim();
+                const cat = searchCategory ? searchCategory.value : '';
+
+                if (q.length < 2) {
+                    searchDrop.innerHTML = '';
+                    searchDrop.classList.add('hidden');
+                    return;
+                }
+
+                fetch('/api/search?q=' + encodeURIComponent(q) + '&cat=' + encodeURIComponent(cat))
+                    .then(function (r) { return r.json(); })
+                    .then(function (data) {
+                        searchDrop.innerHTML = '';
+
+                        if (!data.length) {
+                            searchDrop.innerHTML = '<div class="p-4 text-center text-slate-400 text-xs">No results found</div>';
+                        } else {
+                            data.forEach(function (item) {
+                                var icon = ICON_MAP[item.category] || 'search';
+                                var a = document.createElement('a');
+                                a.href = item.url;
+                                a.className = 'flex items-center gap-3 px-4 py-3 hover:bg-indigo-50 dark:hover:bg-slate-700 transition-colors';
+                                a.innerHTML =
+                                    '<div class="p-1.5 bg-indigo-50 dark:bg-indigo-900/40 text-indigo-600 dark:text-indigo-400 rounded-md flex-shrink-0">' +
+                                        '<i data-lucide="' + icon + '" class="w-4 h-4"></i>' +
+                                    '</div>' +
+                                    '<div class="min-w-0 flex-1">' +
+                                        '<span class="block text-[9px] font-bold text-indigo-600 dark:text-indigo-400 uppercase tracking-wider">' + item.category + '</span>' +
+                                        '<span class="block text-xs text-slate-700 dark:text-slate-200 font-medium truncate mt-0.5">' + item.title + '</span>' +
+                                    '</div>';
+                                searchDrop.appendChild(a);
+                            });
+                        }
+
+                        searchDrop.classList.remove('hidden');
+                        if (typeof lucide !== 'undefined') lucide.createIcons();
+                    })
+                    .catch(function (e) { console.error('Search error:', e); });
+            }
+
+            searchInput.addEventListener('input', function () {
+                clearTimeout(debounce);
+                debounce = setTimeout(doSearch, 300);
+            });
+
+            if (searchCategory) {
+                searchCategory.addEventListener('change', doSearch);
+            }
+        }
+
+        // ─── 2. Notification Bell ──────────────────────────────────────────────
+        var bellBtn       = document.getElementById('notification-bell-btn');
+        var notifDrop     = document.getElementById('notification-dropdown');
+        var notifItems    = document.getElementById('notification-items');
+        var badge         = document.getElementById('notification-badge');
+        var markAllBtn    = document.getElementById('mark-all-read-btn');
+
+        if (bellBtn && notifDrop) {
+            var STYLE_MAP = {
+                info:    { icon: 'info',           cls: 'text-blue-500 bg-blue-50 dark:bg-blue-900/30' },
+                warning: { icon: 'alert-triangle', cls: 'text-amber-500 bg-amber-50 dark:bg-amber-900/30' },
+                danger:  { icon: 'alert-circle',   cls: 'text-red-500 bg-red-50 dark:bg-red-900/30' },
+                success: { icon: 'check-circle',   cls: 'text-emerald-500 bg-emerald-50 dark:bg-emerald-900/30' },
+            };
+
+            function fmtDate(s) {
+                if (!s) return '';
+                try {
+                    var d = new Date(s.replace(' ', 'T'));
+                    return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+                } catch (e) { return s; }
+            }
+
+            function loadNotifications() {
+                fetch('/api/notifications')
+                    .then(function (r) { return r.json(); })
+                    .then(function (data) {
+                        notifItems.innerHTML = '';
+                        var unread = 0;
+
+                        if (!data.length) {
+                            notifItems.innerHTML = '<div class="p-5 text-center text-slate-400 text-xs">You\'re all caught up!</div>';
+                            if (badge) badge.classList.add('hidden');
+                            return;
+                        }
+
+                        data.forEach(function (item) {
+                            if (!item.isRead) unread++;
+                            var s = STYLE_MAP[item.type] || STYLE_MAP.info;
+                            var el = document.createElement('div');
+                            el.className = 'flex items-start gap-3 p-3 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors' + (item.isRead ? ' opacity-60' : '');
+                            el.innerHTML =
+                                '<div class="p-1.5 rounded-lg flex-shrink-0 ' + s.cls + '">' +
+                                    '<i data-lucide="' + s.icon + '" class="w-4 h-4"></i>' +
+                                '</div>' +
+                                '<div class="flex-1 min-w-0">' +
+                                    '<div class="flex items-start justify-between gap-2">' +
+                                        '<span class="text-xs font-semibold text-slate-900 dark:text-slate-100 leading-snug">' + item.title + '</span>' +
+                                        '<span class="text-[9px] text-slate-400 flex-shrink-0 mt-0.5">' + fmtDate(item.createdAt) + '</span>' +
+                                    '</div>' +
+                                    '<p class="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 line-clamp-2">' + item.message + '</p>' +
+                                    (item.linkUrl ? '<a href="' + item.linkUrl + '" class="inline-flex items-center gap-1 text-[10px] text-indigo-600 hover:underline mt-1">View <i data-lucide="arrow-right" class="w-3 h-3"></i></a>' : '') +
+                                '</div>' +
+                                (!item.isRead ?
+                                    '<button type="button" class="mark-read-btn flex-shrink-0 p-1 text-slate-400 hover:text-slate-600 rounded" title="Mark read" data-id="' + item.id + '">' +
+                                        '<i data-lucide="check" class="w-3.5 h-3.5"></i>' +
+                                    '</button>'
+                                : '');
+                            notifItems.appendChild(el);
+                        });
+
+                        if (badge) {
+                            badge.classList.toggle('hidden', unread === 0);
+                        }
+
+                        if (typeof lucide !== 'undefined') lucide.createIcons();
+
+                        notifItems.querySelectorAll('.mark-read-btn').forEach(function (btn) {
+                            btn.addEventListener('click', function (e) {
+                                e.stopPropagation();
+                                fetch('/api/notifications/' + btn.dataset.id + '/read', { method: 'POST' })
+                                    .then(function (r) { return r.json(); })
+                                    .then(function (d) { if (d.success) loadNotifications(); });
+                            });
+                        });
+                    })
+                    .catch(function (e) { console.error('Notification error:', e); });
+            }
+
+            // Load once on page load (to show badge)
+            loadNotifications();
+
+            bellBtn.addEventListener('click', function (e) {
+                e.stopPropagation();
+                var hidden = notifDrop.classList.toggle('hidden');
+                if (!hidden) loadNotifications();
+            });
+
+            if (markAllBtn) {
+                markAllBtn.addEventListener('click', function (e) {
+                    e.stopPropagation();
+                    fetch('/api/notifications/read-all', { method: 'POST' })
+                        .then(function (r) { return r.json(); })
+                        .then(function (d) { if (d.success) loadNotifications(); });
+                });
+            }
+        }
+
+        // ─── 3. Close dropdowns on outside click ──────────────────────────────
+        document.addEventListener('click', function (e) {
+            var nc = document.getElementById('notification-container');
+            if (nc && notifDrop && !nc.contains(e.target)) {
+                notifDrop.classList.add('hidden');
+            }
+            if (searchInput && searchDrop && !searchInput.contains(e.target) && !searchDrop.contains(e.target)) {
+                searchDrop.classList.add('hidden');
+            }
+        });
+
+    });
+})();
+</script>

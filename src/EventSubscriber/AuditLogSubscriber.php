@@ -3,6 +3,7 @@
 namespace App\EventSubscriber;
 
 use App\Entity\Log;
+use App\Entity\Notification;
 use App\Entity\User;
 use Doctrine\Common\EventSubscriber;
 use Doctrine\ORM\Events;
@@ -33,7 +34,7 @@ class AuditLogSubscriber implements EventSubscriber
 
         // 1. Process Insertions
         foreach ($uow->getScheduledEntityInsertions() as $entity) {
-            if ($entity instanceof Log) {
+            if ($entity instanceof Log || $entity instanceof Notification) {
                 continue;
             }
 
@@ -55,7 +56,7 @@ class AuditLogSubscriber implements EventSubscriber
 
         // 2. Process Updates
         foreach ($uow->getScheduledEntityUpdates() as $entity) {
-            if ($entity instanceof Log) {
+            if ($entity instanceof Log || $entity instanceof Notification) {
                 continue;
             }
 
@@ -104,7 +105,7 @@ class AuditLogSubscriber implements EventSubscriber
 
         // 3. Process Deletions
         foreach ($uow->getScheduledEntityDeletions() as $entity) {
-            if ($entity instanceof Log) {
+            if ($entity instanceof Log || $entity instanceof Notification) {
                 continue;
             }
 

@@ -39,7 +39,7 @@ class SettingsController extends AbstractController
             throw $this->createAccessDeniedException('You do not have permission to access settings.');
         }
 
-        $generalKeys = ['business_name', 'address', 'phone', 'email', 'website', 'currency', 'timezone'];
+        $generalKeys = ['business_name', 'address', 'phone', 'email', 'website', 'currency', 'timezone', 'active_module'];
         $appearanceKeys = ['theme', 'primary_color', 'sidebar_style'];
         $brandingKeys = ['company_name', 'invoice_prefix', 'invoice_footer'];
         $maintenanceKeys = ['maintenance_enabled'];
@@ -206,7 +206,7 @@ class SettingsController extends AbstractController
                 $tableName = $table->getName();
                 $sql .= "DROP TABLE IF EXISTS `$tableName`;\n";
 
-                $createSqls = $schemaManager->getDatabasePlatform()->getCreateTableSQL($table);
+                $createSqls = $conn->getDatabasePlatform()->getCreateTableSQL($table);
                 foreach ($createSqls as $createSql) {
                     $sql .= $createSql . ";\n";
                 }

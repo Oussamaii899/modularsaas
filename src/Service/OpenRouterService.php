@@ -51,7 +51,7 @@ class OpenRouterService
         curl_setopt($ch, CURLOPT_POST, true);
         curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($postData));
         curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
-        curl_setopt($ch, CURLOPT_TIMEOUT, 30);
+        curl_setopt($ch, CURLOPT_TIMEOUT, 90); // Increased timeout for thinking models
 
         $response = curl_exec($ch);
         $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
@@ -79,42 +79,45 @@ class OpenRouterService
         $sales = $data['total_sales'] ?? 0;
         $refunds = abs($data['total_refunded_sales'] ?? 0);
         $refundRate = $sales > 0 ? ($refunds / $sales) * 100 : 0;
+        $netProfit = $sales - ($data['total_purchases'] ?? 0) - $refunds;
 
         return sprintf(
             "Please analyze our business financial performance for the selected period from %s to %s.\n\n" .
             "Financial Metrics:\n" .
             "- Gross Revenue (Total Sales): $%s\n" .
             "- Cost of Goods/Supplies (Total Purchases): $%s\n" .
+            "- Net Profit (Sales - Purchases - Customer Refunds): $%s\n" .
             "- Customer Refunds Issued: $%s\n" .
             "- Supplier Refunds Claimed: $%s\n" .
             "- Refund Rate: %s%%\n" .
             "- Outstanding Receivables (Sales Balance Due): $%s\n" .
             "- Outstanding Payables (Purchases Balance Due): $%s\n\n" .
-            "Please compile a CFO report. You MUST structure your response with the following exact titles and numbering as Markdown headers. Use standard lists and bolding. Keep it highly professional and concise.\n\n" .
+            "Please compile an in-depth CFO report. You MUST structure your response with the following exact titles and numbering as Markdown headers. Use standard lists and bolding. Be comprehensive, detailed, and highly professional.\n\n" .
             "## 1. Executive Summary\n" .
             "Financial Health Score: [Insert a score between 0 and 100 based on metrics, formatted exactly like: **XX/100**]\n" .
-            "[Provide a brief summary paragraph justifying the health score based on the sales, net profit margins, and liabilities.]\n\n" .
+            "[Provide a detailed, professional analysis justifying the health score based on the sales volume, net profit margins, refund rates, and ratio of outstanding receivables to payables.]\n\n" .
             "## 2. Key Findings\n" .
-            "- **Revenue**: [Brief statement on gross revenue performance]\n" .
-            "- **Profit**: [Brief statement on net profit (sales minus purchases minus customer refunds)]\n" .
-            "- **Refund Rate**: [Brief comment on customer refund rate]\n" .
-            "- **Outstanding Receivables**: [Brief comment on outstanding customer invoice balances]\n\n" .
+            "- **Revenue**: [Detailed statement analyzing gross revenue performance and transaction volume impact]\n" .
+            "- **Profitability & Margins**: [Detailed statement on net profit performance, margin analysis, and how to improve profit ratios]\n" .
+            "- **Refund Rate & Quality Control**: [Detailed analysis of customer refund rate, customer satisfaction implications, and quality concerns]\n" .
+            "- **Working Capital & Liquidity**: [Detailed comment on outstanding customer invoice balances compared with supplier liabilities]\n\n" .
             "## 3. Risks\n" .
-            "- **High refund rate**: [Analyze refund risks or write 'Low risk' if refund rate is negligible]\n" .
-            "- **Cash tied up in receivables**: [Analyze cash flow risks associated with outstanding receivables]\n\n" .
+            "- **Refund Risk**: [Deconstruct refund risks, cash outflow pressure, or state 'Low risk' if refund rate is negligible with tips to keep it low]\n" .
+            "- **Receivables & Aging Risk**: [Deeply analyze cash flow risks associated with outstanding receivables, collection delays, and potential bad debts]\n\n" .
             "## 4. Opportunities\n" .
-            "- **Faster collections**: [Actionable steps to accelerate collections or outstanding balances]\n" .
-            "- **Supplier negotiations**: [Actionable advice for optimizing supply chain/purchases/accounts payable]\n\n" .
+            "- **Collections Optimization**: [Detailed, step-by-step actionable strategy to accelerate collections of outstanding customer balances]\n" .
+            "- **Supplier & Cost Management**: [Detailed actionable advice for optimizing supply chain costs, renegotiating payment terms, and accounts payable management]\n\n" .
             "## 5. 30-Day Forecast\n" .
-            "[Provide a brief, realistic 30-day projection based on current revenue trends and cash flow metrics]\n\n" .
+            "[Provide a detailed, realistic 30-day outlook and projection based on current revenue velocity, average monthly liabilities, and working capital trends]\n\n" .
             "## 6. Top 3 Recommended Actions\n" .
-            "- [First specific actionable recommendation]\n" .
-            "- [Second specific actionable recommendation]\n" .
-            "- [Third specific actionable recommendation]\n",
+            "- [First specific actionable recommendation with a clear explanation of how to execute it and the expected outcome]\n" .
+            "- [Second specific actionable recommendation with a clear explanation of how to execute it and the expected outcome]\n" .
+            "- [Third specific actionable recommendation with a clear explanation of how to execute it and the expected outcome]\n",
             $data['start_date'],
             $data['end_date'],
             number_format($data['total_sales'], 2),
             number_format($data['total_purchases'], 2),
+            number_format($netProfit, 2),
             number_format($refunds, 2),
             number_format(abs($data['total_refunded_purchases'] ?? 0), 2),
             number_format($refundRate, 1),

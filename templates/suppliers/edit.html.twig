@@ -1,8 +1,8 @@
 {% extends 'layouts/dashboard.html.twig' %}
 
-{% block title %}Edit Supplier | {{ company_name ?? 'ModularSaaS' }}{% endblock %}
+{% block title %}Edit {{ 'Supplier'|module_term }} | {{ company_name ?? 'ModularSaaS' }}{% endblock %}
 
-{% block content_title %}Edit Supplier{% endblock %}
+{% block content_title %}Edit {{ 'Supplier'|module_term }}{% endblock %}
 {% block content_subtitle %}Updating {{ supplier.name }}{% endblock %}
 
 {% block content_actions %}
@@ -17,8 +17,8 @@
         <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
             <div class="p-6 md:p-8">
                 <div class="mb-8">
-                    <h3 class="text-lg font-bold text-slate-900">Supplier Information</h3>
-                    <p class="text-sm text-slate-500 mt-1">Please ensure contact identities remain accurate for logistics.</p>
+                    <h3 class="text-lg font-bold text-slate-900">{{ 'Supplier Information'|module_term }}</h3>
+                    <p class="text-sm text-slate-500 mt-1">Please ensure {{ 'supplier'|module_term }} identities remain accurate for logistics.</p>
                 </div>
 
                 {{ form_start(form, {'attr': {'class': 'space-y-6', 'enctype': 'multipart/form-data', 'id': 'supplier-edit-form'}}) }}
@@ -47,7 +47,7 @@
                         <div class="flex-1 w-full space-y-6">
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 <div class="space-y-3">
-                                    <label class="text-sm font-semibold text-slate-900">Supplier Business Name</label>
+                                    <label class="text-sm font-semibold text-slate-900">{{ 'Supplier'|module_term }} Name</label>
                                     {{ form_widget(form.name, {'attr': {'class': 'w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-4 focus:ring-slate-900/10 focus:border-slate-900 transition-all text-sm font-medium text-slate-900 placeholder-slate-400', 'placeholder': 'e.g. Global Tech Solutions'}}) }}
                                     {{ form_errors(form.name) }}
                                 </div>

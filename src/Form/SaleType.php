@@ -26,7 +26,7 @@ class SaleType extends AbstractType
             ])
             ->add('total', NumberType::class, [
                 'label' => 'Total Amount ($)',
-                'attr' => ['readonly' => true] 
+                'required' => false,
             ])
             ->add('created_at', null, [
                 'widget' => 'single_text',

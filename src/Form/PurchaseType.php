@@ -17,12 +17,22 @@ class PurchaseType extends AbstractType
 {
     public function buildForm(FormBuilderInterface $builder, array $options): void
     {
+        $isDoctor = $options['is_doctor'] ?? false;
+
         $builder
             ->add('contact', EntityType::class, [
                 'class' => Contact::class,
                 'choice_label' => 'name',
-                'placeholder' => 'Select a supplier...',
-                'label' => 'Vendor Supplier',
+                'query_builder' => function (\Doctrine\ORM\EntityRepository $er) use ($isDoctor) {
+                    $qb = $er->createQueryBuilder('c')->orderBy('c.name', 'ASC');
+                    if ($isDoctor) {
+                        $qb->where('c.type = :type')
+                           ->setParameter('type', 'supplier');
+                    }
+                    return $qb;
+                },
+                'placeholder' => $isDoctor ? 'Select a supplier...' : 'Select Contact...',
+                'label' => $isDoctor ? 'Vendor Supplier' : 'Contact',
             ])
             ->add('total', NumberType::class, [
                 'label' => 'Total Cost ($)',
@@ -46,6 +56,7 @@ class PurchaseType extends AbstractType
     {
         $resolver->setDefaults([
             'data_class' => Purchase::class,
+            'is_doctor' => false,
         ]);
     }
 }

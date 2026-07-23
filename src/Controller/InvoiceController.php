@@ -30,8 +30,11 @@ final class InvoiceController extends AbstractController
             throw $this->createNotFoundException('Sale not found for slug: ' . $slug);
         }
 
+        $activeModule = $settingRepository->findOneBy(['keyName' => 'active_module'])?->getValue() ?? 'none';
+
         $html = $this->renderView('invoice/sale_invoice.html.twig', [
             'sale' => $sale,
+            'active_module' => $activeModule,
             'company_logo' => $settingRepository->findOneBy(['keyName' => 'company_logo'])?->getValue(),
             'company_name' => $settingRepository->findOneBy(['keyName' => 'company_name'])?->getValue(),
             'company_address' => $settingRepository->findOneBy(['keyName' => 'company_address'])?->getValue(),
@@ -65,8 +68,11 @@ final class InvoiceController extends AbstractController
             throw $this->createNotFoundException('Purchase not found for slug: ' . $slug);
         }
 
+        $activeModule = $settingRepository->findOneBy(['keyName' => 'active_module'])?->getValue() ?? 'none';
+
         $html = $this->renderView('invoice/purchase_invoice.html.twig', [
             'purchase' => $purchase,
+            'active_module' => $activeModule,
             'company_logo' => $settingRepository->findOneBy(['keyName' => 'company_logo'])?->getValue(),
             'company_name' => $settingRepository->findOneBy(['keyName' => 'company_name'])?->getValue(),
             'company_address' => $settingRepository->findOneBy(['keyName' => 'company_address'])?->getValue(),

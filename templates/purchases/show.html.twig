@@ -1,8 +1,8 @@
 {% extends 'layouts/dashboard.html.twig' %}
 
-{% block title %}Purchase Details | {{ company_name ?? 'ModularSaaS' }}{% endblock %}
+{% block title %}{{ 'Purchase Details'|module_term }} | {{ company_name ?? 'ModularSaaS' }}{% endblock %}
 
-{% block content_title %}Purchase Details{% endblock %}
+{% block content_title %}{{ 'Purchase Details'|module_term }}{% endblock %}
 {% block content_subtitle %}PUR-{{ "%04d"|format(purchase.id) }}{% endblock %}
 
 {% block content_actions %}
@@ -17,18 +17,18 @@
     {% if purchase.paymentStatus != 'Cancelled' and purchase.paymentStatus != 'Refunded' and is_granted('edit.purchases') %}
         <a href="{{ path('app_purchases_edit', {'slug': purchase.slug}) }}" class="inline-flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded-md shadow-sm transition-colors">
             <i data-lucide="pencil" class="w-4 h-4 text-white"></i>
-            <span>Edit Purchase</span>
+            <span>Edit {{ 'Purchase'|module_term }}</span>
         </a>
         <button onclick="document.getElementById('cancel-modal').showModal()" class="inline-flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium rounded-md shadow-sm transition-colors" style="background-color: #ef4444; color: #ffffff; cursor: pointer; border: none; font-family: inherit;">
             <i data-lucide="ban" class="w-4 h-4"></i>
-            <span>Cancel Purchase</span>
+            <span>Cancel {{ 'Purchase'|module_term }}</span>
         </button>
     {% endif %}
 {% endblock %}
 
 {% block main_content %}
     {% set is_overdue = false %}
-    {% if purchase.paymentStatus == 'Unpaid' or purchase.paymentStatus == 'Partial' %}
+    {% if active_module != 'doctor' and (purchase.paymentStatus == 'Unpaid' or purchase.paymentStatus == 'Partial') %}
         {% set difference = date('now').diff(date(purchase.createdAt)) %}
         {% if difference.days > 10 %}
             {% set is_overdue = true %}
@@ -49,7 +49,7 @@
         </div>
     {% endif %}
 
-    {% if purchase.paymentStatus == 'Overpaid' %}
+    {% if active_module != 'doctor' and purchase.paymentStatus == 'Overpaid' %}
         {% set overpaid_amount = purchase.getPaidAmount() - purchase.total %}
         <div class="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 shadow-sm animate-in fade-in duration-300" style="background-color: #fff1f2; padding: 16px 20px; border-radius: 12px; margin-bottom: 24px; border: 1px solid #ffe4e6;">
             <div class="flex items-start gap-3">
@@ -89,23 +89,25 @@
                     } %}
                     {% set color = status_colors[purchase.paymentStatus] ?? 'slate' %}
                     
+                    {% if active_module != 'doctor' %}
                     <div class="flex items-center gap-2 text-xs font-bold text-{{ color }}-700 uppercase tracking-wider bg-{{ color }}-50 px-3 py-1 rounded border border-{{ color }}-100">
                         <span class="w-1.5 h-1.5 rounded-full bg-{{ color }}-500 {% if purchase.paymentStatus != 'Paid' %}animate-pulse{% endif %}"></span>
                         {{ purchase.paymentStatus }}
                     </div>
+                    {% endif %}
                 </div>
                 
                 <div class="p-6 md:p-8">
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-12">
                         <div>
-                            <h3 class="text-sm font-medium text-slate-900 mb-4 border-b border-slate-100 pb-2">Supplier Details</h3>
+                            <h3 class="text-sm font-medium text-slate-900 mb-4 border-b border-slate-100 pb-2">{{ 'Supplier Details'|module_term }}</h3>
                             <div class="flex items-start gap-4 p-4 rounded-lg bg-slate-50 border border-slate-100">
                                 <div class="w-12 h-12 rounded-lg bg-emerald-50 flex items-center justify-center text-emerald-600 font-bold border border-emerald-100 shadow-sm text-lg">
                                     {{ purchase.contact.name|first|upper }}
                                 </div>
                                 <div>
                                     <div class="text-base font-bold text-slate-900 mb-1">{{ purchase.contact.name }}</div>
-                                    <a href="{{ path('app_suppliers_show', {'slug': purchase.contact.slug}) }}" class="text-xs font-medium text-indigo-600 hover:text-indigo-700 flex items-center gap-1">
+                                    <a href="{{ purchase.contact.type == 'client' ? path('app_clients_show', {'slug': purchase.contact.slug}) : path('app_suppliers_show', {'slug': purchase.contact.slug}) }}" class="text-xs font-medium text-indigo-600 hover:text-indigo-700 flex items-center gap-1">
                                         <span>View Profile</span>
                                         <i data-lucide="arrow-up-right" class="w-3 h-3"></i>
                                     </a>
@@ -114,7 +116,7 @@
                         </div>
                         
                         <div>
-                            <h3 class="text-sm font-medium text-slate-900 mb-4 border-b border-slate-100 pb-2">Purchase Info</h3>
+                            <h3 class="text-sm font-medium text-slate-900 mb-4 border-b border-slate-100 pb-2">{{ 'Purchase'|module_term }} Info</h3>
                             <div class="flex items-center gap-3 mb-3">
                                 <i data-lucide="calendar" class="w-4 h-4 text-slate-400"></i>
                                 <div>
@@ -132,6 +134,7 @@
                         </div>
                     </div>
 
+                    {% if active_module != 'doctor' %}
                     <!-- Financial Summary block -->
                     <div class="bg-white rounded-lg border border-slate-200 p-6 mt-8">
                         <h3 class="text-sm font-medium text-slate-900 mb-8 pb-3 border-b border-slate-100">Financial Summary</h3>
@@ -175,13 +178,14 @@
                             {% endif %}
                         </div>
                     </div>
+                    {% endif %}
                 </div>
             </div>
             
             <!-- Transaction Items -->
             <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
                 <div class="p-6 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
-                    <h3 class="text-sm font-bold text-slate-900">Purchase Items</h3>
+                    <h3 class="text-sm font-bold text-slate-900">{{ 'Purchase'|module_term }} Items</h3>
                     <span class="text-xs font-medium text-slate-600 bg-white px-2 py-1 rounded border border-slate-200">{{ purchase.purchaseItems|length }} Item(s)</span>
                 </div>
                 <div class="overflow-x-auto">
@@ -190,9 +194,13 @@
                             <tr class="bg-white border-b border-slate-100">
                                 <th class="px-6 py-4 font-medium text-slate-500 text-center">Product</th>
                                 <th class="px-6 py-4 font-medium text-slate-500 text-center">Quantity</th>
-                                <th class="px-6 py-4 font-medium text-slate-500 text-center">Unit Price</th>
+                                {% if active_module != 'doctor' %}
+                                <th class="px-6 py-4 font-medium text-slate-500 text-center">Unit Cost</th>
                                 <th class="px-6 py-4 font-medium text-slate-500 text-center">Subtotal</th>
+                                {% endif %}
+                                {% if active_module != 'doctor' %}
                                 <th class="px-6 py-4 font-medium text-slate-500 text-center">Status / Actions</th>
+                                {% endif %}
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-slate-50">
@@ -206,8 +214,11 @@
                                     <td class="px-6 py-4 text-center">
                                         <span class="font-medium {% if item.status == 'Refunded' or item.status == 'Cancelled' %}text-slate-400{% else %}text-slate-900{% endif %}">{{ item.quantity }}</span>
                                     </td>
+                                    {% if active_module != 'doctor' %}
                                     <td class="px-6 py-4 text-center {% if item.status == 'Refunded' or item.status == 'Cancelled' %}text-slate-400{% else %}text-slate-600{% endif %}">${{ item.price|number_format(2) }}</td>
                                     <td class="px-6 py-4 text-center font-bold {% if item.status == 'Refunded' or item.status == 'Cancelled' %}text-slate-400 line-through{% else %}text-slate-900{% endif %}">${{ (item.price * item.quantity)|number_format(2) }}</td>
+                                    {% endif %}
+                                    {% if active_module != 'doctor' %}
                                     <td class="px-6 py-4 text-center">
                                         {% if item.status == 'Refunded' %}
                                             <span class="inline-flex items-center gap-1 text-[10px] font-bold text-rose-700 bg-rose-50 px-2 py-0.5 rounded uppercase tracking-wide border border-rose-100/50">
@@ -234,22 +245,106 @@
                                             {% endif %}
                                         {% endif %}
                                     </td>
+                                    {% endif %}
                                 </tr>
                             {% else %}
                                 <tr>
-                                    <td colspan="5" class="px-6 py-12 text-center text-slate-500">No items linked to this purchase</td>
+                                    <td colspan="{% if active_module == 'doctor' %}2{% else %}5{% endif %}" class="px-6 py-12 text-center text-slate-500">No items linked to this purchase</td>
                                 </tr>
                             {% endfor %}
                         </tbody>
                     </table>
                 </div>
             </div>
+
+            {# General Notes Section #}
+            {{ include('components/_notes_section.html.twig', {
+                'targetType': 'purchase',
+                'targetId': purchase.id,
+                'notes': get_notes('purchase', purchase.id),
+                'redirectUrl': path('app_purchases_show', {'slug': purchase.slug})
+            }) }}
         </div>
         
         <!-- Sidebar Summary & Ledger -->
         <div class="space-y-6">
+            {% if active_module == 'doctor' %}
+            <!-- Pharmacy Info Card -->
+            <div class="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden">
+                <div class="p-6 border-b border-slate-100 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-900/50">
+                    <h3 class="text-sm font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
+                        <i data-lucide="building-2" class="w-4 h-4 text-indigo-600 dark:text-indigo-400"></i>
+                        <span>Pharmacy Info</span>
+                    </h3>
+                </div>
+                <div class="p-6 space-y-4">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-lg bg-indigo-50 dark:bg-indigo-950/50 flex items-center justify-center text-indigo-600 dark:text-indigo-400 font-bold border border-indigo-100 dark:border-indigo-900/50 text-base">
+                            {{ purchase.contact.name|first|upper }}
+                        </div>
+                        <div>
+                            <h4 class="text-sm font-bold text-slate-900 dark:text-slate-100">{{ purchase.contact.name }}</h4>
+                            <span class="inline-block text-[11px] font-semibold text-slate-500 dark:text-slate-400">Pharmacy Supplier</span>
+                        </div>
+                    </div>
+                    {% if purchase.contact.phone or purchase.contact.email %}
+                    <div class="pt-3 border-t border-slate-100 dark:border-slate-700/60 space-y-2 text-xs text-slate-600 dark:text-slate-300">
+                        {% if purchase.contact.phone %}
+                            <div class="flex items-center gap-2">
+                                <i data-lucide="phone" class="w-3.5 h-3.5 text-slate-400"></i>
+                                <span>{{ purchase.contact.phone }}</span>
+                            </div>
+                        {% endif %}
+                        {% if purchase.contact.email %}
+                            <div class="flex items-center gap-2">
+                                <i data-lucide="mail" class="w-3.5 h-3.5 text-slate-400"></i>
+                                <span>{{ purchase.contact.email }}</span>
+                            </div>
+                        {% endif %}
+                    </div>
+                    {% endif %}
+                    <div class="pt-3 border-t border-slate-100 dark:border-slate-700/60">
+                        <a href="{{ purchase.contact.type == 'client' ? path('app_clients_show', {'slug': purchase.contact.slug}) : path('app_suppliers_show', {'slug': purchase.contact.slug}) }}" class="w-full inline-flex items-center justify-center gap-2 px-4 py-2 text-xs font-semibold text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/40 hover:bg-indigo-100 dark:hover:bg-indigo-900/50 rounded-lg transition-colors">
+                            <span>View Pharmacy Profile</span>
+                            <i data-lucide="arrow-right" class="w-3.5 h-3.5"></i>
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Stock Intake Summary Widget -->
+            <div class="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden">
+                <div class="p-6 border-b border-slate-100 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-900/50">
+                    <h3 class="text-sm font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
+                        <i data-lucide="package-check" class="w-4 h-4 text-emerald-600 dark:text-emerald-400"></i>
+                        <span>Stock Intake Summary</span>
+                    </h3>
+                </div>
+                <div class="p-6 space-y-4">
+                    {% set total_qty = 0 %}
+                    {% for item in purchase.purchaseItems %}
+                        {% set total_qty = total_qty + item.quantity %}
+                    {% endfor %}
+                    <div class="grid grid-cols-2 gap-3 text-center">
+                        <div class="p-4 bg-slate-50 dark:bg-slate-900/80 rounded-xl border border-slate-100 dark:border-slate-600">
+                            <div class="text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">Medications</div>
+                            <div class="text-2xl font-bold text-slate-900 dark:text-white">{{ purchase.purchaseItems|length }}</div>
+                            <div class="text-xs text-slate-400 dark:text-slate-500 mt-0.5">Types</div>
+                        </div>
+                        <div class="p-4 bg-slate-50 dark:bg-slate-900/80 rounded-xl border border-slate-100 dark:border-slate-600">
+                            <div class="text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">Total Units</div>
+                            <div class="text-2xl font-bold text-emerald-600 dark:text-emerald-400">{{ total_qty }}</div>
+                            <div class="text-xs text-slate-400 dark:text-slate-500 mt-0.5">Units</div>
+                        </div>
+                    </div>
+                    <div class="p-3 bg-emerald-50 dark:bg-emerald-900/30 rounded-lg border border-emerald-200 dark:border-emerald-700/60 flex items-start gap-3">
+                        <i data-lucide="check-circle-2" class="w-4 h-4 text-emerald-600 dark:text-emerald-400 flex-shrink-0 mt-0.5"></i>
+                        <span class="text-xs text-emerald-800 dark:text-emerald-300 font-medium leading-relaxed">All medications from this order have been logged into clinic stock and are available for prescriptions.</span>
+                    </div>
+                </div>
+            </div>
+            {% else %}
             <!-- Payment History only in sidebar -->
-            
             <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
                 <div class="p-6 border-b border-slate-100 bg-slate-50/50">
                     <h3 class="text-sm font-bold text-slate-900">Payment History</h3>
@@ -283,10 +378,12 @@
                     {% endfor %}
                 </div>
             </div>
+            {% endif %}
         </div>
     </div>
 
-    <!-- Payment Recording Modal -->
+    <!-- Payment Recording Modal (hidden in doctor mode) -->
+    {% if active_module != 'doctor' %}
     <dialog id="payment-modal" style="margin:auto;" class="p-0 rounded-lg shadow-xl border border-slate-200 backdrop:bg-slate-600/20 backdrop:backdrop-blur-[2px] open:animate-in open:fade-in open:zoom-in-95 duration-200 w-full max-w-md">
         <div class="bg-white text-left overflow-hidden">
             <div class="p-6 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
@@ -336,6 +433,7 @@
             </form>
         </div>
     </dialog>
+    {% endif %}
 
     <!-- Cancel Confirmation Modal -->
     <dialog id="cancel-modal" style="margin:auto;" class="p-0 rounded-lg shadow-xl border border-slate-200 backdrop:bg-slate-600/20 backdrop:backdrop-blur-[2px] open:animate-in open:fade-in open:zoom-in-95 duration-200 w-full max-w-md">

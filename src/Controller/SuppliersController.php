@@ -128,6 +128,8 @@ final class SuppliersController extends AbstractController
             5
         );
 
+        $activeModule = $settingRepository->findOneBy(['keyName' => 'active_module'])?->getValue() ?? 'none';
+
         return $this->render('suppliers/show.html.twig', [
             'supplier' => $contact,
             'recent_purchases' => $recentPurchases,
@@ -136,6 +138,7 @@ final class SuppliersController extends AbstractController
             'lifetime_revenue' => $lifetimeRevenue,
             'total_orders' => $activePurchasesCount,
             'total_sales' => $activeSalesCount,
+            'active_module' => $activeModule,
             'user' => $this->getUser(),
             'company_logo' => $settingRepository->findOneBy(['keyName' => 'company_logo'])?->getValue(),
             'company_name' => $settingRepository->findOneBy(['keyName' => 'company_name'])?->getValue(),

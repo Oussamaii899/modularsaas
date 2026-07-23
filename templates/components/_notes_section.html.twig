@@ -1,0 +1,114 @@
+{# templates/components/_notes_section.html.twig #}
+{# Parameters expected: targetType, targetId, notes (array of Note entities), redirectUrl #}
+
+<div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden mt-6">
+    <div class="p-6 border-b border-slate-100 bg-slate-50/50 flex items-center justify-between">
+        <div class="flex items-center gap-2">
+            <i data-lucide="notebook-tabs" class="w-5 h-5 text-indigo-600"></i>
+            <h3 class="text-sm font-bold text-slate-900">Notes & Comments</h3>
+        </div>
+        <span class="text-xs font-semibold text-slate-600 bg-white px-2 py-1 rounded border border-slate-200">{{ notes|length }} Note(s)</span>
+    </div>
+
+    <!-- Notes timeline list -->
+    <div class="p-6 space-y-4 max-h-[350px] overflow-y-auto">
+        {% for note in notes %}
+            <div class="flex items-start gap-3 text-sm border-b border-slate-50 pb-3 last:border-0 last:pb-0">
+                <div class="w-8 h-8 rounded-full overflow-hidden flex-shrink-0 flex items-center justify-center bg-indigo-50 text-indigo-600 font-bold text-xs">
+                    {{ note.user.username|slice(0, 2)|upper }}
+                </div>
+                <div class="flex-1">
+                    <div class="flex items-center justify-between gap-2">
+                        <div class="font-bold text-slate-900">{{ note.user.username }}</div>
+                        <div class="flex items-center gap-2">
+                            <span class="text-xs text-slate-400">{{ note.createdAt|date('M d, Y H:i') }}</span>
+                            {% if note.user == app.user or is_granted('ROLE_ADMIN') %}
+                                <div class="flex items-center gap-1.5 ml-2">
+                                    <!-- Edit Trigger -->
+                                    <button type="button" onclick="document.getElementById('edit-note-modal-{{ note.id }}').showModal()" class="text-slate-400 hover:text-indigo-600 transition-colors" title="Edit note" style="border:0; background:transparent; cursor:pointer; padding:0;">
+                                        <i data-lucide="pencil" class="w-3.5 h-3.5"></i>
+                                    </button>
+                                    
+                                    <!-- Delete Trigger -->
+                                    <button type="button" onclick="document.getElementById('delete-note-modal-{{ note.id }}').showModal()" class="text-slate-400 hover:text-red-600 transition-colors" title="Delete note" style="border:0; background:transparent; cursor:pointer; padding:0;">
+                                        <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                                    </button>
+                                </div>
+
+                                <!-- Edit Dialog Modal -->
+                                <dialog id="edit-note-modal-{{ note.id }}" class="m-auto border-0 p-0 rounded-xl shadow-2xl max-w-md w-full overflow-hidden bg-white dark:bg-slate-800 backdrop:bg-slate-900/40 backdrop:backdrop-blur-sm">
+                                    <form action="{{ path('app_note_edit', {'id': note.id}) }}" method="POST" class="p-6 space-y-4">
+                                        <input type="hidden" name="redirectUrl" value="{{ redirectUrl }}">
+                                        <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+                                            <h3 class="text-base font-bold text-slate-900 dark:text-slate-100">Edit Note</h3>
+                                            <button type="button" onclick="document.getElementById('edit-note-modal-{{ note.id }}').close()" class="text-slate-400 hover:text-slate-600">
+                                                <i data-lucide="x" class="w-4 h-4"></i>
+                                            </button>
+                                        </div>
+                                        <div class="space-y-1.5">
+                                            <label class="text-xs font-bold text-slate-500 uppercase tracking-wider">Note Content</label>
+                                            <textarea name="content" rows="4" required class="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all text-sm font-medium text-slate-900">{{ note.content }}</textarea>
+                                        </div>
+                                        <div class="flex justify-end gap-3 pt-3 border-t border-slate-100">
+                                            <button type="button" onclick="document.getElementById('edit-note-modal-{{ note.id }}').close()" class="s-btn-outline" style="border:1px solid #e2e8f0; padding:0.5rem 1rem; border-radius:0.5rem; font-weight:600; cursor:pointer;">Cancel</button>
+                                            <button type="submit" class="px-4 py-2 text-sm font-bold text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg shadow-sm transition-colors active:scale-95">Save Changes</button>
+                                        </div>
+                                    </form>
+                                </dialog>
+
+                                <!-- Delete Dialog Modal -->
+                                <dialog id="delete-note-modal-{{ note.id }}" class="m-auto border-0 p-0 rounded-xl shadow-2xl max-w-sm w-full overflow-hidden bg-white dark:bg-slate-800 backdrop:bg-slate-900/40 backdrop:backdrop-blur-sm">
+                                    <div class="p-6">
+                                        <div class="flex items-start gap-4 mb-4">
+                                            <div class="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center flex-shrink-0">
+                                                <i data-lucide="alert-circle" class="w-5 h-5 text-red-600"></i>
+                                            </div>
+                                            <div>
+                                                <h3 class="text-base font-bold text-slate-900 dark:text-slate-100">Delete Note?</h3>
+                                                <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">This action cannot be undone. Are you sure you want to permanently delete this note?</p>
+                                            </div>
+                                        </div>
+                                        <div class="flex justify-end gap-3 mt-6">
+                                            <button type="button" onclick="document.getElementById('delete-note-modal-{{ note.id }}').close()" class="s-btn-outline" style="border:1px solid #e2e8f0; padding:0.5rem 1rem; border-radius:0.5rem; font-weight:600; cursor:pointer;">Cancel</button>
+                                            <form action="{{ path('app_note_delete', {'id': note.id}) }}" method="POST" class="inline m-0">
+                                                <input type="hidden" name="redirectUrl" value="{{ redirectUrl }}">
+                                                <button type="submit" class="px-4 py-2 text-sm font-bold text-white bg-red-600 hover:bg-red-700 rounded-lg transition-colors active:scale-95">Delete</button>
+                                            </form>
+                                        </div>
+                                    </div>
+                                </dialog>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="text-slate-600 mt-1 leading-relaxed whitespace-pre-line">{{ note.content }}</div>
+                </div>
+            </div>
+        {% else %}
+            <div class="text-center py-6 text-slate-400">
+                <i data-lucide="message-square-dashed" class="w-8 h-8 mx-auto mb-2 opacity-50"></i>
+                <p class="text-sm font-medium">No notes recorded yet</p>
+            </div>
+        {% endfor %}
+    </div>
+
+    <!-- New note form -->
+    <div class="p-6 bg-slate-50/50 border-t border-slate-100">
+        <form action="{{ path('app_note_create') }}" method="POST" class="space-y-3">
+            <input type="hidden" name="targetType" value="{{ targetType }}">
+            <input type="hidden" name="targetId" value="{{ targetId }}">
+            <input type="hidden" name="redirectUrl" value="{{ redirectUrl }}">
+            
+            <div class="space-y-1.5">
+                <label class="text-xs font-bold text-slate-500 uppercase tracking-wider">Add a Note</label>
+                <textarea name="content" rows="2" required placeholder="Type notes here..." class="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all text-sm font-medium text-slate-900 placeholder-slate-400"></textarea>
+            </div>
+            
+            <div class="flex justify-end">
+                <button type="submit" class="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-bold text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg shadow-sm transition-colors active:scale-95">
+                    <i data-lucide="send" class="w-4 h-4"></i>
+                    <span>Submit Note</span>
+                </button>
+            </div>
+        </form>
+    </div>
+</div>

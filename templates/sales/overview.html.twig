@@ -1,8 +1,8 @@
 {% extends 'layouts/dashboard.html.twig' %}
 
-{% block title %}Sales Overview | {{ company_name ?? 'ModularSaaS' }}{% endblock %}
+{% block title %}{{ 'Sales'|module_term }} Overview | {{ company_name ?? 'ModularSaaS' }}{% endblock %}
 
-{% block content_title %}Sales Analytics{% endblock %}
+{% block content_title %}{{ 'Sales'|module_term }} Analytics{% endblock %}
 {% block content_subtitle %}Performance and Revenue Tracking{% endblock %}
 
 {% block stylesheets %}
@@ -77,12 +77,17 @@
                     },
                     scales: {
                         y: {
+                            min: 0,
+                            suggestedMin: 0,
                             beginAtZero: true,
                             grid: { color: initialColors.grid },
                             ticks: {
                                 color: initialColors.text,
                                 font: { family: "'Inter', sans-serif" },
-                                callback: function(value) { return '$' + value.toLocaleString(); }
+                                callback: function(value) {
+                                    if (value < 0) return '';
+                                    return '$' + value.toLocaleString();
+                                }
                             },
                             border: { dash: [4, 4], display: false }
                         },
@@ -175,7 +180,7 @@
                     
                     let currDate = moment(start).startOf(groupMode);
                     const endDate = moment(end).endOf(groupMode);
-                    while (currDate.isBefore(endDate)) {
+                    while (currDate.isSameOrBefore(endDate, groupMode)) {
                         const dateKey = currDate.format(keyFormat);
                         dailyTotals[dateKey] = { sales: 0, label: currDate.format(labelFormat) };
                         currDate.add(1, groupMode + 's');
@@ -194,10 +199,12 @@
 
                     const sortedKeys = Object.keys(dailyTotals).sort();
                     const labels = sortedKeys.map(k => dailyTotals[k].label);
-                    const salesData = sortedKeys.map(k => dailyTotals[k].sales);
+                    const salesData = sortedKeys.map(k => Math.max(0, dailyTotals[k].sales));
 
                     salesOverviewChart.data.labels = labels;
                     salesOverviewChart.data.datasets[0].data = salesData;
+                    salesOverviewChart.data.datasets[0].pointRadius = sortedKeys.length === 1 ? 7 : 4;
+                    salesOverviewChart.data.datasets[0].pointHoverRadius = sortedKeys.length === 1 ? 9 : 6;
                     salesOverviewChart.update();
                 })
                 .catch(err => console.error('Error fetching sales analytics:', err));
@@ -222,90 +229,199 @@
 
             updateDateRangeDisplay(start, end, 'Last 30 Days');
 
-            const generateBtn = document.getElementById('generate-report-btn');
-            if (generateBtn) {
-                generateBtn.addEventListener('click', function(e) {
-                    e.preventDefault();
-                    
-                    const container = document.getElementById('report-content-container');
-                    
-                    // Show loading spinner
+            const container = document.getElementById('report-content-container');
+            const COOLDOWN_DAYS = 3;
+            const COOLDOWN_MS = COOLDOWN_DAYS * 24 * 60 * 60 * 1000;
+
+            function syncAndDownload(cache) {
+                const dlBtn = document.getElementById('download-report-btn');
+                const originalHTML = dlBtn.innerHTML;
+                dlBtn.disabled = true;
+                dlBtn.innerHTML = `
+                    <svg class="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" style="height: 16px; width: 16px; display: inline-block;">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" style="opacity: 0.25;"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" style="opacity: 0.75;"></path>
+                    </svg>
+                    <span>Preparing PDF...</span>
+                `;
+
+                fetch('/sales/overview/growth-report/sync-cache', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(cache)
+                })
+                .then(res => res.json())
+                .then(data => {
+                    dlBtn.disabled = false;
+                    dlBtn.innerHTML = originalHTML;
+                    if (data.success) {
+                        window.location.href = '/sales/overview/growth-report/download';
+                    } else {
+                        alert('Error preparing PDF: ' + (data.error || 'Unknown error'));
+                    }
+                })
+                .catch(err => {
+                    dlBtn.disabled = false;
+                    dlBtn.innerHTML = originalHTML;
+                    alert('Failed to connect to the server.');
+                });
+            }
+
+            function getCooldownRemaining(generatedAt) {
+                const diff = (generatedAt + COOLDOWN_MS) - Date.now();
+                if (diff <= 0) return null;
+                const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+                const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+                const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+                if (days > 0) return `${days}d ${hours}h remaining`;
+                if (hours > 0) return `${hours}h ${minutes}m remaining`;
+                return `${minutes}m remaining`;
+            }
+
+            function updateReportUI() {
+                const cacheStr = localStorage.getItem('cfo_report_cache');
+                if (!cacheStr) {
+                    // Initial state when no report has been generated yet
                     container.innerHTML = `
-                        <div class="flex flex-col items-center justify-center py-8 w-full">
-                            <svg class="animate-spin h-8 w-8 text-indigo-600 mb-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" style="height: 32px; width: 32px;">
-                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" style="opacity: 0.25;"></circle>
-                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" style="opacity: 0.75;"></path>
-                            </svg>
-                            <p class="text-sm font-semibold text-slate-600 text-center">Analyzing financial data and compiling CFO growth insights...</p>
+                        <div class="inline-flex items-center rounded-full border border-indigo-200 bg-indigo-50 px-4 py-1.5 text-xs font-bold text-indigo-700 transition-colors self-start shadow-sm" style="width: max-content; margin-bottom: 2rem;">
+                            <i data-lucide="trending-up" class="w-3 h-3 mr-1.5"></i>
+                            Growth Indicator
+                        </div>
+                        <h3 class="text-xl font-bold tracking-tight text-slate-900 mb-3">Maximize your Revenue</h3>
+                        <p class="text-sm text-slate-500 max-w-sm mb-12 leading-relaxed">Your average transaction value has increased by 12% this month. Keep track of your key accounts to maintain momentum.</p>
+                        
+                        <div class="mt-8 w-full">
+                            <button id="generate-report-btn" class="w-full inline-flex items-center justify-center rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow hover:bg-indigo-700 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-indigo-950 transition-colors" style="cursor: pointer;">
+                                Generate Growth Report
+                            </button>
+                            <p class="text-center text-xs text-slate-400 mt-3 font-medium">New report available every 3 days</p>
                         </div>
                     `;
-                    
-                    const params = new URLSearchParams({
-                        date: start.format('YYYY-MM-DD'),
-                        end: end.format('YYYY-MM-DD')
-                    });
-                    
-                    fetch(`/sales/overview/growth-report?${params.toString()}`)
-                        .then(res => res.json())
-                        .then(data => {
-                            if (data.success) {
-                                container.innerHTML = `
-                                    <div class="flex flex-col items-center justify-center text-center py-4 w-full">
-                                        <div class="w-12 h-12 rounded-full bg-emerald-50 flex items-center justify-center text-emerald-600 mb-4 border border-emerald-100 shadow-sm animate-pulse">
-                                            <i data-lucide="file-text" class="w-6 h-6"></i>
-                                        </div>
-                                        <h4 class="text-base font-bold text-slate-900 mb-1">AI CFO Report Ready</h4>
-                                        <p class="text-xs text-slate-500 max-w-xs mb-6">
-                                            Detailed health metrics, risk analysis, 30-day forecast, and top 3 actions are ready.
-                                        </p>
-                                    </div>
-                                    <div class="w-full flex flex-col gap-2 mt-auto">
-                                        <a href="/sales/overview/growth-report/download" class="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white shadow hover:bg-emerald-700 transition-all">
-                                            <i data-lucide="download" class="w-4 h-4"></i>
-                                            <span>Download PDF Report</span>
-                                        </a>
-                                        <button id="regenerate-report-btn" class="w-full inline-flex items-center justify-center rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-600 hover:bg-slate-50 transition-all" style="cursor: pointer;">
-                                            Regenerate
-                                        </button>
-                                    </div>
-                                `;
-                                
-                                // Re-initialize icons
-                                if (window.lucide) window.lucide.createIcons();
-                                
-                                // Hook up regenerate
-                                document.getElementById('regenerate-report-btn').addEventListener('click', () => {
-                                    generateBtn.click();
-                                });
-                            } else {
-                                container.innerHTML = `
-                                    <div class="text-center py-4 w-full">
-                                        <p class="text-sm text-rose-600 font-semibold mb-3">${data.report}</p>
-                                        <button id="retry-report-btn" class="inline-flex items-center justify-center rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow hover:bg-indigo-700 transition-colors" style="cursor: pointer;">
-                                            Retry
-                                        </button>
-                                    </div>
-                                `;
-                                document.getElementById('retry-report-btn').addEventListener('click', () => {
-                                    generateBtn.click();
-                                });
-                            }
-                        })
-                        .catch(err => {
+                    hookGenerateButton();
+                    if (window.lucide) window.lucide.createIcons();
+                    return;
+                }
+
+                const cache = JSON.parse(cacheStr);
+                const remaining = getCooldownRemaining(cache.generated_at);
+                const isCooldownActive = remaining !== null;
+
+                let actionButtonsHTML = '';
+                if (isCooldownActive) {
+                    actionButtonsHTML = `
+                        <button id="download-report-btn" class="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white shadow hover:bg-emerald-700 transition-all" style="cursor: pointer;">
+                            <i data-lucide="download" class="w-4 h-4"></i>
+                            <span>Download PDF Report</span>
+                        </button>
+                        <p class="text-center text-xs text-slate-400 mt-3 font-medium">Next report available in ${remaining}</p>
+                    `;
+                } else {
+                    actionButtonsHTML = `
+                        <button id="download-report-btn" class="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white shadow hover:bg-emerald-700 transition-all mb-2" style="cursor: pointer;">
+                            <i data-lucide="download" class="w-4 h-4"></i>
+                            <span>Download PDF Report</span>
+                        </button>
+                        <button id="generate-report-btn" class="w-full inline-flex items-center justify-center rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-600 hover:bg-slate-50 transition-all" style="cursor: pointer;">
+                            Generate New Report
+                        </button>
+                    `;
+                }
+
+                container.innerHTML = `
+                    <div class="flex flex-col items-center justify-center text-center py-4 w-full">
+                        <div class="w-12 h-12 rounded-full bg-emerald-50 flex items-center justify-center text-emerald-600 mb-4 border border-emerald-100 shadow-sm animate-pulse">
+                            <i data-lucide="file-text" class="w-6 h-6"></i>
+                        </div>
+                        <h4 class="text-base font-bold text-slate-900 mb-1">AI CFO Report Ready</h4>
+                        <p class="text-xs text-slate-500 max-w-xs mb-6">
+                            Detailed health metrics, risk analysis, 30-day forecast, and top 3 actions are ready (generated ${new Date(cache.generated_at).toLocaleDateString()}).
+                        </p>
+                    </div>
+                    <div class="w-full flex flex-col mt-auto">
+                        ${actionButtonsHTML}
+                    </div>
+                `;
+
+                // Hook events
+                const dlBtn = document.getElementById('download-report-btn');
+                if (dlBtn) {
+                    dlBtn.addEventListener('click', () => syncAndDownload(cache));
+                }
+
+                const genBtn = document.getElementById('generate-report-btn');
+                if (genBtn) {
+                    hookGenerateButton(genBtn);
+                }
+
+                if (window.lucide) window.lucide.createIcons();
+            }
+
+            function triggerGeneration() {
+                // Show loading spinner
+                container.innerHTML = `
+                    <div class="flex flex-col items-center justify-center py-8 w-full">
+                        <svg class="animate-spin h-8 w-8 text-indigo-600 mb-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" style="height: 32px; width: 32px;">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" style="opacity: 0.25;"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" style="opacity: 0.75;"></path>
+                        </svg>
+                        <p class="text-sm font-semibold text-slate-600 text-center">Analyzing financial data and compiling CFO growth insights...</p>
+                    </div>
+                `;
+                
+                const params = new URLSearchParams({
+                    date: start.format('YYYY-MM-DD'),
+                    end: end.format('YYYY-MM-DD')
+                });
+                
+                fetch(`/sales/overview/growth-report?${params.toString()}`)
+                    .then(res => res.json())
+                    .then(data => {
+                        if (data.success) {
+                            // Save to localStorage
+                            const cacheObj = {
+                                report: data.report,
+                                generated_at: Date.now(),
+                                start_date: start.format('YYYY-MM-DD'),
+                                end_date: end.format('YYYY-MM-DD')
+                            };
+                            localStorage.setItem('cfo_report_cache', JSON.stringify(cacheObj));
+                            updateReportUI();
+                        } else {
                             container.innerHTML = `
                                 <div class="text-center py-4 w-full">
-                                    <p class="text-sm text-rose-600 font-semibold mb-3">Failed to connect to server.</p>
+                                    <p class="text-sm text-rose-600 font-semibold mb-3">${data.report}</p>
                                     <button id="retry-report-btn" class="inline-flex items-center justify-center rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow hover:bg-indigo-700 transition-colors" style="cursor: pointer;">
                                         Retry
                                     </button>
                                 </div>
                             `;
-                            document.getElementById('retry-report-btn').addEventListener('click', () => {
-                                generateBtn.click();
-                            });
-                        });
+                            document.getElementById('retry-report-btn').addEventListener('click', triggerGeneration);
+                        }
+                    })
+                    .catch(err => {
+                        container.innerHTML = `
+                            <div class="text-center py-4 w-full">
+                                <p class="text-sm text-rose-600 font-semibold mb-3">Failed to connect to server or request timed out.</p>
+                                <button id="retry-report-btn" class="inline-flex items-center justify-center rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow hover:bg-indigo-700 transition-colors" style="cursor: pointer;">
+                                    Retry
+                                </button>
+                            </div>
+                        `;
+                        document.getElementById('retry-report-btn').addEventListener('click', triggerGeneration);
+                    });
+            }
+
+            function hookGenerateButton(btnEl = null) {
+                const btn = btnEl || document.getElementById('generate-report-btn');
+                if (!btn) return;
+                btn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    triggerGeneration();
                 });
             }
+
+            // Initialize state on page load
+            updateReportUI();
         });
     </script>
 {% endblock %}
@@ -322,7 +438,7 @@
         {% if is_granted('add.sales') %}
         <a href="{{ path('app_sales_new') }}" class="inline-flex h-10 items-center justify-center gap-2 rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow hover:bg-indigo-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 transition-colors">
             <i data-lucide="plus" class="w-4 h-4 text-white"></i>
-            <span>Register Sale</span>
+            <span>Register {{ 'Sale'|module_term }}</span>
         </a>
         {% endif %}
     </div>
@@ -349,7 +465,7 @@
                 value_id: 'total-refunds-value',
                 icon: 'rotate-ccw',
                 change_type: (total_refunds_30 > 0 ? 'down' : 'neutral'),
-                change_text: 'Returned to Clients',
+                change_text: 'Returned to ' ~ ('Clients'|module_term),
                 change_text_id: 'total-refunds-change-text',
                 change_icon: 'alert-circle',
                 value_class: (total_refunds_30 > 0 ? 'text-rose-600' : 'text-slate-900')
@@ -385,8 +501,8 @@
         <div class="p-6 bg-white border border-slate-200 rounded-2xl shadow-sm flex flex-col hover:shadow-md transition-shadow">
             <div class="flex items-center justify-between mb-6">
                 <div>
-                    <h3 class="text-lg font-bold text-slate-900 tracking-tight">Revenue Trend</h3>
-                    <p class="text-sm text-slate-500">Daily breakdown of collected revenue for the selected timeframe</p>
+                    <h3 class="text-lg font-bold text-slate-900 tracking-tight">{{ 'Revenue'|module_term }} Trend</h3>
+                    <p class="text-sm text-slate-500">Daily breakdown of collected {{ 'revenue'|module_term }} for the selected timeframe</p>
                 </div>
             </div>
             <div class="relative w-full min-h-[300px]">
@@ -397,14 +513,14 @@
         <!-- 3. Bottom Panels -->
         <div class="flex flex-col gap-6">
             <div>
-                <h2 class="text-lg font-semibold text-slate-900">Recent Client Activity</h2>
-                <p class="text-sm text-slate-500">Tracking the latest accounts and transactions</p>
+                <h2 class="text-lg font-semibold text-slate-900">{{ 'Recent Customer Activity'|module_term }}</h2>
+                <p class="text-sm text-slate-500">Tracking the latest {{ 'client'|module_term }} accounts and transactions</p>
             </div>
 
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 <div class="rounded-xl border border-slate-200 bg-white shadow-sm flex flex-col">
                     <div class="p-6 border-b border-slate-100 flex items-center justify-between">
-                        <h3 class="font-semibold text-slate-900">Recent Customer Activity</h3>
+                        <h3 class="font-semibold text-slate-900">{{ 'Recent Customer Activity'|module_term }}</h3>
                         <i data-lucide="star" class="w-4 h-4 text-amber-500 fill-amber-500"></i>
                     </div>
                     <div class="flex-1 p-2">
@@ -424,11 +540,11 @@
                                 </a>
                             </div>
                         {% else %}
-                            <div class="p-10 text-center text-slate-500 text-sm">No client data available</div>
+                            <div class="p-10 text-center text-slate-500 text-sm">No {{ 'client'|module_term }} data available</div>
                         {% endfor %}
                     </div>
                     <div class="p-4 border-t border-slate-100 text-center">
-                        <a href="{{ path('app_clients_index') }}" class="text-sm font-medium text-indigo-600 hover:text-indigo-700 hover:underline transition-colors">View All Customers</a>
+                        <a href="{{ path('app_clients_index') }}" class="text-sm font-medium text-indigo-600 hover:text-indigo-700 hover:underline transition-colors">{{ 'View All Customers'|module_term }}</a>
                     </div>
                 </div>
 

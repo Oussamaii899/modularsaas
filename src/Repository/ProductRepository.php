@@ -27,6 +27,20 @@ class ProductRepository extends ServiceEntityRepository
             ->getArrayResult();
     }
 
+    /**
+     * Returns full Product entities with stock at or below the threshold.
+     */
+    public function findLowStockProducts(int $threshold = 5): array
+    {
+        return $this->createQueryBuilder('p')
+            ->where('p.stockQuantity <= :threshold')
+            ->andWhere('p.stockQuantity >= 0')
+            ->setParameter('threshold', $threshold)
+            ->orderBy('p.stockQuantity', 'ASC')
+            ->getQuery()
+            ->getResult();
+    }
+
     public function searchAndPaginate(?string $query, int $page = 1, int $limit = 10): array
     {
         $qb = $this->createQueryBuilder('p');

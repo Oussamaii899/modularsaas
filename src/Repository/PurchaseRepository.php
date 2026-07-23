@@ -132,6 +132,22 @@ class PurchaseRepository extends ServiceEntityRepository
             ->getResult();
     }
 
+    public function ordersCountByDate($startDate, $endDate){
+        $start = new \DateTimeImmutable($startDate);
+        $end = (new \DateTimeImmutable($endDate))->setTime(23, 59, 59);
+
+        return $this->createQueryBuilder("p")
+            ->select("SUBSTRING(p.createdAt, 1, 10) as date, COUNT(p.id) as total")
+            ->where("p.createdAt >= :start")
+            ->andWhere("p.createdAt <= :end")
+            ->andWhere("p.paymentStatus != 'Cancelled'")
+            ->setParameter("start", $start)
+            ->setParameter("end", $end)
+            ->groupBy("date")
+            ->getQuery()
+            ->getResult();
+    }
+
     public function findRecent($startDate, $endDate, int $limit = 5)
     {
         $start = new \DateTimeImmutable($startDate);
@@ -155,8 +171,20 @@ class PurchaseRepository extends ServiceEntityRepository
             ->addSelect('c');
 
         if ($query) {
-            $qb->andWhere('c.name LIKE :query OR p.id LIKE :query')
-               ->setParameter('query', '%' . $query . '%');
+            $trimmedQuery = trim($query);
+            $qb->leftJoin('p.purchaseItems', 'pi')
+               ->leftJoin('pi.product', 'prod');
+
+            $cleanId = preg_replace('/[^0-9]/', '', $trimmedQuery);
+
+            if ($cleanId !== '') {
+                $qb->andWhere('c.name LIKE :query OR p.id = :idVal OR pi.pName LIKE :query OR prod.name LIKE :query')
+                   ->setParameter('query', '%' . $trimmedQuery . '%')
+                   ->setParameter('idVal', (int)$cleanId);
+            } else {
+                $qb->andWhere('c.name LIKE :query OR pi.pName LIKE :query OR prod.name LIKE :query')
+                   ->setParameter('query', '%' . $trimmedQuery . '%');
+            }
         }
 
         if ($status) {
@@ -175,10 +203,11 @@ class PurchaseRepository extends ServiceEntityRepository
         $qb->orderBy($sortField, $sortDir);
 
         $countQb = clone $qb;
-        $totalItems = count($countQb->getQuery()->getResult());
+        $totalItems = (int) $countQb->select('COUNT(DISTINCT p.id)')->getQuery()->getSingleScalarResult();
         $pagesCount = (int) ceil($totalItems / $limit);
 
-        $results = $qb->setFirstResult(($page - 1) * $limit)
+        $results = $qb->distinct()
+            ->setFirstResult(($page - 1) * $limit)
             ->setMaxResults($limit)
             ->getQuery()
             ->getResult();
@@ -189,5 +218,17 @@ class PurchaseRepository extends ServiceEntityRepository
             'currentPage' => $page,
             'totalItems' => $totalItems
         ];
+    }
+
+    /**
+     * Find all unpaid or partially paid purchases (for outstanding payable notifications).
+     */
+    public function findUnpaidOrPartial(): array
+    {
+        return $this->createQueryBuilder('p')
+            ->where("p.paymentStatus IN ('Unpaid', 'Partial')")
+            ->orderBy('p.created_at', 'ASC')
+            ->getQuery()
+            ->getResult();
     }
 }

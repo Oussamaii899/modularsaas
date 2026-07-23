@@ -1,0 +1,14 @@
+framework:
+    rate_limiter:
+        login_limiter:
+            policy: 'token_bucket'
+            limit: 5
+            rate: { amount: 1, interval: '1 minute' }
+        api_limiter:
+            policy: 'token_bucket'
+            limit: 60
+            rate: { amount: 60, interval: '1 minute' }
+        ai_report_limiter:
+            policy: 'token_bucket'
+            limit: 3
+            rate: { amount: 3, interval: '1 hour' }

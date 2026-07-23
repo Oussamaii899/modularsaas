@@ -22,8 +22,11 @@ class Product
     #[ORM\Column(type: Types::DECIMAL, precision: 10, scale: 2)]
     private ?string $price = null;
 
+    #[ORM\Column(type: Types::DECIMAL, precision: 10, scale: 2, nullable: true)]
+    private ?string $purchasePrice = null;
+
     #[ORM\Column]
-    private ?int $stockQuantity = null;
+    private int $stockQuantity = 0;
 
     #[ORM\Column(length: 100, unique: true, nullable: true)]
     private ?string $sku = null;
@@ -37,15 +40,26 @@ class Product
     #[ORM\Column(length: 255, nullable: true)]
     private ?string $image = null;
 
+    #[ORM\Column(options: ["default" => false])]
+    private bool $isSerialized = false;
+
     /**
      * @var Collection<int, ProductScreen>
      */
     #[ORM\OneToMany(mappedBy: 'product', targetEntity: ProductScreen::class, cascade: ['persist', 'remove'], orphanRemoval: true)]
     private Collection $screens;
 
+    /**
+     * @var Collection<int, ProductItem>
+     */
+    #[ORM\OneToMany(mappedBy: 'product', targetEntity: ProductItem::class, cascade: ['persist', 'remove'], orphanRemoval: true)]
+    private Collection $productItems;
+
     public function __construct()
     {
         $this->screens = new ArrayCollection();
+        $this->productItems = new ArrayCollection();
+        $this->stockQuantity = 0;
     }
 
     public function getId(): ?int { return $this->id; }
@@ -66,8 +80,26 @@ class Product
     public function getPrice(): ?string { return $this->price; }
     public function setPrice(string $price): static { $this->price = $price; return $this; }
 
-    public function getStockQuantity(): ?int { return $this->stockQuantity; }
-    public function setStockQuantity(int $stockQuantity): static { $this->stockQuantity = $stockQuantity; return $this; }
+    public function getPurchasePrice(): ?string { return $this->purchasePrice; }
+    public function setPurchasePrice(?string $purchasePrice): static { $this->purchasePrice = $purchasePrice; return $this; }
+
+    public function isSerialized(): bool { return $this->isSerialized; }
+    public function setIsSerialized(bool $isSerialized): static { $this->isSerialized = $isSerialized; return $this; }
+
+    public function getStockQuantity(): int 
+    { 
+        if ($this->isSerialized) {
+            $availableCount = 0;
+            foreach ($this->productItems as $item) {
+                if (in_array($item->getStatus(), [ProductItem::STATUS_AVAILABLE, ProductItem::STATUS_REFUNDED_OK], true)) {
+                    $availableCount++;
+                }
+            }
+            return $availableCount;
+        }
+        return $this->stockQuantity ?? 0; 
+    }
+    public function setStockQuantity(?int $stockQuantity): static { $this->stockQuantity = $stockQuantity ?? 0; return $this; }
 
     public function getSku(): ?string { return $this->sku; }
     public function setSku(?string $sku): static { $this->sku = $sku; return $this; }
@@ -101,6 +133,33 @@ class Product
             // set the owning side to null (unless already changed)
             if ($screen->getProduct() === $this) {
                 $screen->setProduct(null);
+            }
+        }
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, ProductItem>
+     */
+    public function getProductItems(): Collection
+    {
+        return $this->productItems;
+    }
+
+    public function addProductItem(ProductItem $productItem): static
+    {
+        if (!$this->productItems->contains($productItem)) {
+            $this->productItems->add($productItem);
+            $productItem->setProduct($this);
+        }
+        return $this;
+    }
+
+    public function removeProductItem(ProductItem $productItem): static
+    {
+        if ($this->productItems->removeElement($productItem)) {
+            if ($productItem->getProduct() === $this) {
+                $productItem->setProduct(null);
             }
         }
         return $this;

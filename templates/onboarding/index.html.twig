@@ -1,0 +1,760 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Workspace Setup & Onboarding{% endblock %}
+
+{% block body %}
+<style>
+    /* Styling & Theme Variables Compatibility */
+    .onboard-container {
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 3rem 1rem;
+        background: #fafafa;
+        transition: background-color 0.3s;
+        position: relative;
+        overflow: hidden;
+    }
+    html.dark .onboard-container {
+        background: #090d16;
+    }
+
+    /* Subtle animated background glow */
+    .bg-glow-1, .bg-glow-2 {
+        position: absolute;
+        width: 32rem;
+        height: 32rem;
+        border-radius: 50%;
+        filter: blur(140px);
+        opacity: 0.08;
+        pointer-events: none;
+        z-index: 0;
+        animation: floatGlow 15s infinite alternate ease-in-out;
+    }
+    .bg-glow-1 {
+        background: #6366f1;
+        top: -5rem;
+        left: -5rem;
+    }
+    .bg-glow-2 {
+        background: #a855f7;
+        bottom: -5rem;
+        right: -5rem;
+        animation-delay: -7s;
+    }
+    @keyframes floatGlow {
+        0% { transform: translate(0, 0) scale(1); }
+        100% { transform: translate(60px, 40px) scale(1.1); }
+    }
+
+    .onboard-wrapper {
+        width: 100%;
+        max-width: 28rem; /* Compact mobile app style */
+        position: relative;
+        z-index: 10;
+        padding: 1rem;
+    }
+
+    /* Navigation Card Radio buttons */
+    .s-radio-card {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 1rem 1.25rem;
+        border: 1px solid #e2e8f0;
+        border-radius: 1rem;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        background: #ffffff;
+    }
+    .s-radio-card:hover { 
+        background: #f8fafc; 
+        border-color: #cbd5e1;
+    }
+    html.dark .s-radio-card { 
+        border-color: #1e293b; 
+        background: #111827;
+    }
+    html.dark .s-radio-card:hover { 
+        background: #1f2937; 
+        border-color: #374151;
+    }
+    .s-radio-card.selected {
+        border-color: var(--primary-500, #6366f1);
+        box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.12);
+        background: rgba(99, 102, 241, 0.02);
+    }
+    html.dark .s-radio-card.selected {
+        border-color: var(--primary-400, #818cf8);
+        box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.15);
+        background: rgba(129, 140, 248, 0.03);
+    }
+    .s-radio-card span {
+        font-size: 0.9rem;
+        font-weight: 600;
+        color: #0f172a;
+    }
+    html.dark .s-radio-card span { color: #f1f5f9; }
+
+    /* Accent color dots selection */
+    .s-color-card {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        padding: 0.875rem 0.5rem;
+        border: 1px solid #e2e8f0;
+        border-radius: 1rem;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        text-align: center;
+        background: #ffffff;
+    }
+    .s-color-card:hover { 
+        background: #f8fafc;
+        border-color: #cbd5e1;
+    }
+    html.dark .s-color-card { 
+        border-color: #1e293b; 
+        background: #111827;
+    }
+    html.dark .s-color-card:hover { 
+        background: #1f2937; 
+        border-color: #374151;
+    }
+    .s-color-card.selected {
+        border-color: var(--primary-500, #6366f1);
+        box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.12);
+        background: rgba(99, 102, 241, 0.02);
+    }
+    html.dark .s-color-card.selected {
+        border-color: var(--primary-400, #818cf8);
+        box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.15);
+        background: rgba(129, 140, 248, 0.03);
+    }
+    .s-color-card .s-dot {
+        width: 1.5rem;
+        height: 1.5rem;
+        border-radius: 9999px;
+        margin-bottom: 0.5rem;
+    }
+    .s-color-card .s-color-name {
+        font-size: 0.75rem;
+        font-weight: 600;
+        color: #475569;
+    }
+    html.dark .s-color-card .s-color-name { color: #94a3b8; }
+
+    /* Inputs & Select Elements - Mobile app style */
+    .s-input, .s-select {
+        width: 100%;
+        height: 3rem;
+        padding: 0 1rem;
+        font-size: 0.95rem;
+        font-family: inherit;
+        color: #0f172a;
+        background: #f1f5f9;
+        border: 1px solid transparent;
+        border-radius: 0.875rem;
+        outline: none;
+        transition: all 0.2s ease;
+    }
+    .s-input::placeholder {
+        color: #94a3b8;
+    }
+    .s-input:focus, .s-select:focus {
+        border-color: var(--primary-500, #6366f1);
+        background: #ffffff;
+        box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.08);
+    }
+    html.dark .s-input, html.dark .s-select {
+        background: #111827;
+        color: #f1f5f9;
+        border-color: transparent;
+    }
+    html.dark .s-input:focus, html.dark .s-select:focus {
+        border-color: var(--primary-400, #818cf8);
+        background: #090d16;
+        box-shadow: 0 0 0 4px rgba(129, 140, 248, 0.12);
+    }
+
+    /* Welcome logo animation */
+    .welcome-logo {
+        animation: logoPop 1.2s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+    }
+    @keyframes logoPop {
+        0% { opacity: 0; transform: scale(0.3) rotate(-15deg); }
+        70% { opacity: 0.9; transform: scale(1.1) rotate(5deg); }
+        100% { opacity: 1; transform: scale(1) rotate(0deg); }
+    }
+
+    /* Confetti implementation */
+    #confetti-container {
+        position: absolute;
+        top: 0; left: 0; width: 100%; height: 100%;
+        overflow: hidden; pointer-events: none; z-index: 10;
+    }
+    .confetti-piece {
+        position: absolute;
+        width: 8px; height: 8px;
+        top: -10px; border-radius: 2px;
+        opacity: 0.8;
+        animation: fall 3s infinite linear;
+    }
+    @keyframes fall {
+        0% { top: -10px; transform: translateX(0) rotate(0deg); opacity: 1; }
+        50% { opacity: 0.9; }
+        100% { top: 105%; transform: translateX(60px) rotate(450deg); opacity: 0; }
+    }
+
+    /* Success checkmark path animation */
+    .checkmark-circle {
+        stroke-dasharray: 166;
+        stroke-dashoffset: 166;
+        stroke-width: 2;
+        stroke-miterlimit: 10;
+        stroke: #10b981;
+        fill: none;
+        animation: stroke 0.6s cubic-bezier(0.65, 0, 0.45, 1) forwards;
+    }
+    .checkmark {
+        width: 5rem;
+        height: 5rem;
+        border-radius: 50%;
+        display: block;
+        stroke-width: 2;
+        stroke: #fff;
+        stroke-miterlimit: 10;
+        box-shadow: inset 0px 0px 0px #10b981;
+        animation: fill-checkmark .4s ease-in-out .4s forwards, scale-checkmark .3s ease-in-out .9s both;
+        margin: 0 auto;
+    }
+    .checkmark-check {
+        transform-origin: 50% 50%;
+        stroke-dasharray: 48;
+        stroke-dashoffset: 48;
+        animation: stroke 0.3s cubic-bezier(0.65, 0, 0.45, 1) 0.8s forwards;
+    }
+    @keyframes stroke {
+        100% { stroke-dashoffset: 0; }
+    }
+    @keyframes fill-checkmark {
+        100% { box-shadow: inset 0px 0px 0px 40px #10b981; }
+    }
+    @keyframes scale-checkmark {
+        0%, 100% { transform: none; }
+        50% { transform: scale3d(1.1, 1.1, 1); }
+    }
+</style>
+
+<div class="onboard-container">
+    <!-- Background glows -->
+    <div class="bg-glow-1"></div>
+    <div class="bg-glow-2"></div>
+
+    <div class="onboard-wrapper">
+        <!-- Confetti Overlay -->
+        <div id="confetti-container"></div>
+
+        <!-- Progress Header -->
+        <div id="progress-header" class="mb-8 px-1">
+            <div class="flex items-center justify-between text-xs font-semibold text-slate-400 dark:text-slate-500 mb-2.5 uppercase tracking-widest">
+                <span id="progress-label">Step 1 of 4</span>
+                <span id="progress-percentage">0% Complete</span>
+            </div>
+            <div class="w-full bg-slate-200 dark:bg-slate-800 h-1 rounded-full overflow-hidden">
+                <div id="progress-bar-indicator" class="bg-indigo-600 dark:bg-indigo-500 h-full w-0 transition-all duration-500 ease-out"></div>
+            </div>
+        </div>
+
+        <form id="onboarding-form" enctype="multipart/form-data">
+            <!-- STEP 1: Welcome Screen -->
+            <div id="step-welcome" class="step-pane transform transition-all duration-300 ease-out">
+                <div class="text-center py-6">
+                    <div class="welcome-logo w-16 h-16 bg-indigo-600 dark:bg-indigo-500 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-xl shadow-indigo-100 dark:shadow-none">
+                        <svg class="h-10 w-10 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
+                        </svg>
+                    </div>
+                    <h1 class="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">Welcome to ModularSaaS</h1>
+                    <p class="mt-2 text-sm text-slate-500 dark:text-slate-400 max-w-md mx-auto">
+                        Your professional workspace is ready. Let's configure the administrator account and initial preferences in under 2 minutes.
+                    </p>
+                    <button type="button" onclick="nextStep()" class="mt-8 inline-flex items-center justify-center px-8 py-3 text-sm font-semibold rounded-xl text-white bg-indigo-600 hover:bg-indigo-700 active:scale-[0.98] transition-all shadow-lg shadow-indigo-200 dark:shadow-none">
+                        Let's Get Started
+                        <svg class="w-4 h-4 ml-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+                    </button>
+                </div>
+            </div>
+
+            <!-- STEP 2: Administrator Creation -->
+            <div id="step-admin" class="step-pane hidden transform transition-all duration-300 ease-out">
+                <div>
+                    <h2 class="text-xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">Create Administrator</h2>
+                    <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">Establish the primary account with full privileges to manage the platform.</p>
+                </div>
+
+                <div class="mt-6 space-y-4">
+                    <div class="grid grid-cols-2 gap-4">
+                        <div class="space-y-1">
+                            <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">First Name</label>
+                            <input type="text" name="admin_firstname" id="admin_firstname" class="s-input" placeholder="Jane" required>
+                        </div>
+                        <div class="space-y-1">
+                            <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Last Name</label>
+                            <input type="text" name="admin_lastname" id="admin_lastname" class="s-input" placeholder="Doe" required>
+                        </div>
+                    </div>
+
+                    <div class="space-y-1">
+                        <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Username</label>
+                        <input type="text" name="admin_username" id="admin_username" class="s-input" placeholder="janedoe" required>
+                    </div>
+
+                    <div class="space-y-1">
+                        <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Email Address</label>
+                        <input type="email" name="admin_email" id="admin_email" class="s-input" placeholder="jane@example.com" required>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-4">
+                        <div class="space-y-1">
+                            <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Password</label>
+                            <input type="password" name="admin_password" id="admin_password" class="s-input" placeholder="••••••••" required>
+                        </div>
+                        <div class="space-y-1">
+                            <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Confirm</label>
+                            <input type="password" name="admin_password_confirm" id="admin_password_confirm" class="s-input" placeholder="••••••••" required>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mt-8 flex justify-between border-t border-slate-200 dark:border-slate-800 pt-5">
+                    <button type="button" onclick="prevStep()" class="inline-flex items-center justify-center px-5 py-2 text-sm font-semibold rounded-lg text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 transition-all">
+                        Back
+                    </button>
+                    <button type="button" onclick="nextStep()" class="inline-flex items-center justify-center px-6 py-2.5 text-sm font-semibold rounded-lg text-white bg-indigo-600 hover:bg-indigo-700 active:scale-[0.98] transition-all">
+                        Continue
+                    </button>
+                </div>
+            </div>
+
+            <!-- STEP 3: Company Details -->
+            <div id="step-company" class="step-pane hidden transform transition-all duration-300 ease-out">
+                <div>
+                    <h2 class="text-xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">Business Profile</h2>
+                    <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">Provide basic branding and localization parameters for invoices and notifications.</p>
+                </div>
+
+                <div class="mt-6 space-y-4">
+                    <div class="grid grid-cols-2 gap-4">
+                        <div class="space-y-1">
+                            <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Business Name</label>
+                            <input type="text" name="business_name" id="business_name" class="s-input" placeholder="Acme Inc." required>
+                        </div>
+                        <div class="space-y-1">
+                            <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Business Email</label>
+                            <input type="email" name="business_email" id="business_email" class="s-input" placeholder="billing@acme.com" required>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-4">
+                        <div class="space-y-1">
+                            <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Phone</label>
+                            <input type="text" name="business_phone" id="business_phone" class="s-input" placeholder="+1 (555) 0199">
+                        </div>
+                        <div class="space-y-1">
+                            <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Website URL</label>
+                            <input type="text" name="business_website" id="business_website" class="s-input" placeholder="https://acme.com">
+                        </div>
+                    </div>
+
+                    <div class="space-y-1">
+                        <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Address</label>
+                        <input type="text" name="business_address" id="business_address" class="s-input" placeholder="123 Business St, Suite 100">
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-4">
+                        <div class="space-y-1">
+                            <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Currency</label>
+                            <select name="currency" class="s-select">
+                                <option value="MAD">Moroccan Dirham (MAD)</option>
+                                <option value="$" selected>USD ($)</option>
+                                <option value="€">EUR (€)</option>
+                                <option value="£">GBP (£)</option>
+                            </select>
+                        </div>
+                        <div class="space-y-1">
+                            <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Timezone</label>
+                            <select name="timezone" class="s-select">
+                                <option value="UTC" selected>UTC</option>
+                                <option value="America/New_York">New York (EST)</option>
+                                <option value="Europe/Paris">Paris (CET)</option>
+                                <option value="Africa/Casablanca">Casablanca (WET)</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mt-8 flex justify-between border-t border-slate-200 dark:border-slate-800 pt-5">
+                    <button type="button" onclick="prevStep()" class="inline-flex items-center justify-center px-5 py-2 text-sm font-semibold rounded-lg text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 transition-all">
+                        Back
+                    </button>
+                    <button type="button" onclick="nextStep()" class="inline-flex items-center justify-center px-6 py-2.5 text-sm font-semibold rounded-lg text-white bg-indigo-600 hover:bg-indigo-700 active:scale-[0.98] transition-all">
+                        Continue
+                    </button>
+                </div>
+            </div>
+
+            <!-- STEP 4: Theme & Appearance -->
+            <div id="step-appearance" class="step-pane hidden transform transition-all duration-300 ease-out">
+                <div>
+                    <h2 class="text-xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">Branding & Layout</h2>
+                    <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">Personalize your system aesthetics and upload company logos.</p>
+                </div>
+
+                <div class="mt-6 space-y-5">
+                    <div class="space-y-1.5">
+                        <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Theme Mode</label>
+                        <div class="grid grid-cols-2 gap-3">
+                            <label id="theme-light-label" class="s-radio-card selected">
+                                <div class="flex items-center gap-2">
+                                    <svg class="w-4 h-4 text-amber-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364-6.364l-.707.707M6.343 17.657l-.707.707m12.728 0l-.707-.707M6.343 6.343l-.707-.707M14 12a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
+                                    <span>Light Mode</span>
+                                </div>
+                                <input type="radio" name="theme" value="light" checked style="position:absolute;opacity:0;pointer-events:none;" onchange="updateThemeSelection(this)">
+                            </label>
+                            <label id="theme-dark-label" class="s-radio-card">
+                                <div class="flex items-center gap-2">
+                                    <svg class="w-4 h-4 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"/></svg>
+                                    <span>Dark Mode</span>
+                                </div>
+                                <input type="radio" name="theme" value="dark" style="position:absolute;opacity:0;pointer-events:none;" onchange="updateThemeSelection(this)">
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="space-y-1.5">
+                        <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Accent Accent Color</label>
+                        <div class="grid grid-cols-5 gap-2">
+                            {% set onboardingColors = [
+                                {'name': 'Indigo', 'value': 'indigo', 'hex': '#6366f1'},
+                                {'name': 'Emerald', 'value': 'emerald', 'hex': '#10b981'},
+                                {'name': 'Blue', 'value': 'blue', 'hex': '#3b82f6'},
+                                {'name': 'Rose', 'value': 'rose', 'hex': '#f43f5e'},
+                                {'name': 'Violet', 'value': 'violet', 'hex': '#a855f7'}
+                            ] %}
+                            {% for c in onboardingColors %}
+                                <label id="color-{{ c.value }}-label" class="s-color-card {{ loop.first ? 'selected' : '' }}">
+                                    <div class="s-dot" style="background-color:{{ c.hex }};"></div>
+                                    <span class="s-color-name">{{ c.name }}</span>
+                                    <input type="radio" name="primary_color" value="{{ c.value }}" style="position:absolute;opacity:0;pointer-events:none;" {% if loop.first %}checked{% endif %} onchange="updateColorSelection(this)">
+                                </label>
+                            {% endfor %}
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-4">
+                        <div class="space-y-1">
+                            <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Business Logo</label>
+                            <input type="file" name="business_logo" accept="image/*" class="s-input" style="height:auto;padding:0.375rem 0.5rem;font-size:0.75rem;">
+                        </div>
+                        <div class="space-y-1">
+                            <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Invoice Logo</label>
+                            <input type="file" name="company_logo" accept="image/*" class="s-input" style="height:auto;padding:0.375rem 0.5rem;font-size:0.75rem;">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Error Box -->
+                <div id="error-box" class="mt-5 bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-800/40 p-4 rounded-xl text-sm text-red-700 dark:text-red-400 hidden flex items-center gap-2">
+                    <svg class="w-4 h-4 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                    <span id="error-message"></span>
+                </div>
+
+                <div class="mt-8 flex justify-between border-t border-slate-200 dark:border-slate-800 pt-5">
+                    <button type="button" id="btn-back-appearance" onclick="prevStep()" class="inline-flex items-center justify-center px-5 py-2 text-sm font-semibold rounded-lg text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 transition-all">
+                        Back
+                    </button>
+                    <button type="button" id="btn-submit-wizard" onclick="submitWizard()" class="inline-flex items-center justify-center gap-2 px-6 py-2.5 text-sm font-semibold rounded-lg text-white bg-indigo-600 hover:bg-indigo-700 active:scale-[0.98] transition-all shadow-md shadow-indigo-100 dark:shadow-none">
+                        <span id="btn-submit-text">Complete Setup</span>
+                        <svg id="submit-spinner" class="animate-spin h-4 w-4 text-white hidden" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+
+            <!-- STEP 5: Success & Celebration -->
+            <div id="step-success" class="step-pane hidden transform transition-all duration-300 ease-out">
+                <div class="text-center py-6">
+                    <!-- Animated Checkmark -->
+                    <div class="mb-6">
+                        <svg class="checkmark" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 52 52">
+                            <circle class="checkmark-circle" cx="26" cy="26" r="25" fill="none"/>
+                            <path class="checkmark-check" fill="none" d="M14.1 27.2l7.1 7.2 16.7-16.8"/>
+                        </svg>
+                    </div>
+
+                    <h1 class="text-2xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">Configuration Complete!</h1>
+                    <p class="mt-2 text-sm text-slate-500 dark:text-slate-400 max-w-sm mx-auto">
+                        Your workspace settings are persisted, and the Administrator account is ready. Let's go to your new dashboard.
+                    </p>
+
+                    <a href="{{ path('app_dashboard') }}" class="mt-8 inline-flex items-center justify-center px-8 py-3 text-sm font-semibold rounded-xl text-white bg-emerald-600 hover:bg-emerald-700 active:scale-[0.98] transition-all shadow-lg shadow-emerald-100 dark:shadow-none">
+                        Go to Dashboard
+                        <svg class="w-4 h-4 ml-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
+                    </a>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    const steps = ['step-welcome', 'step-admin', 'step-company', 'step-appearance', 'step-success'];
+    let currentStepIdx = 0;
+
+    // Local state to keep entered data preserved when clicking Back/Next
+    const state = {};
+
+    function updateProgressBar() {
+        const indicator = document.getElementById('progress-bar-indicator');
+        const label = document.getElementById('progress-label');
+        const percentage = document.getElementById('progress-percentage');
+        
+        // 5 steps total: index 0 (0%), index 1 (25%), index 2 (50%), index 3 (75%), index 4 (100%)
+        const pct = (currentStepIdx / (steps.length - 1)) * 100;
+        indicator.style.width = pct + '%';
+        percentage.innerText = Math.round(pct) + '% Complete';
+
+        if (currentStepIdx === steps.length - 1) {
+            label.innerText = 'Completed';
+            document.getElementById('progress-header').classList.add('opacity-0');
+        } else {
+            label.innerText = `Step ${currentStepIdx + 1} of ${steps.length - 1}`;
+        }
+    }
+
+    function showStep(idx) {
+        const currentEl = document.getElementById(steps[currentStepIdx]);
+        const nextEl = document.getElementById(steps[idx]);
+
+        // Slide/fade transition
+        if (currentEl) {
+            currentEl.classList.remove('opacity-100', 'translate-x-0');
+            currentEl.classList.add('opacity-0', currentStepIdx < idx ? '-translate-x-6' : 'translate-x-6');
+            
+            setTimeout(() => {
+                currentEl.classList.add('hidden');
+                
+                nextEl.classList.remove('hidden');
+                nextEl.classList.add('opacity-0', currentStepIdx < idx ? 'translate-x-6' : '-translate-x-6');
+                
+                // Reflow
+                nextEl.offsetHeight;
+                
+                nextEl.classList.remove('opacity-0', 'translate-x-6', '-translate-x-6');
+                nextEl.classList.add('opacity-100', 'translate-x-0');
+                currentStepIdx = idx;
+                updateProgressBar();
+            }, 200);
+        } else {
+            nextEl.classList.remove('hidden');
+            nextEl.classList.add('opacity-100', 'translate-x-0');
+            currentStepIdx = idx;
+            updateProgressBar();
+        }
+    }
+
+    function nextStep() {
+        if (validateStep(currentStepIdx)) {
+            // Save state from current inputs
+            saveInputsState(currentStepIdx);
+            showStep(currentStepIdx + 1);
+        }
+    }
+
+    function prevStep() {
+        if (currentStepIdx > 0) {
+            showStep(currentStepIdx - 1);
+        }
+    }
+
+    function saveInputsState(stepIdx) {
+        const pane = document.getElementById(steps[stepIdx]);
+        if (!pane) return;
+        const inputs = pane.querySelectorAll('input, select');
+        inputs.forEach(input => {
+            if (input.type === 'file') return; // Cannot serialize file elements easily
+            if (input.type === 'radio') {
+                if (input.checked) state[input.name] = input.value;
+            } else {
+                state[input.name] = input.value;
+            }
+        });
+    }
+
+    function validateStep(stepIdx) {
+        const pane = document.getElementById(steps[stepIdx]);
+        if (!pane) return true;
+
+        const inputs = pane.querySelectorAll('input[required], select[required]');
+        let isValid = true;
+
+        // Reset error formatting
+        pane.querySelectorAll('input').forEach(i => i.classList.remove('border-red-400', 'focus:ring-red-400', 'focus:border-red-400'));
+
+        for (let i = 0; i < inputs.length; i++) {
+            const input = inputs[i];
+            if (!input.value.trim()) {
+                input.classList.add('border-red-400', 'focus:ring-red-400', 'focus:border-red-400');
+                input.focus();
+                isValid = false;
+                break;
+            }
+
+            if (input.type === 'email' && !validateEmail(input.value)) {
+                input.classList.add('border-red-400', 'focus:ring-red-400', 'focus:border-red-400');
+                input.focus();
+                isValid = false;
+                break;
+            }
+        }
+
+        // Additional password match and length validation on Admin step
+        if (isValid && steps[stepIdx] === 'step-admin') {
+            const password = document.getElementById('admin_password');
+            const confirm = document.getElementById('admin_password_confirm');
+            
+            if (password.value.length < 6) {
+                password.classList.add('border-red-400', 'focus:ring-red-400', 'focus:border-red-400');
+                password.focus();
+                alert('Password must be at least 6 characters long.');
+                isValid = false;
+            } else if (password.value !== confirm.value) {
+                confirm.classList.add('border-red-400', 'focus:ring-red-400', 'focus:border-red-400');
+                confirm.focus();
+                alert('Passwords do not match.');
+                isValid = false;
+            }
+        }
+
+        return isValid;
+    }
+
+    function validateEmail(email) {
+        const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        return re.test(email);
+    }
+
+    function updateThemeSelection(radio) {
+        document.getElementById('theme-light-label').classList.toggle('selected', radio.value === 'light');
+        document.getElementById('theme-dark-label').classList.toggle('selected', radio.value === 'dark');
+        
+        // Dynamic live theme application
+        if (radio.value === 'dark') {
+            document.documentElement.classList.add('dark');
+        } else {
+            document.documentElement.classList.remove('dark');
+        }
+    }
+
+    function updateColorSelection(radio) {
+        // Deselect all
+        document.querySelectorAll('.s-color-card').forEach(card => card.classList.remove('selected'));
+        // Select matching
+        const label = document.getElementById(`color-${radio.value}-label`);
+        if (label) label.classList.add('selected');
+    }
+
+    function submitWizard() {
+        const form = document.getElementById('onboarding-form');
+        const errorBox = document.getElementById('error-box');
+        const errorMessage = document.getElementById('error-message');
+        const btnSubmit = document.getElementById('btn-submit-wizard');
+        const btnBack = document.getElementById('btn-back-appearance');
+        const spinner = document.getElementById('submit-spinner');
+        const btnText = document.getElementById('btn-submit-text');
+
+        // Hide error box
+        errorBox.classList.add('hidden');
+
+        // Show loading state
+        btnSubmit.disabled = true;
+        btnBack.disabled = true;
+        spinner.classList.remove('hidden');
+        btnText.innerText = 'Creating account...';
+
+        const formData = new FormData(form);
+
+        fetch('{{ path('app_onboarding_submit') }}', {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+        .then(response => response.json().then(data => ({ status: response.status, body: data })))
+        .then(({ status, body }) => {
+            if (status === 200 && body.success) {
+                // Play completion animation
+                showStep(4); // Success step index
+                triggerConfetti();
+            } else {
+                // Show validation or upload error
+                errorMessage.innerText = body.error || 'A system error occurred. Please try again.';
+                errorBox.classList.remove('hidden');
+
+                // Restore button states
+                btnSubmit.disabled = false;
+                btnBack.disabled = false;
+                spinner.classList.add('hidden');
+                btnText.innerText = 'Complete Setup';
+            }
+        })
+        .catch(err => {
+            errorMessage.innerText = 'Network error. Failed to connect to the server.';
+            errorBox.classList.remove('hidden');
+
+            // Restore button states
+            btnSubmit.disabled = false;
+            btnBack.disabled = false;
+            spinner.classList.add('hidden');
+            btnText.innerText = 'Complete Setup';
+        });
+    }
+
+    function triggerConfetti() {
+        const container = document.getElementById('confetti-container');
+        container.innerHTML = '';
+        const colors = ['#6366f1', '#10b981', '#3b82f6', '#f43f5e', '#a855f7', '#f59e0b'];
+        
+        for (let i = 0; i < 70; i++) {
+            const piece = document.createElement('div');
+            piece.classList.add('confetti-piece');
+            
+            // Random horizontal placement
+            piece.style.left = Math.random() * 100 + '%';
+            // Random size
+            const size = Math.random() * 6 + 6;
+            piece.style.width = size + 'px';
+            piece.style.height = size + 'px';
+            // Random color
+            piece.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+            // Random animation speed/delay
+            piece.style.animationDuration = Math.random() * 1.5 + 2 + 's';
+            piece.style.animationDelay = Math.random() * 0.5 + 's';
+            
+            // Random initial rotation
+            piece.style.transform = `rotate(${Math.random() * 360}deg)`;
+            container.appendChild(piece);
+        }
+    }
+
+    // Initialize the progress bar on page load
+    document.addEventListener('DOMContentLoaded', () => {
+        updateProgressBar();
+    });
+</script>
+{% endblock %}

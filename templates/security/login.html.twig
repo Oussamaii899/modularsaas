@@ -75,12 +75,14 @@
 				</div>
 			</form>
 
-			<div class="text-center mt-6">
-				<p class="text-sm text-slate-600">
-					New to our platform?
-					<a href="{{ path('app_register') }}" class="font-medium text-indigo-600 hover:text-indigo-500 transition-colors">Create an account</a>
-				</p>
-			</div>
+			{% if can_register is not defined or can_register %}
+				<div class="text-center mt-6">
+					<p class="text-sm text-slate-600">
+						New to our platform?
+						<a href="{{ path('app_register') }}" class="font-medium text-indigo-600 hover:text-indigo-500 transition-colors">Create an account</a>
+					</p>
+				</div>
+			{% endif %}
 		</div>
 	</div>
 {% endblock %}

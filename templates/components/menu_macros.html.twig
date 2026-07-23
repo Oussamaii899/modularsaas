@@ -15,7 +15,7 @@
         <summary class="flex items-center justify-between gap-3 px-3 py-2 text-sm font-medium {{ is_open ? 'text-indigo-600 bg-indigo-50' : 'text-slate-600 hover:text-indigo-600 hover:bg-slate-50' }} rounded-lg cursor-pointer transition-all list-none [&::-webkit-details-marker]:hidden">
             <div class="flex items-center gap-3">
                 <i data-lucide="{{ icon }}" class="w-5 h-5 transition-colors {{ is_open ? 'text-indigo-600' : 'text-slate-400 group-hover:text-indigo-600' }}"></i>
-                {{ title }}
+                {{ title|module_term }}
             </div>
             <div class="flex items-center gap-2">
                 {% if not is_open and has_badge %}
@@ -34,7 +34,7 @@
                         {% else %}
                             <span class="w-1.5 h-1.5 rounded-full {{ is_active ? 'bg-indigo-600' : 'bg-slate-300 group-hover/item:bg-indigo-600' }} transition-colors"></span>
                         {% endif %}
-                        {{ item.label }}
+                        {{ item.label|module_term }}
                     </div>
                     {% if item.badge is defined and item.badge %}
                         {{ item.badge|raw }}

@@ -57,6 +57,8 @@ final class ClientsController extends AbstractController
         $form = $this->createForm(ClientType::class, $contact);
         $form->handleRequest($request);
 
+        $activeModule = $settingRepository->findOneBy(['keyName' => 'active_module'])?->getValue() ?? 'none';
+
         if ($form->isSubmitted() && $form->isValid()) {
             $avatarFile = $form->get('avatarFile')->getData();
             if ($avatarFile) {
@@ -67,6 +69,19 @@ final class ClientsController extends AbstractController
                 $contact->setAvatar($newFilename);
             }
             $entityManager->persist($contact);
+
+            if ($activeModule === 'doctor') {
+                $patientProfile = new \App\Entity\PatientProfile();
+                $patientProfile->setContact($contact);
+                $patientProfile->setDiseaseCategory($request->request->get('diseaseCategory'));
+                $patientProfile->setChronicDiseases($request->request->get('chronicDiseases'));
+                $patientProfile->setGeneralMedicalNotes($request->request->get('generalMedicalNotes'));
+                $patientProfile->setEmergencyContactName($request->request->get('emergencyContactName'));
+                $patientProfile->setEmergencyContactPhone($request->request->get('emergencyContactPhone'));
+                $patientProfile->setEmergencyContactRelation($request->request->get('emergencyContactRelation'));
+                $entityManager->persist($patientProfile);
+            }
+
             $entityManager->flush();
 
             return $this->redirectToRoute('app_clients_index', [], Response::HTTP_SEE_OTHER);
@@ -78,6 +93,7 @@ final class ClientsController extends AbstractController
             'user' => $this->getUser(),
             'company_logo' => $settingRepository->findOneBy(['keyName' => 'company_logo'])?->getValue(),
             'company_name' => $settingRepository->findOneBy(['keyName' => 'company_name'])?->getValue(),
+            'active_module' => $activeModule,
             'breadcrumbs' => [
                 ['label' => 'Sales', 'url' => '#'],
                 ['label' => 'Clients', 'url' => $this->generateUrl('app_clients_index')],
@@ -87,7 +103,7 @@ final class ClientsController extends AbstractController
     }
 
     #[Route('/{slug}', name: 'app_clients_show', methods: ['GET'])]
-    public function show(Contact $contact, SettingRepository $settingRepository, SaleRepository $saleRepository, PurchaseRepository $purchaseRepository): Response
+    public function show(Contact $contact, SettingRepository $settingRepository, SaleRepository $saleRepository, PurchaseRepository $purchaseRepository, EntityManagerInterface $entityManager): Response
     {
         if (!$this->isGranted('see.sale.clients')) {
             throw $this->createAccessDeniedException('Access denied.');
@@ -120,6 +136,36 @@ final class ClientsController extends AbstractController
 
         $recentPurchases = $purchaseRepository->findBy( ['contact' => $contact], ['created_at' => 'DESC'], 5 );
 
+        $activeModule = $settingRepository->findOneBy(['keyName' => 'active_module'])?->getValue() ?? 'none';
+        $patientProfile = null;
+        $attachedDocuments = [];
+        $activePrescriptions = [];
+        $upcomingAppointments = [];
+
+        if ($activeModule === 'doctor') {
+            $patientProfile = $entityManager->getRepository(\App\Entity\PatientProfile::class)->findOneBy(['contact' => $contact]);
+            $attachedDocuments = $entityManager->getRepository(\App\Entity\PatientDocument::class)->findBy(['contact' => $contact], ['createdAt' => 'DESC']);
+            
+            $activePrescriptions = $entityManager->getRepository(\App\Entity\PrescriptionItem::class)->createQueryBuilder('pi')
+                ->join('pi.sale', 's')
+                ->andWhere('s.contact = :contact')
+                ->setParameter('contact', $contact)
+                ->orderBy('s.created_at', 'DESC')
+                ->setMaxResults(10)
+                ->getQuery()
+                ->getResult();
+
+            $upcomingAppointments = $entityManager->getRepository(\App\Entity\Appointment::class)->createQueryBuilder('a')
+                ->andWhere('a.patient = :patient')
+                ->andWhere('a.startAt >= :now')
+                ->setParameter('patient', $contact)
+                ->setParameter('now', new \DateTime())
+                ->orderBy('a.startAt', 'ASC')
+                ->setMaxResults(5)
+                ->getQuery()
+                ->getResult();
+        }
+
         return $this->render('clients/show.html.twig', [
             'client' => $contact,
             'recent_sales' => $recentSales,
@@ -131,6 +177,11 @@ final class ClientsController extends AbstractController
             'user' => $this->getUser(),
             'company_logo' => $settingRepository->findOneBy(['keyName' => 'company_logo'])?->getValue(),
             'company_name' => $settingRepository->findOneBy(['keyName' => 'company_name'])?->getValue(),
+            'patient_profile' => $patientProfile,
+            'attached_documents' => $attachedDocuments,
+            'active_prescriptions' => $activePrescriptions,
+            'upcoming_appointments' => $upcomingAppointments,
+            'active_module' => $activeModule,
             'breadcrumbs' => [
                 ['label' => 'Sales', 'url' => '#'],
                 ['label' => 'Clients', 'url' => $this->generateUrl('app_clients_index')],
@@ -151,6 +202,12 @@ final class ClientsController extends AbstractController
 
         $form = $this->createForm(ClientType::class, $contact);
         $form->handleRequest($request);
+
+        $activeModule = $settingRepository->findOneBy(['keyName' => 'active_module'])?->getValue() ?? 'none';
+        $patientProfile = null;
+        if ($activeModule === 'doctor') {
+            $patientProfile = $entityManager->getRepository(\App\Entity\PatientProfile::class)->findOneBy(['contact' => $contact]);
+        }
 
         if ($form->isSubmitted() && $form->isValid()) {
             $avatarFile = $form->get('avatarFile')->getData();
@@ -173,6 +230,21 @@ final class ClientsController extends AbstractController
                 }
                 $contact->setAvatar(null);
             }
+
+            if ($activeModule === 'doctor') {
+                if (!$patientProfile) {
+                    $patientProfile = new \App\Entity\PatientProfile();
+                    $patientProfile->setContact($contact);
+                    $entityManager->persist($patientProfile);
+                }
+                $patientProfile->setDiseaseCategory($request->request->get('diseaseCategory'));
+                $patientProfile->setChronicDiseases($request->request->get('chronicDiseases'));
+                $patientProfile->setGeneralMedicalNotes($request->request->get('generalMedicalNotes'));
+                $patientProfile->setEmergencyContactName($request->request->get('emergencyContactName'));
+                $patientProfile->setEmergencyContactPhone($request->request->get('emergencyContactPhone'));
+                $patientProfile->setEmergencyContactRelation($request->request->get('emergencyContactRelation'));
+            }
+
             $entityManager->flush();
 
             return $this->redirectToRoute('app_clients_index', [], Response::HTTP_SEE_OTHER);
@@ -181,6 +253,8 @@ final class ClientsController extends AbstractController
         return $this->render('clients/edit.html.twig', [
             'client' => $contact,
             'form' => $form->createView(),
+            'patient_profile' => $patientProfile,
+            'active_module' => $activeModule,
             'user' => $this->getUser(),
             'company_logo' => $settingRepository->findOneBy(['keyName' => 'company_logo'])?->getValue(),
             'company_name' => $settingRepository->findOneBy(['keyName' => 'company_name'])?->getValue(),

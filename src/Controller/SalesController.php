@@ -5,6 +5,8 @@ namespace App\Controller;
 use App\Entity\Sale;
 use App\Entity\SaleItem;
 use App\Entity\Payment;
+use App\Entity\PrescriptionItem;
+use App\Entity\Product;
 use App\Form\SaleType;
 use App\Repository\SaleRepository;
 use Doctrine\ORM\EntityManagerInterface;
@@ -138,14 +140,31 @@ final class SalesController extends AbstractController
         $form->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {
+            $activeModule = $settingRepository->findOneBy(['keyName' => 'active_module'])?->getValue() ?? 'none';
+
             foreach ($sale->getSaleItems() as $item) {
                 if ($item->getProduct()) {
                     $item->setPName($item->getProduct()->getName());
                     $item->setPSku($item->getProduct()->getSku());
 
+                    if ($activeModule === 'doctor') {
+                        $item->setPrice(0.00);
+                    }
+
                     $product = $item->getProduct();
-                    $product->setStockQuantity($product->getStockQuantity() - $item->getQuantity());
-                    $entityManager->persist($product);
+                    if ($product->isSerialized()) {
+                        $productItemRepo = $entityManager->getRepository(\App\Entity\ProductItem::class);
+                        $availableItems = $productItemRepo->findAvailableItemsByProduct($product->getId(), $item->getQuantity());
+                        
+                        foreach ($availableItems as $pItem) {
+                            $pItem->setStatus(\App\Entity\ProductItem::STATUS_SOLD);
+                            $pItem->setSaleItem($item);
+                            $entityManager->persist($pItem);
+                        }
+                    } else {
+                        $product->setStockQuantity($product->getStockQuantity() - $item->getQuantity());
+                        $entityManager->persist($product);
+                    }
                 }
                 if ($sale->getContact()) {
                     $item->setContact($sale->getContact());
@@ -153,6 +172,33 @@ final class SalesController extends AbstractController
                 }
             }
             
+            if ($activeModule === 'doctor') {
+                $sale->setMedicalDetails($request->request->get('medicalDetails'));
+                $sale->setPrescriptionNotes($request->request->get('prescriptionNotes'));
+                $sale->setDoctor($this->getUser());
+
+                // Handle structured prescription items
+                $rxNames = $request->request->all('rx_name');
+                $rxDosages = $request->request->all('rx_dosage');
+                $rxFrequencies = $request->request->all('rx_frequency');
+                $rxDurations = $request->request->all('rx_duration');
+                $rxInstructions = $request->request->all('rx_instructions');
+                $rxQuantities = $request->request->all('rx_quantity');
+
+                foreach ($rxNames as $i => $name) {
+                    if (empty(trim($name))) continue;
+                    $pi = new PrescriptionItem();
+                    $pi->setMedicationName(trim($name));
+                    $pi->setDosage($rxDosages[$i] ?? null);
+                    $pi->setFrequency($rxFrequencies[$i] ?? null);
+                    $pi->setDuration($rxDurations[$i] ?? null);
+                    $pi->setInstructions($rxInstructions[$i] ?? null);
+                    $pi->setQuantity(!empty($rxQuantities[$i]) ? (int)$rxQuantities[$i] : null);
+                    $sale->addPrescriptionItem($pi);
+                    $entityManager->persist($pi);
+                }
+            }
+
             $entityManager->persist($sale);
 
             $recordPayment = $request->request->get('record_payment');
@@ -175,9 +221,12 @@ final class SalesController extends AbstractController
             return $this->redirectToRoute('app_sales_index', [], Response::HTTP_SEE_OTHER);
         }
 
+        $activeModule = $settingRepository->findOneBy(['keyName' => 'active_module'])?->getValue() ?? 'none';
+
         return $this->render('sales/new.html.twig', [
             'sale' => $sale,
             'form' => $form->createView(),
+            'active_module' => $activeModule,
             'user' => $this->getUser(),
             'company_logo' => $settingRepository->findOneBy(['keyName' => 'company_logo'])?->getValue(),
             'company_name' => $settingRepository->findOneBy(['keyName' => 'company_name'])?->getValue(),
@@ -194,8 +243,10 @@ final class SalesController extends AbstractController
         if (!$this->isGranted('see.sale.list')) {
             throw $this->createAccessDeniedException('You do not have permission to view this sale.');
         }
+        $activeModule = $settingRepository->findOneBy(['keyName' => 'active_module'])?->getValue() ?? 'none';
         return $this->render('sales/show.html.twig', [
             'sale' => $sale,
+            'active_module' => $activeModule,
             'user' => $this->getUser(),
             'company_logo' => $settingRepository->findOneBy(['keyName' => 'company_logo'])?->getValue(),
             'company_name' => $settingRepository->findOneBy(['keyName' => 'company_name'])?->getValue(),
@@ -230,6 +281,8 @@ final class SalesController extends AbstractController
 
         $form = $this->createForm(SaleType::class, $sale);
         $form->handleRequest($request);
+
+        $activeModule = $settingRepository->findOneBy(['keyName' => 'active_module'])?->getValue() ?? 'none';
 
         if ($form->isSubmitted() && $form->isValid()) {
             foreach ($originalQuantities as $data) {
@@ -273,6 +326,37 @@ final class SalesController extends AbstractController
                 }
             }
 
+            if ($activeModule === 'doctor') {
+                $sale->setMedicalDetails($request->request->get('medicalDetails'));
+                $sale->setPrescriptionNotes($request->request->get('prescriptionNotes'));
+
+                // Clear old prescription items and re-add
+                foreach ($sale->getPrescriptionItems() as $oldPi) {
+                    $sale->removePrescriptionItem($oldPi);
+                    $entityManager->remove($oldPi);
+                }
+
+                $rxNames = $request->request->all('rx_name');
+                $rxDosages = $request->request->all('rx_dosage');
+                $rxFrequencies = $request->request->all('rx_frequency');
+                $rxDurations = $request->request->all('rx_duration');
+                $rxInstructions = $request->request->all('rx_instructions');
+                $rxQuantities = $request->request->all('rx_quantity');
+
+                foreach ($rxNames as $i => $name) {
+                    if (empty(trim($name))) continue;
+                    $pi = new PrescriptionItem();
+                    $pi->setMedicationName(trim($name));
+                    $pi->setDosage($rxDosages[$i] ?? null);
+                    $pi->setFrequency($rxFrequencies[$i] ?? null);
+                    $pi->setDuration($rxDurations[$i] ?? null);
+                    $pi->setInstructions($rxInstructions[$i] ?? null);
+                    $pi->setQuantity(!empty($rxQuantities[$i]) ? (int)$rxQuantities[$i] : null);
+                    $sale->addPrescriptionItem($pi);
+                    $entityManager->persist($pi);
+                }
+            }
+
             $sale->updatePaymentStatus();
 
             $entityManager->flush();
@@ -283,6 +367,7 @@ final class SalesController extends AbstractController
         return $this->render('sales/edit.html.twig', [
             'sale' => $sale,
             'form' => $form->createView(),
+            'active_module' => $activeModule,
             'user' => $this->getUser(),
             'company_logo' => $settingRepository->findOneBy(['keyName' => 'company_logo'])?->getValue(),
             'company_name' => $settingRepository->findOneBy(['keyName' => 'company_name'])?->getValue(),

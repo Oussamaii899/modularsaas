@@ -8,6 +8,8 @@ document.addEventListener("DOMContentLoaded", function() {
     if (!dashboardContainer) return;
 
     const dataUrl = dashboardContainer.getAttribute('data-data-url');
+    const salesLabel = dashboardContainer.getAttribute('data-sales-label') || 'Sales';
+    const purchasesLabel = dashboardContainer.getAttribute('data-purchases-label') || 'Purchases';
 
     // Re-initialize lucide icons for any dynamically added DOM
     if (typeof lucide !== 'undefined') {
@@ -41,27 +43,41 @@ document.addEventListener("DOMContentLoaded", function() {
             .then(response => response.json())
             .then(data => {
                 console.log(data)
-                const totalSalesValue = data.total_sales ?? 0;
-                document.getElementById('total-sales-value').innerText = '$' + Number(totalSalesValue).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
-
-                const totalPurchaseValue = data.total_purchases ?? 0;
-                document.getElementById('total-purchases-value').innerText = '$' + Number(totalPurchaseValue).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
-
-                const netSales = totalSalesValue - Math.abs(data.total_refunded_sales ?? 0);
-                const netPurchases = totalPurchaseValue - Math.abs(data.total_refunded_purchases ?? 0);
                 
-                const netProfit = netSales - netPurchases;
-                if(netProfit > 0){
-                    document.getElementById('net-profit-value').innerText = '$' + Number(netProfit).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
-                } else {
-                    document.getElementById('net-profit-value').innerText = '$0.00';
+                if (document.getElementById('total-sales-value')) {
+                    const totalSalesValue = data.total_sales ?? 0;
+                    document.getElementById('total-sales-value').innerText = '$' + Number(totalSalesValue).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
                 }
 
-                const netLoss = netPurchases - netSales;
-                if(netLoss > 0){
-                    document.getElementById('net-loss-value').innerText = '$' + Number(netLoss).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
-                } else {
-                    document.getElementById('net-loss-value').innerText = '$0.00';
+                if (document.getElementById('total-purchases-value')) {
+                    const totalPurchaseValue = data.total_purchases ?? 0;
+                    document.getElementById('total-purchases-value').innerText = '$' + Number(totalPurchaseValue).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
+                }
+
+                if (document.getElementById('net-profit-value')) {
+                    const totalSalesValue = data.total_sales ?? 0;
+                    const totalPurchaseValue = data.total_purchases ?? 0;
+                    const netSales = totalSalesValue - Math.abs(data.total_refunded_sales ?? 0);
+                    const netPurchases = totalPurchaseValue - Math.abs(data.total_refunded_purchases ?? 0);
+                    const netProfit = netSales - netPurchases;
+                    if(netProfit > 0){
+                        document.getElementById('net-profit-value').innerText = '$' + Number(netProfit).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
+                    } else {
+                        document.getElementById('net-profit-value').innerText = '$0.00';
+                    }
+                }
+
+                if (document.getElementById('net-loss-value')) {
+                    const totalSalesValue = data.total_sales ?? 0;
+                    const totalPurchaseValue = data.total_purchases ?? 0;
+                    const netSales = totalSalesValue - Math.abs(data.total_refunded_sales ?? 0);
+                    const netPurchases = totalPurchaseValue - Math.abs(data.total_refunded_purchases ?? 0);
+                    const netLoss = netPurchases - netSales;
+                    if(netLoss > 0){
+                        document.getElementById('net-loss-value').innerText = '$' + Number(netLoss).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
+                    } else {
+                        document.getElementById('net-loss-value').innerText = '$0.00';
+                    }
                 }
 
                 if (document.getElementById('customer-refunds-value')) {
@@ -77,11 +93,36 @@ document.addEventListener("DOMContentLoaded", function() {
                     document.getElementById('purchases-payables-value').innerText = '$' + Number(data.total_outstanding_purchases ?? 0).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
                 }
 
+                // Update doctor mode widgets
+                if (data.doctor_stats) {
+                    if (document.getElementById('total-patients-value')) {
+                        document.getElementById('total-patients-value').innerText = data.doctor_stats.total_patients ?? 0;
+                    }
+                    if (document.getElementById('consultations-count-value')) {
+                        document.getElementById('consultations-count-value').innerText = data.doctor_stats.consultations_count ?? 0;
+                    }
+                    if (document.getElementById('pending-payments-value')) {
+                        document.getElementById('pending-payments-value').innerText = data.doctor_stats.pending_payments_count ?? 0;
+                    }
+                    if (document.getElementById('income-this-month-value')) {
+                        const incomeVal = data.doctor_stats.income_this_month ?? 0;
+                        document.getElementById('income-this-month-value').innerText = '$' + Number(incomeVal).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
+                    }
+                }
+
                 const timeframeText = label || (start.format('MMM D') + ' - ' + end.format('MMM D'));
-                document.getElementById('total-sales-change-text').innerText = timeframeText;
-                document.getElementById('total-purchases-change-text').innerText = timeframeText;
-                document.getElementById('net-profit-change-text').innerText = timeframeText;
-                document.getElementById('net-loss-change-text').innerText = timeframeText;
+                if (document.getElementById('total-sales-change-text')) {
+                    document.getElementById('total-sales-change-text').innerText = timeframeText;
+                }
+                if (document.getElementById('total-purchases-change-text')) {
+                    document.getElementById('total-purchases-change-text').innerText = timeframeText;
+                }
+                if (document.getElementById('net-profit-change-text')) {
+                    document.getElementById('net-profit-change-text').innerText = timeframeText;
+                }
+                if (document.getElementById('net-loss-change-text')) {
+                    document.getElementById('net-loss-change-text').innerText = timeframeText;
+                }
 
                 if (document.getElementById('customer-refunds-change-text')) {
                     document.getElementById('customer-refunds-change-text').innerText = timeframeText;
@@ -176,7 +217,7 @@ document.addEventListener("DOMContentLoaded", function() {
                             const textColor = isCritical ? '#dc2626' : '#d97706';
                             const borderColor = isCritical ? '#fee2e2' : '#fef3c7';
                             const dotColor = isCritical ? '#ef4444' : '#f59e0b';
-                            const detailUrl = `/products/${product.id}`;
+                            const detailUrl = `/products/${product.slug || product.id}`;
 
                             const itemHtml = `
                                 <a href="${detailUrl}" class="flex items-center gap-4 p-3 rounded-xl hover:bg-slate-50/80 transition-colors border border-transparent hover:border-slate-100 group block">
@@ -358,14 +399,14 @@ document.addEventListener("DOMContentLoaded", function() {
             labels: [],
             datasets: [
                 {
-                    label: 'Sales',
+                    label: salesLabel,
                     data: [],
                     backgroundColor: '#4f46e5',
                     borderRadius: 6,
                     barPercentage: 0.6,
                 },
                 {
-                    label: 'Purchases',
+                    label: purchasesLabel,
                     data: [],
                     backgroundColor: initialColors.purchaseBar,
                     borderRadius: 6,

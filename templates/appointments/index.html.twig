@@ -1,0 +1,532 @@
+{% extends 'layouts/dashboard.html.twig' %}
+
+{% block title %}Appointments | {{ company_name ?? 'ModularSaaS' }}{% endblock %}
+
+{% block content_title %}Appointments{% endblock %}
+{% block content_subtitle %}Manage and schedule appointments{% endblock %}
+
+{% block stylesheets %}
+    {{ parent() }}
+    <style>
+        /* FullCalendar overrides */
+        .fc {
+            font-family: inherit;
+            --fc-border-color: #e2e8f0;
+            --fc-today-bg-color: rgba(99, 102, 241, 0.04);
+            --fc-event-border-color: transparent;
+        }
+        .fc .fc-toolbar-title {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: #0f172a;
+        }
+        .fc .fc-button {
+            background-color: #fff;
+            border: 1px solid #e2e8f0;
+            color: #475569;
+            font-weight: 500;
+            font-size: 0.8125rem;
+            padding: 6px 14px;
+            border-radius: 8px;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+            transition: all 0.15s ease;
+            text-transform: capitalize;
+        }
+        .fc .fc-button:hover {
+            background-color: #f8fafc;
+            border-color: #cbd5e1;
+            color: #1e293b;
+        }
+        .fc .fc-button-active, .fc .fc-button.fc-button-active {
+            background-color: #6366f1 !important;
+            border-color: #6366f1 !important;
+            color: #fff !important;
+            box-shadow: 0 2px 4px rgba(99, 102, 241, 0.3);
+        }
+        .fc .fc-daygrid-day-number {
+            font-size: 0.8125rem;
+            font-weight: 600;
+            color: #64748b;
+            padding: 8px;
+        }
+        .fc .fc-col-header-cell-cushion {
+            font-size: 0.6875rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: #94a3b8;
+            padding: 10px 0;
+        }
+        .fc .fc-event {
+            border-radius: 6px;
+            padding: 2px 6px;
+            font-size: 0.75rem;
+            font-weight: 500;
+            border-left-width: 3px;
+            cursor: pointer;
+            transition: transform 0.1s ease, box-shadow 0.1s ease;
+        }
+        .fc .fc-event:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        .fc .fc-timegrid-slot {
+            height: 48px;
+        }
+        .fc .fc-timegrid-slot-label-cushion {
+            font-size: 0.6875rem;
+            font-weight: 500;
+            color: #94a3b8;
+        }
+
+        /* New Appointment Dialog */
+        .apt-dialog {
+            border: none;
+            border-radius: 16px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+            padding: 0;
+            max-width: 480px;
+            width: 90%;
+            margin: auto !important;
+            background: #fff;
+        }
+        .apt-dialog::backdrop {
+            background-color: rgba(15, 23, 42, 0.6);
+            backdrop-filter: blur(4px);
+        }
+        .apt-dialog .dialog-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 20px 24px;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        .apt-dialog .dialog-header h3 {
+            font-size: 1.125rem;
+            font-weight: 700;
+            color: #0f172a;
+            margin: 0;
+        }
+        .apt-dialog .dialog-body {
+            padding: 24px;
+        }
+        .apt-dialog .dialog-footer {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            padding: 16px 24px;
+            border-top: 1px solid #e2e8f0;
+            background: #f8fafc;
+            border-radius: 0 0 16px 16px;
+        }
+        .apt-field {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            margin-bottom: 16px;
+        }
+        .apt-field label {
+            font-size: 0.8125rem;
+            font-weight: 600;
+            color: #334155;
+        }
+        .apt-field input, .apt-field select, .apt-field textarea {
+            padding: 8px 12px;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 0.875rem;
+            color: #0f172a;
+            background: #fff;
+            transition: border-color 0.15s, box-shadow 0.15s;
+            font-family: inherit;
+        }
+        .apt-field input:focus, .apt-field select:focus, .apt-field textarea:focus {
+            outline: none;
+            border-color: #6366f1;
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+        }
+
+        /* Event detail popup */
+        .event-popup {
+            position: fixed;
+            z-index: 100;
+            background: #fff;
+            border-radius: 12px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.15);
+            padding: 20px;
+            min-width: 280px;
+            max-width: 360px;
+            border: 1px solid #e2e8f0;
+            display: none;
+        }
+        .event-popup.active { display: block; }
+        .event-popup .status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 3px 10px;
+            border-radius: 9999px;
+            font-size: 0.6875rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        /* Dark Mode Support */
+        .dark .apt-dialog {
+            background-color: #1e293b;
+            color: #f1f5f9;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+        }
+        .dark .apt-dialog .dialog-header {
+            border-bottom-color: #334155;
+        }
+        .dark .apt-dialog .dialog-header h3 {
+            color: #f1f5f9;
+        }
+        .dark .apt-dialog .dialog-footer {
+            border-top-color: #334155;
+            background-color: #0f172a;
+        }
+        .dark .apt-dialog button[type="button"] {
+            background-color: #334155 !important;
+            color: #f1f5f9 !important;
+            border: 1px solid #475569 !important;
+        }
+        .dark .apt-field label {
+            color: #94a3b8;
+        }
+        .dark .apt-field input, .dark .apt-field select, .dark .apt-field textarea {
+            background-color: #0f172a;
+            border-color: #334155;
+            color: #f1f5f9;
+        }
+        .dark .apt-field input:focus, .dark .apt-field select:focus, .dark .apt-field textarea:focus {
+            border-color: #818cf8;
+            box-shadow: 0 0 0 3px rgba(129, 140, 248, 0.2);
+        }
+        .dark .event-popup {
+            background-color: #1e293b;
+            border-color: #334155;
+            color: #f1f5f9;
+        }
+        .dark .event-popup h4 {
+            color: #f1f5f9 !important;
+        }
+        .dark .event-popup #popupReason, .dark .event-popup #popupNotes {
+            color: #cbd5e1 !important;
+        }
+        .dark .event-popup .apt-action-btn {
+            background-color: #334155 !important;
+            color: #cbd5e1 !important;
+            border-color: #475569 !important;
+        }
+
+        /* FullCalendar Dark Mode overrides */
+        .dark .fc {
+            --fc-border-color: #334155;
+            --fc-today-bg-color: rgba(99, 102, 241, 0.12);
+            --fc-page-bg-color: #1e293b;
+            --fc-neutral-bg-color: #0f172a;
+        }
+        .dark .fc .fc-toolbar-title {
+            color: #f1f5f9;
+        }
+        .dark .fc .fc-button {
+            background-color: #1e293b;
+            border-color: #334155;
+            color: #cbd5e1;
+        }
+        .dark .fc .fc-button:hover {
+            background-color: #334155;
+            border-color: #475569;
+            color: #f1f5f9;
+        }
+        .dark .fc .fc-col-header-cell-cushion {
+            color: #94a3b8;
+        }
+        .dark .fc .fc-daygrid-day-number {
+            color: #cbd5e1;
+        }
+        .dark .fc .fc-timegrid-slot-label-cushion {
+            color: #94a3b8;
+        }
+        .dark .fc .fc-col-header-cell {
+            background-color: #0f172a;
+        }
+        .dark .fc .fc-timegrid-axis-frame {
+            background-color: #0f172a;
+            color: #f1f5f9;
+        }
+    </style>
+{% endblock %}
+
+{% block content_actions %}
+    <button onclick="document.getElementById('newAptDialog').showModal()" class="inline-flex h-10 items-center justify-center gap-2 rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow hover:bg-indigo-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 transition-colors">
+        <i data-lucide="calendar-plus" class="w-4 h-4"></i>
+        <span>New Appointment</span>
+    </button>
+{% endblock %}
+
+{% block main_content %}
+    <div class="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm p-6">
+        <div id="calendar"></div>
+    </div>
+
+    <!-- Event Detail Popup -->
+    <div class="event-popup" id="eventPopup">
+        <div style="display:flex; align-items:flex-start; justify-content:space-between; margin-bottom:12px;">
+            <div>
+                <h4 style="font-size:1rem; font-weight:700; color:#0f172a; margin:0;" id="popupPatientName"></h4>
+                <p style="font-size:0.75rem; color:#64748b; margin:4px 0 0 0;" id="popupTime"></p>
+            </div>
+            <button onclick="closeEventPopup()" style="background:none; border:none; cursor:pointer; padding:4px;">
+                <i data-lucide="x" class="w-4 h-4 text-slate-400"></i>
+            </button>
+        </div>
+        <div id="popupStatus" style="margin-bottom:12px;"></div>
+        <div id="popupReason" style="font-size:0.8125rem; color:#334155; margin-bottom:8px;"></div>
+        <div id="popupNotes" style="font-size:0.8125rem; color:#64748b; margin-bottom:16px;"></div>
+        <div id="popupDoctor" style="font-size:0.75rem; color:#94a3b8; margin-bottom:16px;"></div>
+        <div style="display:flex; gap:8px; flex-wrap:wrap;">
+            <button onclick="updateAptStatus('confirmed')" class="apt-action-btn" style="background:#ecfdf5; color:#059669; border:1px solid #a7f3d0; padding:5px 12px; border-radius:6px; font-size:0.75rem; font-weight:600; cursor:pointer; font-family:inherit;">✓ Confirm</button>
+            <button onclick="updateAptStatus('completed')" class="apt-action-btn" style="background:#f8fafc; color:#475569; border:1px solid #e2e8f0; padding:5px 12px; border-radius:6px; font-size:0.75rem; font-weight:600; cursor:pointer; font-family:inherit;">✓ Complete</button>
+            <button onclick="updateAptStatus('no_show')" class="apt-action-btn" style="background:#fffbeb; color:#d97706; border:1px solid #fde68a; padding:5px 12px; border-radius:6px; font-size:0.75rem; font-weight:600; cursor:pointer; font-family:inherit;">⚠ No Show</button>
+            <button onclick="updateAptStatus('cancelled')" class="apt-action-btn" style="background:#fef2f2; color:#dc2626; border:1px solid #fecaca; padding:5px 12px; border-radius:6px; font-size:0.75rem; font-weight:600; cursor:pointer; font-family:inherit;">✗ Cancel</button>
+            <button onclick="deleteAppointment()" class="apt-action-btn" style="background:#fef2f2; color:#dc2626; border:1px solid #fecaca; padding:5px 12px; border-radius:6px; font-size:0.75rem; font-weight:600; cursor:pointer; font-family:inherit;">🗑 Delete</button>
+        </div>
+    </div>
+
+    <!-- New Appointment Dialog -->
+    <dialog id="newAptDialog" class="apt-dialog">
+        <div class="dialog-header">
+            <h3>Schedule New Appointment</h3>
+            <button onclick="document.getElementById('newAptDialog').close()" style="background:none; border:none; cursor:pointer; padding:4px;">
+                <i data-lucide="x" class="w-5 h-5 text-slate-400"></i>
+            </button>
+        </div>
+        <form id="newAptForm" onsubmit="return createAppointment(event)">
+            <div class="dialog-body">
+                <div class="apt-field">
+                    <label>{{ (active_module is defined and active_module == 'doctor') ? 'Patient' : 'Contact' }}</label>
+                    <select id="aptPatient" required>
+                        <option value="">Select {{ (active_module is defined and active_module == 'doctor') ? 'patient' : 'contact' }}…</option>
+                        {% for contact in contacts %}
+                            <option value="{{ contact.id }}">{{ contact.name }} {% if contact.type is defined and active_module != 'doctor' %}({{ contact.type|capitalize }}){% endif %}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+                    <div class="apt-field">
+                        <label>Start</label>
+                        <input type="datetime-local" id="aptStart" required>
+                    </div>
+                    <div class="apt-field">
+                        <label>End</label>
+                        <input type="datetime-local" id="aptEnd">
+                    </div>
+                </div>
+                <div class="apt-field">
+                    <label>Reason</label>
+                    <input type="text" id="aptReason" placeholder="e.g. Check-up, Follow-up, Emergency">
+                </div>
+                <div class="apt-field">
+                    <label>Notes</label>
+                    <textarea id="aptNotes" rows="3" placeholder="Any additional notes…"></textarea>
+                </div>
+            </div>
+            <div class="dialog-footer">
+                <button type="button" onclick="document.getElementById('newAptDialog').close()" style="padding:8px 16px; font-size:0.875rem; font-weight:600; color:#475569; background:#fff; border:1px solid #e2e8f0; border-radius:8px; cursor:pointer; font-family:inherit;">Cancel</button>
+                <button type="submit" style="padding:8px 20px; font-size:0.875rem; font-weight:600; color:#fff; background:#6366f1; border:none; border-radius:8px; cursor:pointer; box-shadow:0 2px 4px rgba(99,102,241,0.3); font-family:inherit;">Schedule</button>
+            </div>
+        </form>
+    </dialog>
+
+    <!-- Delete Confirmation Dialog -->
+    <dialog id="deleteAptDialog" class="apt-dialog" style="max-width:400px;">
+        <div class="dialog-header">
+            <h3 style="color:#dc2626;">Delete Appointment</h3>
+            <button onclick="document.getElementById('deleteAptDialog').close()" style="background:none; border:none; cursor:pointer; padding:4px;">
+                <i data-lucide="x" class="w-5 h-5 text-slate-400"></i>
+            </button>
+        </div>
+        <div class="dialog-body">
+            <p style="font-size:0.875rem; color:#475569;">Are you sure you want to permanently delete this appointment? This action cannot be undone.</p>
+        </div>
+        <div class="dialog-footer">
+            <button onclick="document.getElementById('deleteAptDialog').close()" style="padding:8px 16px; font-size:0.875rem; font-weight:600; color:#475569; background:#fff; border:1px solid #e2e8f0; border-radius:8px; cursor:pointer; font-family:inherit;">Cancel</button>
+            <button onclick="confirmDeleteAppointment()" style="padding:8px 20px; font-size:0.875rem; font-weight:600; color:#fff; background:#dc2626; border:none; border-radius:8px; cursor:pointer; font-family:inherit;">Delete</button>
+        </div>
+    </dialog>
+{% endblock %}
+
+{% block javascripts %}
+    {{ parent() }}
+    <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.js"></script>
+    <script>
+        let calendar;
+        let currentEventId = null;
+
+        document.addEventListener('DOMContentLoaded', function() {
+            const calendarEl = document.getElementById('calendar');
+            calendar = new FullCalendar.Calendar(calendarEl, {
+                initialView: 'timeGridWeek',
+                headerToolbar: {
+                    left: 'prev,next today',
+                    center: 'title',
+                    right: 'dayGridMonth,timeGridWeek,timeGridDay'
+                },
+                height: 'auto',
+                slotMinTime: '07:00:00',
+                slotMaxTime: '21:00:00',
+                allDaySlot: false,
+                nowIndicator: true,
+                editable: false,
+                selectable: true,
+                eventSources: [{
+                    url: '{{ path("app_appointments_api_events") }}',
+                    method: 'GET'
+                }],
+                select: function(info) {
+                    document.getElementById('aptStart').value = formatForInput(info.start);
+                    document.getElementById('aptEnd').value = formatForInput(info.end);
+                    document.getElementById('newAptDialog').showModal();
+                },
+                eventClick: function(info) {
+                    info.jsEvent.preventDefault();
+                    showEventPopup(info.event, info.jsEvent);
+                },
+                eventDidMount: function(info) {
+                    if (info.event.extendedProps.status === 'cancelled') {
+                        info.el.style.opacity = '0.5';
+                        info.el.style.textDecoration = 'line-through';
+                    }
+                }
+            });
+            calendar.render();
+
+            // Close popup on outside click
+            document.addEventListener('click', function(e) {
+                const popup = document.getElementById('eventPopup');
+                if (popup.classList.contains('active') && !popup.contains(e.target) && !e.target.closest('.fc-event')) {
+                    closeEventPopup();
+                }
+            });
+
+            if (typeof lucide !== 'undefined') {
+                lucide.createIcons();
+            }
+        });
+
+        function formatForInput(date) {
+            const d = new Date(date);
+            return d.getFullYear() + '-' +
+                String(d.getMonth() + 1).padStart(2, '0') + '-' +
+                String(d.getDate()).padStart(2, '0') + 'T' +
+                String(d.getHours()).padStart(2, '0') + ':' +
+                String(d.getMinutes()).padStart(2, '0');
+        }
+
+        function showEventPopup(event, jsEvent) {
+            currentEventId = event.id;
+            const popup = document.getElementById('eventPopup');
+            const props = event.extendedProps;
+
+            document.getElementById('popupPatientName').textContent = props.patientName || 'Unknown';
+            document.getElementById('popupTime').textContent =
+                event.start.toLocaleString('en-US', { weekday: 'short', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) +
+                (event.end ? ' → ' + event.end.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }) : '');
+
+            const statusColors = {
+                scheduled: { bg: '#eef2ff', color: '#6366f1', label: 'Scheduled' },
+                confirmed: { bg: '#ecfdf5', color: '#059669', label: 'Confirmed' },
+                completed: { bg: '#f8fafc', color: '#64748b', label: 'Completed' },
+                cancelled: { bg: '#fef2f2', color: '#dc2626', label: 'Cancelled' },
+                no_show:   { bg: '#fffbeb', color: '#d97706', label: 'No Show' }
+            };
+            const sc = statusColors[props.status] || statusColors.scheduled;
+            document.getElementById('popupStatus').innerHTML =
+                `<span class="status-badge" style="background:${sc.bg}; color:${sc.color};">${sc.label}</span>`;
+
+            document.getElementById('popupReason').innerHTML = props.reason
+                ? `<strong>Reason:</strong> ${props.reason}` : '';
+            document.getElementById('popupNotes').innerHTML = props.notes
+                ? `<strong>Notes:</strong> ${props.notes}` : '';
+            document.getElementById('popupDoctor').innerHTML = props.doctorName
+                ? `<i data-lucide="stethoscope" class="w-3 h-3" style="display:inline;"></i> Dr. ${props.doctorName}` : '';
+
+            // Position popup near click
+            const x = Math.min(jsEvent.clientX + 10, window.innerWidth - 380);
+            const y = Math.min(jsEvent.clientY + 10, window.innerHeight - 300);
+            popup.style.left = x + 'px';
+            popup.style.top = y + 'px';
+            popup.classList.add('active');
+
+            if (typeof lucide !== 'undefined') lucide.createIcons();
+        }
+
+        function closeEventPopup() {
+            document.getElementById('eventPopup').classList.remove('active');
+            currentEventId = null;
+        }
+
+        async function createAppointment(e) {
+            e.preventDefault();
+            const body = {
+                patientId: document.getElementById('aptPatient').value,
+                startAt: document.getElementById('aptStart').value,
+                endAt: document.getElementById('aptEnd').value || null,
+                reason: document.getElementById('aptReason').value || null,
+                notes: document.getElementById('aptNotes').value || null
+            };
+
+            const res = await fetch('{{ path("app_appointments_api_create") }}', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(body)
+            });
+
+            if (res.ok) {
+                document.getElementById('newAptDialog').close();
+                document.getElementById('newAptForm').reset();
+                calendar.refetchEvents();
+            } else {
+                const data = await res.json();
+                alert(data.error || 'Failed to create appointment.');
+            }
+            return false;
+        }
+
+        async function updateAptStatus(status) {
+            if (!currentEventId) return;
+            const res = await fetch(`/appointments/api/${currentEventId}/update-status`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ status })
+            });
+            if (res.ok) {
+                closeEventPopup();
+                calendar.refetchEvents();
+            }
+        }
+
+        function deleteAppointment() {
+            closeEventPopup();
+            document.getElementById('deleteAptDialog').showModal();
+        }
+
+        async function confirmDeleteAppointment() {
+            if (!currentEventId) return;
+            const id = currentEventId;
+            document.getElementById('deleteAptDialog').close();
+            const res = await fetch(`/appointments/api/${id}/delete`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' }
+            });
+            if (res.ok) {
+                calendar.refetchEvents();
+            }
+            currentEventId = null;
+        }
+    </script>
+{% endblock %}

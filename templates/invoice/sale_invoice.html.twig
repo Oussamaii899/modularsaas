@@ -2,7 +2,7 @@
 <html>
 <head>
     <meta charset="utf-8">
-    <title>Invoice {{ sale.slug }}</title>
+    <title>{{ 'Invoice'|module_term }} {{ sale.slug }}</title>
     <style>
         body {
             font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
@@ -157,7 +157,7 @@
         <table>
             <tr>
                 <td class="details-col">
-                    <div class="section-title">Billed To</div>
+                    <div class="section-title">{% if active_module == 'doctor' %}Patient Details{% else %}Billed To{% endif %}</div>
                     <div class="party-info">
                         <div class="party-name">{{ sale.contact.name }}</div>
                         {% if sale.contact.address %}
@@ -172,9 +172,9 @@
                     </div>
                 </td>
                 <td class="details-col" style="text-align: right;">
-                    <div class="section-title" style="text-align: right;">Invoice Meta</div>
+                    <div class="section-title" style="text-align: right;">{% if active_module == 'doctor' %}Consultation Info{% else %}{{ 'Invoice'|module_term }} Meta{% endif %}</div>
                     <ul class="meta-list">
-                        <li><span class="meta-label">Invoice Slug:</span> {{ sale.slug }}</li>
+                        <li><span class="meta-label">{{ 'Invoice'|module_term }} Slug:</span> {{ sale.slug }}</li>
                         <li><span class="meta-label">Date:</span> {{ sale.createdAt|date('M d, Y') }}</li>
                         <li>
                             <span class="meta-label">Status:</span> 
@@ -195,10 +195,12 @@
     <table class="items-table">
         <thead>
             <tr>
-                <th>Product / SKU</th>
+                <th>{% if active_module == 'doctor' %}Medication / Clinic Stock Item{% else %}{{ 'Product'|module_term }} / SKU{% endif %}</th>
                 <th class="text-right" style="width: 100px;">Qty</th>
+                {% if active_module != 'doctor' %}
                 <th class="text-right" style="width: 120px;">Unit Price</th>
                 <th class="text-right" style="width: 120px;">Total</th>
+                {% endif %}
             </tr>
         </thead>
         <tbody>
@@ -209,32 +211,87 @@
                         <span style="font-size: 11px; color: #64748b;">SKU: {{ item.pSku }}</span>
                     </td>
                     <td class="text-right">{{ item.quantity }}</td>
+                    {% if active_module != 'doctor' %}
                     <td class="text-right">${{ item.price|number_format(2) }}</td>
                     <td class="text-right">${{ (item.price * item.quantity)|number_format(2) }}</td>
+                    {% endif %}
                 </tr>
             {% endfor %}
         </tbody>
     </table>
 
-    <div class="totals-section">
-        <table class="totals-table">
-            <tr>
-                <td>Subtotal</td>
-                <td class="text-right">${{ sale.total|number_format(2) }}</td>
-            </tr>
-            <tr>
-                <td>Paid Amount</td>
-                <td class="text-right">${{ sale.getPaidAmount|number_format(2) }}</td>
-            </tr>
-            <tr class="grand-total">
-                <td>Balance Due</td>
-                <td class="text-right">${{ sale.getBalance|number_format(2) }}</td>
-            </tr>
-        </table>
-    </div>
+    {% if active_module == 'doctor' and (sale.medicalDetails is not empty or sale.prescriptionNotes is not empty or sale.prescriptionItems is not empty) %}
+        <!-- DIAGNOSIS -->
+        {% if sale.medicalDetails is not empty %}
+        <div style="margin-top: 30px; border: 1px solid #e2e8f0; border-radius: 6px; padding: 15px; background-color: #f8fafc; font-size: 12px; line-height: 1.6;">
+            <div style="font-weight: bold; color: #475569; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 1px solid #e2e8f0; padding-bottom: 6px; margin-bottom: 10px;">Diagnosis / Medical Details</div>
+            <span style="color: #334155;">{{ sale.medicalDetails|nl2br }}</span>
+        </div>
+        {% endif %}
 
-    <div class="footer">
-        Thank you for your business! If you have any questions, please contact {{ company_email ?? 'billing@modularsaas.com' }}.
+        <!-- PRESCRIPTION (Rx) -->
+        {% if sale.prescriptionItems is not empty %}
+        <div style="margin-top: 20px; border: 2px solid #4f46e5; border-radius: 8px; overflow: hidden;">
+            <div style="background-color: #4f46e5; color: #fff; padding: 10px 15px; font-size: 14px; font-weight: bold;">
+                ℞ ORDONNANCE — Prescription
+            </div>
+            <table style="width: 100%; border-collapse: collapse; font-size: 12px;">
+                <thead>
+                    <tr style="background-color: #eef2ff; border-bottom: 1px solid #c7d2fe;">
+                        <th style="padding: 8px 12px; text-align: left; font-size: 11px; font-weight: 600; text-transform: uppercase; color: #4338ca;">#</th>
+                        <th style="padding: 8px 12px; text-align: left; font-size: 11px; font-weight: 600; text-transform: uppercase; color: #4338ca;">Medication</th>
+                        <th style="padding: 8px 12px; text-align: center; font-size: 11px; font-weight: 600; text-transform: uppercase; color: #4338ca;">Dosage</th>
+                        <th style="padding: 8px 12px; text-align: center; font-size: 11px; font-weight: 600; text-transform: uppercase; color: #4338ca;">Frequency</th>
+                        <th style="padding: 8px 12px; text-align: center; font-size: 11px; font-weight: 600; text-transform: uppercase; color: #4338ca;">Duration</th>
+                        <th style="padding: 8px 12px; text-align: center; font-size: 11px; font-weight: 600; text-transform: uppercase; color: #4338ca;">Qty</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for pi in sale.prescriptionItems %}
+                    <tr style="border-bottom: 1px solid #f1f5f9;">
+                        <td style="padding: 10px 12px; color: #64748b;">{{ loop.index }}</td>
+                        <td style="padding: 10px 12px;">
+                            <strong style="color: #0f172a;">{{ pi.medicationName }}</strong>
+                            {% if pi.instructions %}
+                            <br><span style="font-size: 11px; color: #64748b; font-style: italic;">↳ {{ pi.instructions }}</span>
+                            {% endif %}
+                        </td>
+                        <td style="padding: 10px 12px; text-align: center;">{{ pi.dosage|default('—') }}</td>
+                        <td style="padding: 10px 12px; text-align: center;">{{ pi.frequency|default('—') }}</td>
+                        <td style="padding: 10px 12px; text-align: center;">{{ pi.duration|default('—') }}</td>
+                        <td style="padding: 10px 12px; text-align: center;">{{ pi.quantity|default('—') }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% endif %}
+
+        <!-- PRESCRIPTION NOTES (free text) -->
+        {% if sale.prescriptionNotes is not empty %}
+        <div style="margin-top: 15px; border: 1px solid #e2e8f0; border-radius: 6px; padding: 15px; background-color: #f8fafc; font-size: 12px; line-height: 1.6;">
+            <div style="font-weight: bold; color: #475569; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 1px solid #e2e8f0; padding-bottom: 6px; margin-bottom: 10px;">Additional Prescription Notes</div>
+            <span style="color: #334155;">{{ sale.prescriptionNotes|nl2br }}</span>
+        </div>
+        {% endif %}
+
+        <!-- DOCTOR SIGNATURE -->
+        <div style="margin-top: 40px; display: flex; justify-content: flex-end;">
+            <div style="text-align: center; min-width: 200px; float: right;">
+                <div style="font-size: 11px; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 40px;">Doctor's Signature</div>
+                <div style="border-top: 1px solid #334155; padding-top: 8px;">
+                    <strong style="font-size: 13px; color: #0f172a;">{{ sale.doctor ? 'Dr. ' ~ sale.doctor.fullName : company_name ?? 'Doctor' }}</strong>
+                </div>
+            </div>
+        </div>
+    {% endif %}
+
+    <div class="footer" style="clear: both;">
+        {% if active_module == 'doctor' %}
+            Thank you for trusting us with your health. If you have any questions, please contact {{ company_email ?? 'contact@clinic.com' }}.
+        {% else %}
+            Thank you for your business! If you have any questions, please contact {{ company_email ?? 'billing@modularsaas.com' }}.
+        {% endif %}
     </div>
 
 </body>

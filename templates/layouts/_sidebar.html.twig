@@ -80,9 +80,14 @@
                 {% if is_granted('see.products') %}
                 <a href="{{ path('app_products_index') }}" class="flex items-center gap-3 px-3 py-2 text-sm font-medium {{ app.request.pathinfo starts with '/products' ? 'text-indigo-600 bg-indigo-50' : 'text-slate-600 hover:text-indigo-600 hover:bg-slate-50' }} rounded-lg group transition-all">
                     <i data-lucide="package" class="w-5 h-5 transition-colors {{ app.request.pathinfo starts with '/products' ? 'text-indigo-600' : 'group-hover:text-indigo-600' }}"></i>
-                    Products
+                    {{ 'Products'|module_term }}
                 </a>
                 {% endif %}
+
+                <a href="{{ path('app_appointments_index') }}" class="flex items-center gap-3 px-3 py-2 text-sm font-medium {{ app.request.pathinfo starts with '/appointments' ? 'text-indigo-600 bg-indigo-50' : 'text-slate-600 hover:text-indigo-600 hover:bg-slate-50' }} rounded-lg group transition-all">
+                    <i data-lucide="calendar" class="w-5 h-5 transition-colors {{ app.request.pathinfo starts with '/appointments' ? 'text-indigo-600' : 'group-hover:text-indigo-600' }}"></i>
+                    Appointments
+                </a>
 
                 {% if is_granted('ROLE_ADMIN') %}
                 <a href="{{ path('app_users_index') }}" class="flex items-center gap-3 px-3 py-2 text-sm font-medium {{ app.request.pathinfo starts with '/users' ? 'text-indigo-600 bg-indigo-50' : 'text-slate-600 hover:text-indigo-600 hover:bg-slate-50' }} rounded-lg group transition-all">

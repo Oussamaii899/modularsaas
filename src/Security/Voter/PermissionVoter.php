@@ -10,6 +10,7 @@ class PermissionVoter extends Voter
 {
     private const PERMISSIONS = [
         'see.dashboard',
+        'see.notifications',
         'see.purchases',
         'see.sales',
         'see.products',

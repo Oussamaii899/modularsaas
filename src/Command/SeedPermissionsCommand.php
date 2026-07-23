@@ -19,6 +19,7 @@ class SeedPermissionsCommand extends Command
 {
     private const PERMISSIONS = [
         'see.dashboard',
+        'see.notifications',
         'see.purchases',
         'see.sales',
         'see.products',

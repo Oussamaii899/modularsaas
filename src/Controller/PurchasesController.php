@@ -27,13 +27,27 @@ final class PurchasesController extends AbstractController
             throw $this->createAccessDeniedException('You do not have permission to view the purchases overview.');
         }
 
+        $activeModule = $settingRepository->findOneBy(['keyName' => 'active_module'])?->getValue() ?? 'none';
+
+        $allProducts = $productRepository->findAll();
+        $lowStockCount = 0;
+        foreach ($allProducts as $prod) {
+            if ($prod->getStockQuantity() <= 10) {
+                $lowStockCount++;
+            }
+        }
+        $totalOrdersCount = count($purchaseRepository->findAll());
+
         return $this->render('purchases/overview.html.twig', [
             'total_gross_30' => $purchaseRepository->totalPaidByDate('-30 days', 'now') ?? 0,
             'total_refunds_30' => abs($purchaseRepository->totalRefundedByDate('-30 days', 'now') ?? 0),
             'total_net_30' => $purchaseRepository->totalNetPaidByDate('-30 days', 'now') ?? 0,
             'total_outstanding' => $purchaseRepository->totalOutstandingByDate('2000-01-01', 'now'),
             'total_purchases_today' => $purchaseRepository->totalPaidByDate('today', 'now') ?? 0,
-            'all_products' => $productRepository->findAll(),
+            'all_products' => $allProducts,
+            'low_stock_count' => $lowStockCount,
+            'total_orders_count' => $totalOrdersCount,
+            'active_module' => $activeModule,
             'breadcrumbs' => [
                 ['label' => 'Purchases', 'url' => '#'],
                 ['label' => 'Overview', 'url' => $this->generateUrl('app_purchases_overview')],
@@ -84,6 +98,8 @@ final class PurchasesController extends AbstractController
 
         $data = $purchaseRepository->searchAndPaginate($query, $page, 10, $status, $contactId, $sortBy, $sortDir);
 
+        $activeModule = $settingRepository->findOneBy(['keyName' => 'active_module'])?->getValue() ?? 'none';
+
         return $this->render('purchases/index.html.twig', [
             'purchases' => $data['items'],
             'pagesCount' => $data['pagesCount'],
@@ -94,6 +110,7 @@ final class PurchasesController extends AbstractController
             'sortFilter' => $sort,
             'contactIdFilter' => $contactIdVal,
             'filterContact' => $filterContact,
+            'active_module' => $activeModule,
             'breadcrumbs' => [
                 ['label' => 'Purchases', 'url' => '#'],
                 ['label' => 'Purchase List', 'url' => $this->generateUrl('app_purchases_index')],
@@ -110,8 +127,11 @@ final class PurchasesController extends AbstractController
         if (!$this->isGranted('add.purchases')) {
             throw $this->createAccessDeniedException('You do not have permission to add purchases.');
         }
+        $activeModule = $settingRepository->findOneBy(['keyName' => 'active_module'])?->getValue() ?? 'none';
         $purchase = new Purchase();
-        $form = $this->createForm(PurchaseType::class, $purchase);
+        $form = $this->createForm(PurchaseType::class, $purchase, [
+            'is_doctor' => ($activeModule === 'doctor'),
+        ]);
         $form->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {
@@ -120,9 +140,45 @@ final class PurchasesController extends AbstractController
                     $item->setPName($item->getProduct()->getName());
                     $item->setPSku($item->getProduct()->getSku());
 
+                    if ($activeModule === 'doctor') {
+                        $item->setPrice(0.00);
+                    } else {
+                        // Use purchasePrice if set, otherwise fall back to unit price
+                        if (!$item->getPrice() || (float)$item->getPrice() === 0.0) {
+                            $product = $item->getProduct();
+                            $costPrice = $product->getPurchasePrice() ?: $product->getPrice();
+                            if ($costPrice) {
+                                $item->setPrice($costPrice);
+                            }
+                        }
+                    }
+
                     $product = $item->getProduct();
-                    $product->setStockQuantity($product->getStockQuantity() + $item->getQuantity());
-                    $entityManager->persist($product);
+                    if ($product->isSerialized()) {
+                        // Create ProductItem instances for serialized product
+                        $qty = $item->getQuantity();
+                        $providedSerials = $request->request->all('product_items')[$product->getId()] ?? [];
+                        for ($i = 0; $i < $qty; $i++) {
+                            $serial = !empty($providedSerials[$i]) ? trim($providedSerials[$i]) : null;
+                            if (empty($serial)) {
+                                $prefix = strtoupper(substr(preg_replace('/[^A-Za-z0-9]/', '', $product->getName()), 0, 3));
+                                if (strlen($prefix) < 3) {
+                                    $prefix = str_pad($prefix, 3, 'PRD');
+                                }
+                                $serial = $prefix . '-' . strtoupper(substr(bin2hex(random_bytes(4)), 0, 8));
+                            }
+
+                            $productItem = new \App\Entity\ProductItem();
+                            $productItem->setProduct($product);
+                            $productItem->setSerialNumber($serial);
+                            $productItem->setStatus(\App\Entity\ProductItem::STATUS_AVAILABLE);
+                            $productItem->setPurchaseItem($item);
+                            $entityManager->persist($productItem);
+                        }
+                    } else {
+                        $product->setStockQuantity($product->getStockQuantity() + $item->getQuantity());
+                        $entityManager->persist($product);
+                    }
                 }
                 if ($purchase->getContact()) {
                     $item->setContact($purchase->getContact());
@@ -155,6 +211,7 @@ final class PurchasesController extends AbstractController
         return $this->render('purchases/new.html.twig', [
             'purchase' => $purchase,
             'form' => $form->createView(),
+            'active_module' => $activeModule,
             'user' => $this->getUser(),
             'company_logo' => $settingRepository->findOneBy(['keyName' => 'company_logo'])?->getValue(),
             'company_name' => $settingRepository->findOneBy(['keyName' => 'company_name'])?->getValue(),
@@ -171,8 +228,11 @@ final class PurchasesController extends AbstractController
         if (!$this->isGranted('see.purchase.list')) {
             throw $this->createAccessDeniedException('You do not have permission to view this purchase.');
         }
+        $activeModule = $settingRepository->findOneBy(['keyName' => 'active_module'])?->getValue() ?? 'none';
+
         return $this->render('purchases/show.html.twig', [
             'purchase' => $purchase,
+            'active_module' => $activeModule,
             'user' => $this->getUser(),
             'company_logo' => $settingRepository->findOneBy(['keyName' => 'company_logo'])?->getValue(),
             'company_name' => $settingRepository->findOneBy(['keyName' => 'company_name'])?->getValue(),
@@ -194,6 +254,8 @@ final class PurchasesController extends AbstractController
             return $this->redirectToRoute('app_purchases_show', ['slug' => $purchase->getSlug()]);
         }
 
+        $activeModule = $settingRepository->findOneBy(['keyName' => 'active_module'])?->getValue() ?? 'none';
+
         $originalQuantities = [];
         foreach ($purchase->getPurchaseItems() as $item) {
             if ($item->getProduct()) {
@@ -204,7 +266,9 @@ final class PurchasesController extends AbstractController
             }
         }
 
-        $form = $this->createForm(PurchaseType::class, $purchase);
+        $form = $this->createForm(PurchaseType::class, $purchase, [
+            'is_doctor' => ($activeModule === 'doctor'),
+        ]);
         $form->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {
@@ -239,6 +303,15 @@ final class PurchasesController extends AbstractController
                     $item->setPName($item->getProduct()->getName());
                     $item->setPSku($item->getProduct()->getSku());
 
+                    // Use purchasePrice if set, otherwise fall back to unit price
+                    if (!$item->getPrice() || (float)$item->getPrice() === 0.0) {
+                        $product = $item->getProduct();
+                        $costPrice = $product->getPurchasePrice() ?: $product->getPrice();
+                        if ($costPrice) {
+                            $item->setPrice($costPrice);
+                        }
+                    }
+
                     $product = $item->getProduct();
                     $product->setStockQuantity($product->getStockQuantity() + $item->getQuantity());
                     $entityManager->persist($product);
@@ -259,6 +332,7 @@ final class PurchasesController extends AbstractController
         return $this->render('purchases/edit.html.twig', [
             'purchase' => $purchase,
             'form' => $form->createView(),
+            'active_module' => $activeModule,
             'user' => $this->getUser(),
             'company_logo' => $settingRepository->findOneBy(['keyName' => 'company_logo'])?->getValue(),
             'company_name' => $settingRepository->findOneBy(['keyName' => 'company_name'])?->getValue(),
@@ -270,7 +344,7 @@ final class PurchasesController extends AbstractController
     }
 
     #[Route('/overview/data', name: 'app_purchases_overview_data', methods: ['GET'])]
-    public function overviewData(PurchaseRepository $purchaseRepository, Request $request): Response
+    public function overviewData(PurchaseRepository $purchaseRepository, SettingRepository $settingRepository, Request $request): Response
     {
         if (!$this->isGranted('see.purchase.list')) {
             throw $this->createAccessDeniedException('You do not have permission to view purchases overview data.');
@@ -279,12 +353,18 @@ final class PurchasesController extends AbstractController
             $startDate = $request->query->get('date', (new \DateTime('-30 days'))->format('Y-m-d'));
             $endDate = $request->query->get('end', (new \DateTime())->format('Y-m-d'));
 
+            $activeModule = $settingRepository->findOneBy(['keyName' => 'active_module'])?->getValue() ?? 'none';
+            
             $total_gross_30 = $purchaseRepository->totalPaidByDate($startDate, $endDate) ?? 0;
             $total_refunds_30 = abs($purchaseRepository->totalRefundedByDate($startDate, $endDate) ?? 0);
             $total_net_30 = $purchaseRepository->totalNetPaidByDate($startDate, $endDate) ?? 0;
             $total_outstanding = $purchaseRepository->totalOutstandingByDate('2000-01-01', $endDate);
 
-            $purchases = $purchaseRepository->purchasesByDate($startDate, $endDate);
+            if ($activeModule === 'doctor') {
+                $purchases = $purchaseRepository->ordersCountByDate($startDate, $endDate);
+            } else {
+                $purchases = $purchaseRepository->purchasesByDate($startDate, $endDate);
+            }
 
             $formattedPurchases = [];
             foreach ($purchases as $p) {

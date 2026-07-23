@@ -1,8 +1,8 @@
 {% extends 'layouts/dashboard.html.twig' %}
 
-{% block title %}Edit Client | {{ company_name ?? 'ModularSaaS' }}{% endblock %}
+{% block title %}Edit {{ 'Client'|module_term }} | {{ company_name ?? 'ModularSaaS' }}{% endblock %}
 
-{% block content_title %}Edit Client{% endblock %}
+{% block content_title %}Edit {{ 'Client'|module_term }}{% endblock %}
 {% block content_subtitle %}Updating {{ client.name }}{% endblock %}
 
 {% block content_actions %}
@@ -17,8 +17,8 @@
         <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
             <div class="p-6 md:p-8">
                 <div class="mb-8">
-                    <h3 class="text-lg font-bold text-slate-900">Client Information</h3>
-                    <p class="text-sm text-slate-500 mt-1">Please ensure contact identities remain accurate for logistics.</p>
+                    <h3 class="text-lg font-bold text-slate-900">{{ 'Client Information'|module_term }}</h3>
+                    <p class="text-sm text-slate-500 mt-1">Please ensure {{ 'client'|module_term }} identities remain accurate for logistics.</p>
                 </div>
 
                 {{ form_start(form, {'attr': {'class': 'space-y-6', 'enctype': 'multipart/form-data', 'id': 'client-edit-form'}}) }}
@@ -47,7 +47,7 @@
                         <div class="flex-1 w-full space-y-6">
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 <div class="space-y-3">
-                                    <label class="text-sm font-semibold text-slate-900">Client Business Name</label>
+                                    <label class="text-sm font-semibold text-slate-900">{{ 'Client'|module_term }} Name</label>
                                     {{ form_widget(form.name, {'attr': {'class': 'w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-4 focus:ring-slate-900/10 focus:border-slate-900 transition-all text-sm font-medium text-slate-900 placeholder-slate-400', 'placeholder': 'e.g. Acme Corp'}}) }}
                                     {{ form_errors(form.name) }}
                                 </div>
@@ -78,6 +78,42 @@
                         {{ form_widget(form.address, {'attr': {'class': 'w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-4 focus:ring-slate-900/10 focus:border-slate-900 transition-all text-sm font-medium text-slate-900 placeholder-slate-400', 'rows': '3', 'placeholder': 'Street, City, Zip...'}}) }}
                         {{ form_errors(form.address) }}
                     </div>
+
+                    {% if active_module == 'doctor' %}
+                        <div class="mt-8 pt-8 border-t border-slate-100 space-y-6">
+                            <h3 class="text-lg font-bold text-slate-900">Medical Information (Doctor Module)</h3>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div class="space-y-3">
+                                    <label class="text-sm font-semibold text-slate-900">Illness/Disease Category</label>
+                                    <input type="text" name="diseaseCategory" value="{{ patient_profile.diseaseCategory|default('') }}" placeholder="e.g. Cardiovascular, Diabetic" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-4 focus:ring-slate-900/10 focus:border-slate-900 transition-all text-sm font-medium text-slate-900 placeholder-slate-400">
+                                </div>
+                                <div class="space-y-3">
+                                    <label class="text-sm font-semibold text-slate-900">Chronic Diseases</label>
+                                    <input type="text" name="chronicDiseases" value="{{ patient_profile.chronicDiseases|default('') }}" placeholder="e.g. Hypertension, Asthma" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-4 focus:ring-slate-900/10 focus:border-slate-900 transition-all text-sm font-medium text-slate-900 placeholder-slate-400">
+                                </div>
+                            </div>
+                            <div class="space-y-3">
+                                <label class="text-sm font-semibold text-slate-900">General Medical Notes</label>
+                                <textarea name="generalMedicalNotes" rows="3" placeholder="Background clinical history..." class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-4 focus:ring-slate-900/10 focus:border-slate-900 transition-all text-sm font-medium text-slate-900 placeholder-slate-400">{{ patient_profile.generalMedicalNotes|default('') }}</textarea>
+                            </div>
+
+                            <h4 class="text-md font-bold text-slate-900 mt-6 pt-4 border-t border-slate-100">Emergency Contact Details</h4>
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                <div class="space-y-3">
+                                    <label class="text-sm font-semibold text-slate-900">Contact Name</label>
+                                    <input type="text" name="emergencyContactName" value="{{ patient_profile.emergencyContactName|default('') }}" placeholder="e.g. Jane Doe" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-4 focus:ring-slate-900/10 focus:border-slate-900 transition-all text-sm font-medium text-slate-900 placeholder-slate-400">
+                                </div>
+                                <div class="space-y-3">
+                                    <label class="text-sm font-semibold text-slate-900">Contact Relation</label>
+                                    <input type="text" name="emergencyContactRelation" value="{{ patient_profile.emergencyContactRelation|default('') }}" placeholder="e.g. Spouse, Parent" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-4 focus:ring-slate-900/10 focus:border-slate-900 transition-all text-sm font-medium text-slate-900 placeholder-slate-400">
+                                </div>
+                                <div class="space-y-3">
+                                    <label class="text-sm font-semibold text-slate-900">Contact Phone</label>
+                                    <input type="text" name="emergencyContactPhone" value="{{ patient_profile.emergencyContactPhone|default('') }}" placeholder="e.g. +1 (555) 000-0000" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-4 focus:ring-slate-900/10 focus:border-slate-900 transition-all text-sm font-medium text-slate-900 placeholder-slate-400">
+                                </div>
+                            </div>
+                        </div>
+                    {% endif %}
 
                     <div class="pt-8 flex items-center justify-end">
                         <a href="{{ path('app_clients_index') }}" class="inline-block px-14 py-2.5 text-sm font-medium text-slate-600 hover:bg-slate-100 rounded-lg transition-colors" style="margin-right: 40px;padding:10px;">Discard</a>

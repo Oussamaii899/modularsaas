@@ -104,13 +104,23 @@ class ProductsController extends AbstractController
 
     #[Route('/{slug}', name: 'app_products_show', methods: ['GET'])]
     public function show(
-        Product $product, 
+        string $slug,
+        ProductRepository $productRepository,
         SettingRepository $settingRepository,
         PurchaseItemRepository $purchaseItemRepository,
         SaleItemRepository $saleItemRepository
     ): Response {
         if (!$this->isGranted('see.products')) {
             throw $this->createAccessDeniedException('You do not have permission to view products.');
+        }
+
+        $product = $productRepository->findOneBy(['slug' => $slug]);
+        if (!$product && ctype_digit($slug)) {
+            $product = $productRepository->find((int) $slug);
+        }
+
+        if (!$product) {
+            throw $this->createNotFoundException('Product not found.');
         }
         $recentPurchases = $purchaseItemRepository->createQueryBuilder('pi')
             ->join('pi.purchase', 'p')
@@ -247,6 +257,46 @@ class ProductsController extends AbstractController
         ]);
     }
 
+    #[Route('/items/{id}/update-status', name: 'app_products_item_update_status', methods: ['POST'])]
+    public function updateItemStatus(
+        int $id,
+        Request $request,
+        EntityManagerInterface $entityManager
+    ): Response {
+        if (!$this->isGranted('edit.products')) {
+            throw $this->createAccessDeniedException('You do not have permission to edit product items.');
+        }
+
+        $item = $entityManager->getRepository(\App\Entity\ProductItem::class)->find($id);
+        if (!$item) {
+            $this->addFlash('error', 'Product item not found.');
+            return $this->redirectToRoute('app_products_index');
+        }
+
+        $status = $request->request->get('status');
+        $notes = $request->request->get('notes');
+
+        if (in_array($status, [
+            \App\Entity\ProductItem::STATUS_AVAILABLE,
+            \App\Entity\ProductItem::STATUS_SOLD,
+            \App\Entity\ProductItem::STATUS_REFUNDED_OK,
+            \App\Entity\ProductItem::STATUS_REFUNDED_DEFECTIVE,
+            \App\Entity\ProductItem::STATUS_DAMAGED,
+            \App\Entity\ProductItem::STATUS_RESERVED
+        ], true)) {
+            $item->setStatus($status);
+        }
+
+        if ($notes !== null) {
+            $item->setNotes(trim($notes));
+        }
+
+        $entityManager->flush();
+        $this->addFlash('success', 'Product item item status updated.');
+
+        return $this->redirectToRoute('app_products_show', ['slug' => $item->getProduct()->getSlug()]);
+    }
+
     #[Route('/api/{id}/price', name: 'api_product_price', methods: ['GET'])]
     public function getPrice(Product $product): Response
     {
@@ -256,6 +306,8 @@ class ProductsController extends AbstractController
         return $this->json([
             'id' => $product->getId(),
             'price' => $product->getPrice(),
+            'purchasePrice' => $product->getPurchasePrice() ?: $product->getPrice(),
+            'isSerialized' => $product->isSerialized(),
         ]);
     }
 

@@ -29,10 +29,14 @@ class Sale
     #[ORM\Column(length: 255, unique: true)]
     private ?string $slug = null;
 
+    #[ORM\OneToMany(mappedBy: 'sale', targetEntity: PrescriptionItem::class, cascade: ['persist', 'remove'], orphanRemoval: true)]
+    private Collection $prescriptionItems;
+
     public function __construct()
     {
         $this->saleItems = new ArrayCollection();
         $this->payments = new ArrayCollection();
+        $this->prescriptionItems = new ArrayCollection();
         $this->created_at = new \DateTimeImmutable();
         $this->slug = 'inv-' . bin2hex(random_bytes(4));
     }
@@ -186,5 +190,78 @@ class Sale
         } else {
             $this->paymentStatus = 'Paid';
         }
+    }
+
+    #[ORM\Column(type: Types::TEXT, nullable: true)]
+    private ?string $medicalDetails = null;
+
+    #[ORM\Column(type: Types::TEXT, nullable: true)]
+    private ?string $prescriptionNotes = null;
+
+    public function getMedicalDetails(): ?string
+    {
+        return $this->medicalDetails;
+    }
+
+    public function setMedicalDetails(?string $medicalDetails): static
+    {
+        $this->medicalDetails = $medicalDetails;
+        return $this;
+    }
+
+    public function getPrescriptionNotes(): ?string
+    {
+        return $this->prescriptionNotes;
+    }
+
+    public function setPrescriptionNotes(?string $prescriptionNotes): static
+    {
+        $this->prescriptionNotes = $prescriptionNotes;
+        return $this;
+    }
+
+    #[ORM\ManyToOne(targetEntity: User::class)]
+    #[ORM\JoinColumn(nullable: true)]
+    private ?User $doctor = null;
+
+    public function getDoctor(): ?User
+    {
+        return $this->doctor;
+    }
+
+    public function setDoctor(?User $doctor): static
+    {
+        $this->doctor = $doctor;
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, PrescriptionItem>
+     */
+    public function getPrescriptionItems(): Collection
+    {
+        return $this->prescriptionItems;
+    }
+
+    public function addPrescriptionItem(PrescriptionItem $prescriptionItem): static
+    {
+        if (!$this->prescriptionItems->contains($prescriptionItem)) {
+            $this->prescriptionItems->add($prescriptionItem);
+            $prescriptionItem->setSale($this);
+        }
+
+        return $this;
+    }
+
+    public function removePrescriptionItem(PrescriptionItem $prescriptionItem): static
+    {
+        if ($this->prescriptionItems->removeElement($prescriptionItem)) {
+            // set the owning side to null (unless already changed)
+            if ($prescriptionItem->getSale() === $this) {
+                $prescriptionItem->setSale(null);
+            }
+        }
+
+        return $this;
     }
 }

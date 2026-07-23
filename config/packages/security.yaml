@@ -23,6 +23,9 @@ security:
                 path: app_logout
                 # where to redirect after logout
                 # target: app_any_route
+            login_throttling:
+                max_attempts: 5
+                interval: '1 minute'
 
             remember_me:
                 secret: '%kernel.secret%'
@@ -54,3 +57,19 @@ when@test:
                 cost: 4 # Lowest possible value for bcrypt
                 time_cost: 3 # Lowest possible value for argon
                 memory_cost: 10 # Lowest possible value for argon
+
+    framework:
+        rate_limiter:
+            login_limiter:
+                policy: 'token_bucket'
+                limit: 5
+                rate: { amount: 1, interval: '1 minute' }
+                storage_service: null  # use in-memory for tests
+            api_limiter:
+                policy: 'token_bucket'
+                limit: 60
+                rate: { amount: 60, interval: '1 minute' }
+            ai_report_limiter:
+                policy: 'token_bucket'
+                limit: 3
+                rate: { amount: 3, interval: '1 hour' }

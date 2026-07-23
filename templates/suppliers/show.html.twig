@@ -1,8 +1,8 @@
 {% extends 'layouts/dashboard.html.twig' %}
 
-{% block title %}Supplier Details | {{ company_name ?? 'ModularSaaS' }}{% endblock %}
+{% block title %}{{ 'Supplier Details'|module_term }} | {{ company_name ?? 'ModularSaaS' }}{% endblock %}
 
-{% block content_title %}Supplier Details{% endblock %}
+{% block content_title %}{{ 'Supplier Details'|module_term }}{% endblock %}
 {% block content_subtitle %}{{ supplier.name }}{% endblock %}
 
 {% block content_actions %}
@@ -19,7 +19,7 @@
     {% if is_granted('delete.suppliers') %}
     <button type="button" onclick="document.getElementById('deleteSupplierModal').showModal()" class="inline-flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium text-white rounded-md shadow-sm transition-colors" style="background-color: #dc2626;">
         <i data-lucide="trash-2" class="w-4 h-4 text-white"></i>
-        <span>Delete Vendor</span>
+        <span>Delete {{ 'Supplier'|module_term }}</span>
     </button>
     
     <dialog id="deleteSupplierModal" style="margin:auto;" class="p-0 rounded-lg shadow-xl border border-slate-200 backdrop:bg-slate-600/20 backdrop:backdrop-blur-[2px] open:animate-in open:fade-in open:zoom-in-95 duration-200 overflow-hidden">
@@ -64,7 +64,7 @@
                             {% endif %}
                             <div>
                                 <h2 class="text-2xl font-bold text-slate-900 tracking-tight">{{ supplier.name }}</h2>
-                                <p class="text-xs font-medium text-slate-500" style="margin-top:0.25rem;">Vendor Profile</p>
+                                <p class="text-xs font-medium text-slate-500" style="margin-top:0.25rem;">{{ 'Supplier'|module_term }} Profile</p>
                             </div>
                         </div>
                     </div>
@@ -120,8 +120,8 @@
             <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
                 <div class="p-6 md:p-8 border-b border-slate-100 flex items-center justify-between bg-slate-50/30">
                     <div>
-                        <h3 class="text-lg font-bold text-slate-900 tracking-tight">Recent Purchase History</h3>
-                        <p class="text-sm text-slate-500">Last transactions with this vendor</p>
+                        <h3 class="text-lg font-bold text-slate-900 tracking-tight">Recent {{ 'Purchase'|module_term }} History</h3>
+                        <p class="text-sm text-slate-500">Last transactions with this {{ 'supplier'|module_term }}</p>
                     </div>
                     <a href="{{ path('app_purchases_index', {'contact_id': supplier.slug}) }}" class="text-sm font-bold text-indigo-600 hover:text-indigo-700 transition-colors">View All</a>
                 </div>
@@ -139,8 +139,9 @@
                                 </div>
                             </div>
                             <div class="text-right flex flex-col items-end flex-shrink-0 ml-4" style="display: flex; flex-direction: column; align-items: flex-end; justify-content: center; text-align: right; flex-shrink: 0; margin-left: 16px;">
-                                <div class="text-sm font-bold text-slate-900">${{ purchase.total|number_format(2) }}</div>
+                                <div class="text-sm font-bold text-slate-900">{% if active_module == 'doctor' %}Free Samples{% else %}${{ purchase.total|number_format(2) }}{% endif %}</div>
                                 
+                                {% if active_module != 'doctor' %}
                                 {% set status = purchase.paymentStatus|default('Unpaid') %}
                                  {% set style_map = {
                                     'Paid': { 'text': '#059669', 'bg': '#10b981', 'light': '#ecfdf5' },
@@ -156,6 +157,7 @@
                                     <span style="width: 4px; height: 4px; border-radius: 9999px; display: inline-block; background-color: {{ status_style.bg }};"></span>
                                     {{ status }}
                                 </div>
+                                {% endif %}
                             </div>
                         </a>
                     {% else %}
@@ -170,7 +172,7 @@
                 </div>
             </div>
             
-            {% if is_granted('see.sales') %}
+            {% if is_granted('see.sales') and active_module != 'doctor' %}
             <!-- Recent Sales History (as Customer) -->
             <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden mt-6">
                 <div class="p-6 md:p-8 border-b border-slate-100 flex items-center justify-between bg-slate-50/30">
@@ -225,21 +227,30 @@
                 </div>
             </div>
             {% endif %}
+
+            {# General Notes Section #}
+            {{ include('components/_notes_section.html.twig', {
+                'targetType': 'contact',
+                'targetId': supplier.id,
+                'notes': get_notes('contact', supplier.id),
+                'redirectUrl': path('app_suppliers_show', {'slug': supplier.slug})
+            }) }}
         </div>
 
-        <!-- Sidebar Stats -->
         <div class="space-y-6">
             <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-6">
-                <h3 class="text-sm font-semibold text-slate-900 mb-4">Supply Chain Metrics</h3>
+                <h3 class="text-sm font-semibold text-slate-900 mb-4">Supply Metrics</h3>
                 <div class="space-y-4">
+                    {% if active_module != 'doctor' %}
                     <div>
                         <div class="text-xs font-medium text-slate-500 mb-1">Total Purchases</div>
                         <div class="text-3xl font-bold tracking-tight text-slate-900">${{ lifetime_spending|number_format(2) }}</div>
                     </div>
+                    {% endif %}
                     <div class="pt-4 border-t border-slate-100">
                         <div class="flex items-center justify-between">
                             <div>
-                                <div class="text-xs font-medium text-slate-500 mb-1">Total Purchase Orders</div>
+                                <div class="text-xs font-medium text-slate-500 mb-1">Total Supply Stock Orders</div>
                                 <div class="text-xl font-bold text-slate-900">{{ total_orders }}</div>
                             </div>
                             <div class="w-10 h-10 bg-slate-50 rounded-md border border-slate-100 flex items-center justify-center">
@@ -247,7 +258,7 @@
                             </div>
                         </div>
                     </div>
-                    {% if lifetime_revenue > 0 %}
+                    {% if active_module != 'doctor' and lifetime_revenue > 0 %}
                     <div class="pt-4 border-t border-slate-100">
                         <div>
                             <div class="text-xs font-medium text-slate-500 mb-1">Lifetime Revenue (as Client)</div>

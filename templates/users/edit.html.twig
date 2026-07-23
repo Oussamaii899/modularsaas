@@ -212,6 +212,25 @@
                                             <td class="text-center text-slate-300 dark:text-slate-600 font-mono text-xs">—</td>
                                         </tr>
 
+                                        <!-- Row: Notifications -->
+                                        <tr class="hover:bg-slate-50/30 transition-colors">
+                                            <td class="font-semibold text-slate-900 flex items-center gap-2">
+                                                <i data-lucide="bell" class="w-4 h-4 text-slate-400"></i>
+                                                <span>Notifications</span>
+                                            </td>
+                                            <td class="text-center">
+                                                {% if perm_fields['see.notifications'] is defined %}
+                                                    {% set cb = perm_fields['see.notifications'] %}
+                                                    <div class="inline-flex items-center justify-center">
+                                                        {{ form_widget(cb, {'attr': {'class': 'w-4 h-4 text-indigo-600 border-slate-300 rounded focus:ring-indigo-500'}}) }}
+                                                    </div>
+                                                {% endif %}
+                                            </td>
+                                            <td class="text-center text-slate-300 dark:text-slate-600 font-mono text-xs">—</td>
+                                            <td class="text-center text-slate-300 dark:text-slate-600 font-mono text-xs">—</td>
+                                            <td class="text-center text-slate-300 dark:text-slate-600 font-mono text-xs">—</td>
+                                        </tr>
+
                                         <!-- Row: Purchases (Parent) -->
                                         <tr class="hover:bg-slate-50/30 transition-colors bg-slate-50/20">
                                             <td class="font-bold text-slate-900 flex items-center gap-2">
@@ -608,6 +627,7 @@
                             <i data-lucide="arrow-right" class="w-4 h-4 text-white"></i>
                         </button>
                     </div>
+                    {% do form.permissions.setRendered %}
                 {{ form_end(form) }}
 
                 <script>

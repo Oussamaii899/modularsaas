@@ -33,12 +33,12 @@ class SaleRepository extends ServiceEntityRepository
     }
 
 
-    public function totalCollectedByDate($startDate, $endDate)
+    public function totalCollectedByDate($startDate, $endDate, ?int $doctorId = null)
     {
         $start = new \DateTimeImmutable($startDate);
         $end = (new \DateTimeImmutable($endDate))->setTime(23, 59, 59);
 
-        return $this->createQueryBuilder("s")
+        $qb = $this->createQueryBuilder("s")
             ->select("SUM(p.amount)")
             ->join("s.payments", "p")
             ->where("p.createdAt >= :start")
@@ -46,17 +46,22 @@ class SaleRepository extends ServiceEntityRepository
             ->andWhere("s.paymentStatus != 'Cancelled'")
             ->andWhere("p.type != 'Refund'")
             ->setParameter("start", $start)
-            ->setParameter("end", $end)
-            ->getQuery()
-            ->getSingleScalarResult();
+            ->setParameter("end", $end);
+
+        if ($doctorId) {
+            $qb->andWhere("s.doctor = :doctorId")
+               ->setParameter("doctorId", $doctorId);
+        }
+
+        return $qb->getQuery()->getSingleScalarResult();
     }
 
-    public function totalRefundedByDate($startDate, $endDate)
+    public function totalRefundedByDate($startDate, $endDate, ?int $doctorId = null)
     {
         $start = new \DateTimeImmutable($startDate);
         $end = (new \DateTimeImmutable($endDate))->setTime(23, 59, 59);
 
-        return $this->createQueryBuilder("s")
+        $qb = $this->createQueryBuilder("s")
             ->select("SUM(p.amount)")
             ->join("s.payments", "p")
             ->where("p.createdAt >= :start")
@@ -64,92 +69,124 @@ class SaleRepository extends ServiceEntityRepository
             ->andWhere("s.paymentStatus != 'Cancelled'")
             ->andWhere("p.type = 'Refund'")
             ->setParameter("start", $start)
-            ->setParameter("end", $end)
-            ->getQuery()
-            ->getSingleScalarResult();
+            ->setParameter("end", $end);
+
+        if ($doctorId) {
+            $qb->andWhere("s.doctor = :doctorId")
+               ->setParameter("doctorId", $doctorId);
+        }
+
+        return $qb->getQuery()->getSingleScalarResult();
     }
 
 
-    public function totalNetCollectedByDate($startDate, $endDate)
+    public function totalNetCollectedByDate($startDate, $endDate, ?int $doctorId = null)
     {
         $start = new \DateTimeImmutable($startDate);
         $end = (new \DateTimeImmutable($endDate))->setTime(23, 59, 59);
 
-        return $this->createQueryBuilder("s")
+        $qb = $this->createQueryBuilder("s")
             ->select("SUM(p.amount)")
             ->join("s.payments", "p")
             ->where("p.createdAt >= :start")
             ->andWhere("p.createdAt <= :end")
             ->andWhere("s.paymentStatus != 'Cancelled'")
             ->setParameter("start", $start)
-            ->setParameter("end", $end)
-            ->getQuery()
-            ->getSingleScalarResult();
+            ->setParameter("end", $end);
+
+        if ($doctorId) {
+            $qb->andWhere("s.doctor = :doctorId")
+               ->setParameter("doctorId", $doctorId);
+        }
+
+        return $qb->getQuery()->getSingleScalarResult();
     }
 
     /**
      * Outstanding = invoiced total - net paid (includes refunds) for non-cancelled sales.
      * Refunds must be included here so overpayment refunds don't create a phantom negative balance.
      */
-    public function totalOutstandingByDate($startDate, $endDate): float
+    public function totalOutstandingByDate($startDate, $endDate, ?int $doctorId = null): float
     {
         $start = new \DateTimeImmutable($startDate);
         $end = (new \DateTimeImmutable($endDate))->setTime(23, 59, 59);
 
-        $invoiced = (float) ($this->createQueryBuilder("s")
+        $qbInvoiced = $this->createQueryBuilder("s")
             ->select("SUM(s.total)")
             ->where("s.created_at >= :start")
             ->andWhere("s.created_at <= :end")
             ->andWhere("s.paymentStatus != 'Cancelled'")
             ->setParameter("start", $start)
-            ->setParameter("end", $end)
-            ->getQuery()
-            ->getSingleScalarResult() ?? 0);
+            ->setParameter("end", $end);
 
-        $netPaid = (float) ($this->createQueryBuilder("s")
+        if ($doctorId) {
+            $qbInvoiced->andWhere("s.doctor = :doctorId")
+                       ->setParameter("doctorId", $doctorId);
+        }
+
+        $invoiced = (float) ($qbInvoiced->getQuery()->getSingleScalarResult() ?? 0);
+
+        $qbNetPaid = $this->createQueryBuilder("s")
             ->select("SUM(p.amount)")
             ->join("s.payments", "p")
             ->where("s.created_at >= :start")
             ->andWhere("s.created_at <= :end")
             ->andWhere("s.paymentStatus != 'Cancelled'")
             ->setParameter("start", $start)
-            ->setParameter("end", $end)
-            ->getQuery()
-            ->getSingleScalarResult() ?? 0);
+            ->setParameter("end", $end);
+
+        if ($doctorId) {
+            $qbNetPaid->andWhere("s.doctor = :doctorId")
+                      ->setParameter("doctorId", $doctorId);
+        }
+
+        $netPaid = (float) ($qbNetPaid->getQuery()->getSingleScalarResult() ?? 0);
 
         return max(0.0, $invoiced - $netPaid);
     }
 
-    public function salesByDate($startDate, $endDate){
+    public function salesByDate($startDate, $endDate, ?int $doctorId = null){
         $start = new \DateTimeImmutable($startDate);
         $end = (new \DateTimeImmutable($endDate))->setTime(23, 59, 59);
 
-        return $this->createQueryBuilder("s")
+        $qb = $this->createQueryBuilder("s")
             ->select("SUBSTRING(p.createdAt, 1, 10) as date, SUM(p.amount) as total")
             ->join("s.payments", "p")
             ->where("p.createdAt >= :start")
             ->andWhere("p.createdAt <= :end")
             ->andWhere("s.paymentStatus != 'Cancelled'")
             ->setParameter("start", $start)
-            ->setParameter("end", $end)
-            ->groupBy("date")
+            ->setParameter("end", $end);
+
+        if ($doctorId) {
+            $qb->andWhere("s.doctor = :doctorId")
+               ->setParameter("doctorId", $doctorId);
+        }
+
+        return $qb->groupBy("date")
             ->getQuery()
             ->getResult();
     }
 
-    public function findRecent($startDate, $endDate, int $limit = 5)
+    public function findRecent($startDate, $endDate, int $limit = 5, ?int $doctorId = null)
     {
         $start = new \DateTimeImmutable($startDate);
         $end = (new \DateTimeImmutable($endDate))->setTime(23, 59, 59);
 
-        return $this->createQueryBuilder('s')
+        $qb = $this->createQueryBuilder('s')
             ->addSelect('c')
             ->leftJoin('s.contact', 'c')
             ->where('s.created_at >= :start')
             ->andWhere('s.created_at <= :end')
             ->setParameter('start', $start)
-            ->setParameter('end', $end)
-            ->orderBy('s.created_at', 'DESC')
+            ->setParameter('end', $end);
+
+        if ($doctorId) {
+            $qb->andWhere("s.doctor = :doctorId")
+               ->setParameter("doctorId", $doctorId);
+        }
+
+        return $qb->orderBy('s.created_at', 'DESC')
             ->setMaxResults($limit)
             ->getQuery()
             ->getResult();
@@ -160,8 +197,22 @@ class SaleRepository extends ServiceEntityRepository
             ->addSelect('c');
 
         if ($query) {
-            $qb->andWhere('c.name LIKE :query OR s.id LIKE :query')
-               ->setParameter('query', '%' . $query . '%');
+            $trimmedQuery = trim($query);
+            $qb->leftJoin('s.saleItems', 'si')
+               ->leftJoin('si.product', 'prod')
+               ->leftJoin('s.prescriptionItems', 'rx')
+               ->leftJoin('s.doctor', 'doc');
+
+            $cleanId = preg_replace('/[^0-9]/', '', $trimmedQuery);
+
+            if ($cleanId !== '') {
+                $qb->andWhere('c.name LIKE :query OR s.id = :idVal OR si.pName LIKE :query OR prod.name LIKE :query OR rx.medicationName LIKE :query OR s.medicalDetails LIKE :query OR doc.fullName LIKE :query')
+                   ->setParameter('query', '%' . $trimmedQuery . '%')
+                   ->setParameter('idVal', (int)$cleanId);
+            } else {
+                $qb->andWhere('c.name LIKE :query OR si.pName LIKE :query OR prod.name LIKE :query OR rx.medicationName LIKE :query OR s.medicalDetails LIKE :query OR doc.fullName LIKE :query')
+                   ->setParameter('query', '%' . $trimmedQuery . '%');
+            }
         }
 
         if ($status) {
@@ -180,10 +231,11 @@ class SaleRepository extends ServiceEntityRepository
         $qb->orderBy($sortField, $sortDir);
 
         $countQb = clone $qb;
-        $totalItems = count($countQb->getQuery()->getResult());
+        $totalItems = (int) $countQb->select('COUNT(DISTINCT s.id)')->getQuery()->getSingleScalarResult();
         $pagesCount = (int) ceil($totalItems / $limit);
 
-        $results = $qb->setFirstResult(($page - 1) * $limit)
+        $results = $qb->distinct()
+            ->setFirstResult(($page - 1) * $limit)
             ->setMaxResults($limit)
             ->getQuery()
             ->getResult();
@@ -194,5 +246,17 @@ class SaleRepository extends ServiceEntityRepository
             'currentPage' => $page,
             'totalItems' => $totalItems
         ];
+    }
+
+    /**
+     * Find all unpaid or partially paid sales (for outstanding balance notifications).
+     */
+    public function findUnpaidOrPartial(): array
+    {
+        return $this->createQueryBuilder('s')
+            ->where("s.paymentStatus IN ('Unpaid', 'Partial')")
+            ->orderBy('s.created_at', 'ASC')
+            ->getQuery()
+            ->getResult();
     }
 }

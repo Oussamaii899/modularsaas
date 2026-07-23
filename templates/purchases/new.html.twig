@@ -1,9 +1,9 @@
 {% extends 'layouts/dashboard.html.twig' %}
 
-{% block title %}Log New Purchase | {{ company_name ?? 'ModularSaaS' }}{% endblock %}
+{% block title %}Log New {{ 'Purchase'|module_term }} | {{ company_name ?? 'ModularSaaS' }}{% endblock %}
 
-{% block content_title %}Add New Purchase{% endblock %}
-{% block content_subtitle %}Record an inventory acquisition{% endblock %}
+{% block content_title %}Add New {{ 'Purchase'|module_term }}{% endblock %}
+{% block content_subtitle %}Record an inventory {{ 'purchase'|module_term }}{% endblock %}
 
 {% block content_actions %}
     <a href="{{ path('app_purchases_index') }}" class="inline-flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium text-slate-600 bg-white border border-slate-200 hover:bg-slate-50 rounded-md shadow-sm transition-colors">
@@ -19,8 +19,8 @@
             <div class="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-visible">
                 <div class="p-6 md:p-8">
                     <div class="mb-6">
-                        <h3 class="text-lg font-bold text-slate-900 dark:text-slate-100">1. Supplier Information</h3>
-                        <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">Select the vendor and the date of acquisition.</p>
+                        <h3 class="text-lg font-bold text-slate-900 dark:text-slate-100">1. {{ 'Supplier Information'|module_term }}</h3>
+                        <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">Select the {{ 'supplier'|module_term }} and the date of {{ 'purchase'|module_term }}.</p>
                     </div>
 
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -44,7 +44,7 @@
                     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
                         <div>
                             <h3 class="text-lg font-bold text-slate-900 dark:text-slate-100">2. Acquired Items</h3>
-                            <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">Add the products purchased from this supplier.</p>
+                            <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">Add the {{ 'products'|module_term }} purchased from this {{ 'supplier'|module_term }}.</p>
                         </div>
                         <button type="button" class="add-item-btn inline-flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-bold text-indigo-700 dark:text-indigo-300 bg-indigo-50 dark:bg-indigo-950/30 border border-indigo-100 dark:border-indigo-900/50 hover:bg-indigo-100 dark:hover:bg-indigo-900/50 rounded-md transition-colors shadow-sm">
                             <i data-lucide="plus" class="w-4 h-4"></i>
@@ -72,6 +72,7 @@
             </div>
 
             <!-- Step 3: Record Payment Option -->
+            {% if active_module != 'doctor' %}
             <div class="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-visible">
                 <div class="p-6 md:p-8">
                     <div class="mb-4">
@@ -106,8 +107,10 @@
                     </div>
                 </div>
             </div>
+            {% endif %}
 
             <!-- Step 4: Financial Summary -->
+            {% if active_module != 'doctor' %}
             <div class="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden">
                 <div class="p-6 md:p-8">
                     <div class="flex flex-col gap-4">
@@ -125,11 +128,22 @@
                         <a href="{{ path('app_purchases_index') }}" class="w-full sm:w-auto px-6 py-2.5 text-sm font-medium text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors text-center">Discard</a>
                         <button type="submit" class="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-8 py-2.5 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg shadow-sm transition-colors active:scale-95">
                             <i data-lucide="save" class="w-4 h-4"></i>
-                            <span>Record Purchase</span>
+                            <span>Record {{ 'Purchase'|module_term }}</span>
                         </button>
                     </div>
                 </div>
             </div>
+            {% else %}
+            {# Doctor mode: just a submit button, no payment or total shown #}
+            <div class="hidden">{{ form_widget(form.total) }}</div>
+            <div class="flex flex-col sm:flex-row items-center justify-end gap-4 pt-2">
+                <a href="{{ path('app_purchases_index') }}" class="w-full sm:w-auto px-6 py-2.5 text-sm font-medium text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors text-center">Discard</a>
+                <button type="submit" class="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-8 py-2.5 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg shadow-sm transition-colors active:scale-95">
+                    <i data-lucide="save" class="w-4 h-4"></i>
+                    <span>Record {{ 'Purchase'|module_term }}</span>
+                </button>
+            </div>
+            {% endif %}
         {{ form_end(form) }}
     </div>
 
@@ -203,10 +217,11 @@
                             fetch(`/products/api/${productId}/price`)
                                 .then(res => res.json())
                                 .then(data => {
-                                    if (data.price) {
-                                        priceInput.value = data.price;
+                                    const costToUse = data.purchasePrice || data.price;
+                                    if (costToUse) {
+                                        priceInput.value = costToUse;
                                         if (priceDisplay) {
-                                            priceDisplay.textContent = parseFloat(data.price).toFixed(2);
+                                            priceDisplay.textContent = parseFloat(costToUse).toFixed(2);
                                         }
                                         updateGrandTotal();
                                     }

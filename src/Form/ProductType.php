@@ -27,13 +27,26 @@ class ProductType extends AbstractType
                 'attr' => ['placeholder' => 'e.g. PRD-001']
             ])
             ->add('price', NumberType::class, [
-                'label' => 'Unit Price ($)',
+                'label' => 'Selling Price ($)',
                 'scale' => 2,
+                'attr' => ['placeholder' => '0.00']
+            ])
+            ->add('purchasePrice', NumberType::class, [
+                'label' => 'Cost / Purchase Price ($)',
+                'scale' => 2,
+                'required' => false,
                 'attr' => ['placeholder' => '0.00']
             ])
             ->add('stockQuantity', NumberType::class, [
                 'label' => 'Initial Stock Level',
+                'required' => false,
+                'empty_data' => '0',
                 'attr' => ['placeholder' => '0']
+            ])
+            ->add('isSerialized', \Symfony\Component\Form\Extension\Core\Type\CheckboxType::class, [
+                'label' => 'Track as Individual Items (Serial Numbers / Unique Codes)',
+                'required' => false,
+                'help' => 'Enable this for laptops, phones, books or items requiring individual serial numbers and status tracking.'
             ])
             ->add('description', TextareaType::class, [
                 'label' => 'Product Description',

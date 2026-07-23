@@ -1,8 +1,8 @@
 {% extends 'layouts/dashboard.html.twig' %}
 
-{% block title %}Product Catalog | {{ company_name ?? 'ModularSaaS' }}{% endblock %}
+{% block title %}{{ 'Product'|module_term }} Catalog | {{ company_name ?? 'ModularSaaS' }}{% endblock %}
 
-{% block content_title %}Service & Product Management{% endblock %}
+{% block content_title %}Service & {{ 'Product'|module_term }} Management{% endblock %}
 {% block content_subtitle %}Control your inventory and service offerings{% endblock %}
 
 {% block content_actions %}
@@ -18,7 +18,7 @@
         {% if is_granted('add.products') %}
         <a href="{{ path('app_products_new') }}" class="inline-flex h-10 items-center justify-center gap-2 rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow hover:bg-indigo-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 transition-colors">
             <i data-lucide="plus-circle" class="w-4 h-4"></i>
-            <span>Add Product</span>
+            <span>Add {{ 'Product'|module_term }}</span>
         </a>
         {% endif %}
     </div>
@@ -30,7 +30,7 @@
             <table class="w-full text-left border-collapse text-sm">
                 <thead>
                     <tr class="border-b border-slate-100 bg-slate-50/30 transition-colors pointer-events-none">
-                        <th class="h-12 px-4 align-middle font-medium text-slate-500 text-left uppercase tracking-wider text-[11px]">Product Details</th>
+                        <th class="h-12 px-4 align-middle font-medium text-slate-500 text-left uppercase tracking-wider text-[11px]">{{ 'Product Details'|module_term }}</th>
                         <th class="h-12 px-4 align-middle font-medium text-slate-500 text-center uppercase tracking-wider text-[11px]">Description</th>
                         <th class="h-12 px-4 align-middle font-medium text-slate-500 text-center uppercase tracking-wider text-[11px]">Unit Price</th>
                         <th class="h-12 px-4 align-middle font-medium text-slate-500 text-center uppercase tracking-wider text-[11px]">Stock Level</th>
@@ -98,7 +98,7 @@
                                                     <button type="button" onclick="document.getElementById('deleteModal_{{ product.id }}').close()" class="px-4 py-2 text-sm font-semibold text-slate-700 bg-white border border-slate-200 hover:bg-slate-50 rounded-md transition-all">Cancel</button>
                                                     <form method="post" action="{{ path('app_products_delete', {'slug': product.slug}) }}" class="inline m-0">
                                                         <input type="hidden" name="_token" value="{{ csrf_token('delete' ~ product.id) }}">
-                                                        <button type="submit" class="px-4 py-2 text-sm font-bold text-white rounded-md shadow-sm transition-all border border-red-600" style="background-color: #dc2626;">Delete Product</button>
+                                                        <button type="submit" class="px-4 py-2 text-sm font-bold text-white rounded-md shadow-sm transition-all border border-red-600" style="background-color: #dc2626;">Delete {{ 'Product'|module_term }}</button>
                                                     </form>
                                                 </div>
                                             </div>
@@ -114,13 +114,13 @@
                                 <div class="flex flex-col items-center gap-3">
                                     <i data-lucide="box" class="w-8 h-8 text-slate-300"></i>
                                     <div class="flex flex-col gap-1">
-                                        <p class="font-medium text-slate-900">No products found</p>
-                                        <p class="text-sm">Try adjusting your search or register a new product</p>
+                                        <p class="font-medium text-slate-900">No {{ 'products'|module_term }} found</p>
+                                        <p class="text-sm">Try adjusting your search or register a new {{ 'product'|module_term }}</p>
                                     </div>
                                     {% if is_granted('add.products') %}
                                     <a href="{{ path('app_products_new') }}" class="mt-2 inline-flex h-10 items-center justify-center gap-2 rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow hover:bg-indigo-700 transition-colors">
                                         <i data-lucide="plus" class="w-4 h-4"></i>
-                                        Add First Product
+                                        Add First {{ 'Product'|module_term }}
                                     </a>
                                     {% endif %}
                                 </div>

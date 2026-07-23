@@ -23,5 +23,10 @@ services:
         tags:
             - { name: doctrine.event_listener, event: onFlush }
 
+    App\EventSubscriber\RateLimitSubscriber:
+        arguments:
+            $apiLimiterFactory: '@limiter.api_limiter'
+            $aiReportLimiterFactory: '@limiter.ai_report_limiter'
+
     # add more service definitions when explicit configuration is needed
     # please note that last definitions always *replace* previous ones

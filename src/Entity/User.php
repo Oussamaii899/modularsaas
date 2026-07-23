@@ -152,6 +152,11 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         return false;
     }
 
+    public function getFullName(): string
+    {
+        return trim(($this->firstname ?? '') . ' ' . ($this->lastname ?? ''));
+    }
+
     public function hasAnyPermission(): bool
     {
         return !$this->permissionUsers->isEmpty();

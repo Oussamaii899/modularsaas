@@ -46,6 +46,8 @@ class MaintenanceSubscriber implements EventSubscriberInterface
             'app_settings_clear_cache', 
             'app_settings_recalculate', 
             'app_settings_export_data', 
+            'app_onboarding',
+            'app_onboarding_submit',
             '_wdt', 
             '_profiler'
         ];

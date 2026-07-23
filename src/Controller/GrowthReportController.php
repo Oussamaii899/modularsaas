@@ -111,4 +111,26 @@ final class GrowthReportController extends AbstractController
             'Content-Disposition' => 'attachment; filename="AI-growth-report-' . $sessionData['start_date'] . '_to_' . $sessionData['end_date'] . '.pdf"',
         ]);
     }
+
+    #[Route('/sales/overview/growth-report/sync-cache', name: 'app_sales_growth_report_sync_cache', methods: ['POST'])]
+    public function syncCache(Request $request): Response
+    {
+        if (!$this->isGranted('see.sale.overview')) {
+            return $this->json(['success' => false, 'error' => 'Access Denied.'], Response::HTTP_FORBIDDEN);
+        }
+
+        $data = json_decode($request->getContent(), true);
+        if (!$data || empty($data['report']) || empty($data['start_date']) || empty($data['end_date'])) {
+            return $this->json(['success' => false, 'error' => 'Invalid cached data.'], Response::HTTP_BAD_REQUEST);
+        }
+
+        $request->getSession()->set('latest_growth_report', [
+            'content' => $data['report'],
+            'start_date' => $data['start_date'],
+            'end_date' => $data['end_date'],
+        ]);
+
+        return $this->json(['success' => true]);
+    }
 }
+

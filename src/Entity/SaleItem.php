@@ -56,6 +56,17 @@ class SaleItem
     #[ORM\Column(length: 20, options: ["default" => "Active"])]
     private string $status = 'Active';
 
+    /**
+     * @var \Doctrine\Common\Collections\Collection<int, ProductItem>
+     */
+    #[ORM\OneToMany(mappedBy: 'saleItem', targetEntity: ProductItem::class)]
+    private \Doctrine\Common\Collections\Collection $productItems;
+
+    public function __construct()
+    {
+        $this->productItems = new \Doctrine\Common\Collections\ArrayCollection();
+    }
+
     public function getId(): ?int { return $this->id; }
 
     public function getSale(): ?Sale { return $this->sale; }
@@ -96,4 +107,31 @@ class SaleItem
 
     public function getStatus(): string { return $this->status; }
     public function setStatus(string $status): static { $this->status = $status; return $this; }
+
+    /**
+     * @return \Doctrine\Common\Collections\Collection<int, ProductItem>
+     */
+    public function getProductItems(): \Doctrine\Common\Collections\Collection
+    {
+        return $this->productItems;
+    }
+
+    public function addProductItem(ProductItem $productItem): static
+    {
+        if (!$this->productItems->contains($productItem)) {
+            $this->productItems->add($productItem);
+            $productItem->setSaleItem($this);
+        }
+        return $this;
+    }
+
+    public function removeProductItem(ProductItem $productItem): static
+    {
+        if ($this->productItems->removeElement($productItem)) {
+            if ($productItem->getSaleItem() === $this) {
+                $productItem->setSaleItem(null);
+            }
+        }
+        return $this;
+    }
 }

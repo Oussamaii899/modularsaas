@@ -102,6 +102,9 @@
         {# TomSelect dark mode overrides — must come AFTER the TomSelect CDN CSS to win the cascade #}
         <style id="tomselect-dark-overrides">
             /* ── Light Mode (default) ── */
+            .ts-wrapper {
+                width: 100% !important;
+            }
             .ts-wrapper .ts-control,
             .ts-wrapper.single .ts-control {
                 background-color: #f8fafc !important;
@@ -192,7 +195,7 @@
         <script src="https://cdn.jsdelivr.net/npm/frankenphp-hot-reload/+esm" type="module"></script>
         {% endif %}
     </head>
-    <body class="bg-slate-50 dark:bg-slate-900 font-['Inter'] text-slate-900 dark:text-slate-100 antialiased min-h-screen">
+    <body class="bg-slate-50 dark:bg-slate-900 font-sans text-slate-900 dark:text-slate-100 antialiased min-h-screen" data-active-module="{{ active_module|default(setting('active_module', 'none')) }}">
         {% block body %}{% endblock %}
 
         <script>

@@ -1,9 +1,9 @@
 {% extends 'layouts/dashboard.html.twig' %}
 
-{% block title %}Purchases Overview | {{ company_name ?? 'ModularSaaS' }}{% endblock %}
+{% block title %}{{ 'Purchases'|module_term }} Overview | {{ company_name ?? 'ModularSaaS' }}{% endblock %}
 
-{% block content_title %}Purchases Analytics{% endblock %}
-{% block content_subtitle %}Acquisitions and Inventory Status{% endblock %}
+{% block content_title %}{% if active_module == 'doctor' %}Medicine Supplies Overview{% else %}{{ 'Purchases'|module_term }} Analytics{% endif %}{% endblock %}
+{% block content_subtitle %}{% if active_module == 'doctor' %}Clinic Sample & Medicine Stock Intake History{% else %}Acquisitions and Inventory Status{% endif %}{% endblock %}
 
 {% block stylesheets %}
     {{ parent() }}
@@ -38,19 +38,21 @@
 
             const initialColors = getChartColors();
 
+            const isDoctorMode = document.body.dataset.activeModule === 'doctor';
+
             const purchasesOverviewChart = new Chart(ctx, {
                 type: 'line',
                 data: {
                     labels: [],
                     datasets: [{
-                        label: 'Spending Disbursed ($)',
+                        label: isDoctorMode ? 'Medication Orders Received' : 'Spending Disbursed ($)',
                         data: [],
-                        borderColor: '#3b82f6', // beautiful blue-500
-                        backgroundColor: 'rgba(59, 130, 246, 0.05)',
+                        borderColor: isDoctorMode ? '#6366f1' : '#3b82f6',
+                        backgroundColor: isDoctorMode ? 'rgba(99, 102, 241, 0.08)' : 'rgba(59, 130, 246, 0.05)',
                         borderWidth: 2.5,
                         fill: true,
                         tension: 0.35,
-                        pointBackgroundColor: '#3b82f6',
+                        pointBackgroundColor: isDoctorMode ? '#6366f1' : '#3b82f6',
                         pointBorderColor: '#ffffff',
                         pointBorderWidth: 1.5,
                         pointRadius: 4,
@@ -70,6 +72,9 @@
                             cornerRadius: 8,
                             callbacks: {
                                 label: function(context) {
+                                    if (isDoctorMode) {
+                                        return ' Orders Received: ' + Number(context.raw).toLocaleString();
+                                    }
                                     return ' Spending: $' + Number(context.raw).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
                                 }
                             }
@@ -77,12 +82,17 @@
                     },
                     scales: {
                         y: {
+                            min: 0,
+                            suggestedMin: 0,
                             beginAtZero: true,
                             grid: { color: initialColors.grid },
                             ticks: {
                                 color: initialColors.text,
                                 font: { family: "'Inter', sans-serif" },
-                                callback: function(value) { return '$' + value.toLocaleString(); }
+                                callback: function(value) {
+                                    if (value < 0) return '';
+                                    return isDoctorMode ? value : '$' + value.toLocaleString();
+                                }
                             },
                             border: { dash: [4, 4], display: false }
                         },
@@ -132,39 +142,50 @@
                 .then(response => response.json())
                 .then(data => {
                     // Update Stats Widgets
-                    const totalGrossVal = parseFloat(data.total_gross_30) || 0;
-                    const totalRefundsVal = parseFloat(data.total_refunds_30) || 0;
-                    const totalNetVal = parseFloat(data.total_net_30) || 0;
-                    const totalOutstandingVal = parseFloat(data.total_outstanding) || 0;
+                    if (!isDoctorMode) {
+                        const totalGrossVal = parseFloat(data.total_gross_30) || 0;
+                        const totalRefundsVal = parseFloat(data.total_refunds_30) || 0;
+                        const totalNetVal = parseFloat(data.total_net_30) || 0;
+                        const totalOutstandingVal = parseFloat(data.total_outstanding) || 0;
 
-                    const formatCurrency = val => (val < 0 ? '-$' : '$') + Math.abs(val).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
+                        const formatCurrency = val => (val < 0 ? '-$' : '$') + Math.abs(val).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
 
-                    document.getElementById('total-gross-value').innerText = formatCurrency(totalGrossVal);
-                    document.getElementById('total-refunds-value').innerText = '-$' + totalRefundsVal.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
-                    document.getElementById('total-net-value').innerText = formatCurrency(totalNetVal);
-                    document.getElementById('total-outstanding-value').innerText = formatCurrency(totalOutstandingVal);
+                        const grossEl = document.getElementById('total-gross-value');
+                        const refundsEl = document.getElementById('total-refunds-value');
+                        const netValueEl = document.getElementById('total-net-value');
+                        const outstandingEl = document.getElementById('total-outstanding-value');
 
-                    const netValueEl = document.getElementById('total-net-value');
-                    const netIconEl = document.getElementById('total-net-change-icon');
-                    const netContainerEl = document.getElementById('total-net-change-container');
-                    
-                    if (totalNetVal < 0) {
-                        if (netValueEl) netValueEl.className = 'text-2xl font-bold tracking-tight text-rose-600';
-                        if (netContainerEl) netContainerEl.className = 'flex items-center text-xs font-medium text-rose-600 mt-1';
-                        if (netIconEl) { netIconEl.setAttribute('data-lucide', 'trending-down'); netIconEl.innerHTML = ''; }
-                    } else {
-                        if (netValueEl) netValueEl.className = 'text-2xl font-bold tracking-tight text-slate-900';
-                        if (netContainerEl) netContainerEl.className = 'flex items-center text-xs font-medium text-emerald-600 mt-1';
-                        if (netIconEl) { netIconEl.setAttribute('data-lucide', 'trending-up'); netIconEl.innerHTML = ''; }
+                        if (grossEl) grossEl.innerText = formatCurrency(totalGrossVal);
+                        if (refundsEl) refundsEl.innerText = '-$' + totalRefundsVal.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
+                        if (netValueEl) netValueEl.innerText = formatCurrency(totalNetVal);
+                        if (outstandingEl) outstandingEl.innerText = formatCurrency(totalOutstandingVal);
+
+                        const netIconEl = document.getElementById('total-net-change-icon');
+                        const netContainerEl = document.getElementById('total-net-change-container');
+                        
+                        if (totalNetVal < 0) {
+                            if (netValueEl) netValueEl.className = 'text-2xl font-bold tracking-tight text-rose-600';
+                            if (netContainerEl) netContainerEl.className = 'flex items-center text-xs font-medium text-rose-600 mt-1';
+                            if (netIconEl) { netIconEl.setAttribute('data-lucide', 'trending-down'); netIconEl.innerHTML = ''; }
+                        } else {
+                            if (netValueEl) netValueEl.className = 'text-2xl font-bold tracking-tight text-slate-900';
+                            if (netContainerEl) netContainerEl.className = 'flex items-center text-xs font-medium text-emerald-600 mt-1';
+                            if (netIconEl) { netIconEl.setAttribute('data-lucide', 'trending-up'); netIconEl.innerHTML = ''; }
+                        }
+
+                        // Update widget timeframes only in non-doctor mode
+                        const timeframeText = label || (start.format('MMM D') + ' - ' + end.format('MMM D'));
+                        const grossChangeEl = document.getElementById('total-gross-change-text');
+                        const refundsChangeEl = document.getElementById('total-refunds-change-text');
+                        const netChangeEl = document.getElementById('total-net-change-text');
+                        const outstandingChangeEl = document.getElementById('total-outstanding-change-text');
+                        if (grossChangeEl) grossChangeEl.innerText = timeframeText;
+                        if (refundsChangeEl) refundsChangeEl.innerText = timeframeText;
+                        if (netChangeEl) netChangeEl.innerText = timeframeText;
+                        if (outstandingChangeEl) outstandingChangeEl.innerText = timeframeText;
+
+                        if (window.lucide) window.lucide.createIcons();
                     }
-                    if (window.lucide) window.lucide.createIcons();
-
-                    // Update widget titles/timeframes
-                    const timeframeText = label || (start.format('MMM D') + ' - ' + end.format('MMM D'));
-                    document.getElementById('total-gross-change-text').innerText = timeframeText;
-                    document.getElementById('total-refunds-change-text').innerText = timeframeText;
-                    document.getElementById('total-net-change-text').innerText = timeframeText;
-                    document.getElementById('total-outstanding-change-text').innerText = timeframeText;
 
                     // Process trend chart
                     const dailyTotals = {};
@@ -175,7 +196,7 @@
                     
                     let currDate = moment(start).startOf(groupMode);
                     const endDate = moment(end).endOf(groupMode);
-                    while (currDate.isBefore(endDate)) {
+                    while (currDate.isSameOrBefore(endDate, groupMode)) {
                         const dateKey = currDate.format(keyFormat);
                         dailyTotals[dateKey] = { purchases: 0, label: currDate.format(labelFormat) };
                         currDate.add(1, groupMode + 's');
@@ -187,17 +208,30 @@
                             const dateVal = item.created_at && item.created_at.date ? item.created_at.date : item.created_at;
                             const dateKey = moment(dateVal).format(keyFormat);
                             if (dailyTotals[dateKey]) {
-                                dailyTotals[dateKey].purchases += parseFloat(item.total || 0);
+                                // In doctor mode: count orders (integer); otherwise: sum spending
+                                if (isDoctorMode) {
+                                    dailyTotals[dateKey].purchases += parseInt(item.total || 0);
+                                } else {
+                                    dailyTotals[dateKey].purchases += parseFloat(item.total || 0);
+                                }
                             }
                         });
                     }
 
                     const sortedKeys = Object.keys(dailyTotals).sort();
                     const labels = sortedKeys.map(k => dailyTotals[k].label);
-                    const purchasesData = sortedKeys.map(k => dailyTotals[k].purchases);
+                    const purchasesData = sortedKeys.map(k => Math.max(0, dailyTotals[k].purchases));
 
                     purchasesOverviewChart.data.labels = labels;
                     purchasesOverviewChart.data.datasets[0].data = purchasesData;
+                    purchasesOverviewChart.data.datasets[0].pointRadius = sortedKeys.length === 1 ? 7 : 4;
+                    purchasesOverviewChart.data.datasets[0].pointHoverRadius = sortedKeys.length === 1 ? 9 : 6;
+
+                    // In doctor mode ensure Y axis shows integers only
+                    if (isDoctorMode) {
+                        purchasesOverviewChart.options.scales.y.ticks.stepSize = 1;
+                        purchasesOverviewChart.options.scales.y.ticks.precision = 0;
+                    }
                     purchasesOverviewChart.update();
                 })
                 .catch(err => console.error('Error fetching purchases analytics:', err));
@@ -237,7 +271,7 @@
         {% if is_granted('add.purchases') %}
         <a href="{{ path('app_purchases_new') }}" class="inline-flex h-10 items-center justify-center gap-2 rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow hover:bg-indigo-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 transition-colors">
             <i data-lucide="plus" class="w-4 h-4 text-white"></i>
-            <span>New Purchase</span>
+            <span>New {{ 'Purchase'|module_term }}</span>
         </a>
         {% endif %}
     </div>
@@ -246,6 +280,44 @@
 {% block main_content %}
     <div class="space-y-6" id="purchases-overview-container" data-data-url="{{ path('app_purchases_overview_data') }}">
         <!-- 1. Stats Widgets -->
+        {% if active_module == 'doctor' %}
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {% include 'components/widget.html.twig' with {
+                title: 'Catalog Medications',
+                value: all_products|length ~ ' Items',
+                value_id: 'total-gross-value',
+                icon: 'package-search',
+                change_type: 'neutral',
+                change_text: 'Sample Packs & Supplies',
+                change_text_id: 'total-gross-change-text',
+                change_icon: 'check-circle'
+            } %}
+
+            {% include 'components/widget.html.twig' with {
+                title: 'Total Intakes Logged',
+                value: total_orders_count|default(0) ~ ' Orders',
+                value_id: 'total-refunds-value',
+                icon: 'truck',
+                change_type: 'neutral',
+                change_text: 'Pharmacy Deliveries',
+                change_text_id: 'total-refunds-change-text',
+                change_icon: 'check-circle',
+                value_class: 'text-slate-900 dark:text-slate-100'
+            } %}
+
+            {% include 'components/widget.html.twig' with {
+                title: 'Low Stock Alert',
+                value: low_stock_count|default(0) ~ ' Reorder Needed',
+                value_id: 'total-net-value',
+                icon: 'alert-triangle',
+                change_type: (low_stock_count|default(0) > 0 ? 'down' : 'neutral'),
+                change_text: (low_stock_count|default(0) > 0 ? 'Stock low (≤ 10 units)' : 'Stock levels healthy'),
+                change_text_id: 'total-net-change-text',
+                change_icon: (low_stock_count|default(0) > 0 ? 'alert-circle' : 'check-circle'),
+                value_class: (low_stock_count|default(0) > 0 ? 'text-amber-600 dark:text-amber-400' : 'text-slate-900 dark:text-slate-100')
+            } %}
+        </div>
+        {% else %}
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             {% include 'components/widget.html.twig' with {
                 title: 'Gross Spending',
@@ -264,7 +336,7 @@
                 value_id: 'total-refunds-value',
                 icon: 'rotate-ccw',
                 change_type: (total_refunds_30 > 0 ? 'down' : 'neutral'),
-                change_text: 'Returned from Suppliers',
+                change_text: 'Returned from ' ~ ('Suppliers'|module_term),
                 change_text_id: 'total-refunds-change-text',
                 change_icon: 'alert-circle',
                 value_class: (total_refunds_30 > 0 ? 'text-emerald-600' : 'text-slate-900')
@@ -295,13 +367,18 @@
                 change_icon: (total_outstanding > 0 ? 'alert-triangle' : 'check-circle')
             } %}
         </div>
+        {% endif %}
 
-        <!-- 2. Spending Trend Graph (Full Width) -->
-        <div class="p-6 bg-white border border-slate-200 rounded-2xl shadow-sm flex flex-col hover:shadow-md transition-shadow">
+        <!-- 2. Stock Intake / Spending Trend Graph (Full Width) -->
+        <div class="p-6 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl shadow-sm flex flex-col hover:shadow-md transition-shadow">
             <div class="flex items-center justify-between mb-6">
                 <div>
-                    <h3 class="text-lg font-bold text-slate-900 tracking-tight">Spending Trend</h3>
-                    <p class="text-sm text-slate-500">Daily breakdown of inventory acquisition costs for the selected timeframe</p>
+                    <h3 class="text-lg font-bold text-slate-900 dark:text-slate-100 tracking-tight">
+                        {% if active_module == 'doctor' %}Medication Intake Trend{% else %}Spending Trend{% endif %}
+                    </h3>
+                    <p class="text-sm text-slate-500 dark:text-slate-400">
+                        {% if active_module == 'doctor' %}Daily volume of sample medications and pharmacy supplies received{% else %}Daily breakdown of inventory acquisition costs for the selected timeframe{% endif %}
+                    </p>
                 </div>
             </div>
             <div class="relative w-full min-h-[300px]">

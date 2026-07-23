@@ -1,9 +1,9 @@
 {% extends 'layouts/dashboard.html.twig' %}
 
-{% block title %}Log New Sale | {{ company_name ?? 'ModularSaaS' }}{% endblock %}
+{% block title %}Log {{ 'New Sale'|module_term }} | {{ company_name ?? 'ModularSaaS' }}{% endblock %}
 
-{% block content_title %}Add New Sale{% endblock %}
-{% block content_subtitle %}Record an inventory sale{% endblock %}
+{% block content_title %}Add {{ 'New Sale'|module_term }}{% endblock %}
+{% block content_subtitle %}Record an inventory {{ 'sale'|module_term }}{% endblock %}
 
 {% block content_actions %}
     <a href="{{ path('app_sales_index') }}" class="inline-flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium text-slate-600 bg-white border border-slate-200 hover:bg-slate-50 rounded-md shadow-sm transition-colors">
@@ -19,8 +19,8 @@
             <div class="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-visible">
                 <div class="p-6 md:p-8">
                     <div class="mb-6">
-                        <h3 class="text-lg font-bold text-slate-900 dark:text-slate-100">1. Customer Information</h3>
-                        <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">Select the client and the date of sale.</p>
+                        <h3 class="text-lg font-bold text-slate-900 dark:text-slate-100">1. {{ 'Customer Information'|module_term }}</h3>
+                        <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">Select the {{ 'client'|module_term }} and the date of {{ 'sale'|module_term }}.</p>
                     </div>
 
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -38,17 +38,21 @@
                 </div>
             </div>
 
-            <!-- Step 2: Product Breakdown -->
+            <!-- Step 2: Prescribed Clinic Stock / Medications -->
             <div class="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-visible">
                 <div class="p-6 md:p-8">
                     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
                         <div>
-                            <h3 class="text-lg font-bold text-slate-900 dark:text-slate-100">2. Sold Items</h3>
-                            <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">Add the products saled from this supplier.</p>
+                            <h3 class="text-lg font-bold text-slate-900 dark:text-slate-100">
+                                {% if active_module == 'doctor' %}2. Prescribed Clinic Stock{% else %}2. Sold Items{% endif %}
+                            </h3>
+                            <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">
+                                {% if active_module == 'doctor' %}Select medications/supplies provided from clinic stock (free of charge to patient).{% else %}Add the {{ 'products'|module_term }} saled from this {{ 'supplier'|module_term }}.{% endif %}
+                            </p>
                         </div>
                         <button type="button" class="add-item-btn inline-flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-bold text-indigo-700 dark:text-indigo-300 bg-indigo-50 dark:bg-indigo-950/30 border border-indigo-100 dark:border-indigo-900/50 hover:bg-indigo-100 dark:hover:bg-indigo-900/50 rounded-md transition-colors shadow-sm">
                             <i data-lucide="plus" class="w-4 h-4"></i>
-                            <span>Add Product</span>
+                            <span>Add {% if active_module == 'doctor' %}Medication{% else %}{{ 'Product'|module_term }}{% endif %}</span>
                         </button>
                     </div>
 
@@ -63,15 +67,39 @@
 
                     {% if form.saleItems|length == 0 %}
                         <div class="no-items-placeholder upload-zone dark:border-slate-700 dark:text-slate-400" style="display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 32px 16px; margin-top: 16px; border-radius: 8px; text-align: center; box-sizing: border-box; border-style: dashed; border-width: 2px;">
-                            <i data-lucide="shopping-cart" class="w-8 h-8" style="margin-bottom: 8px; opacity: 0.5;"></i>
-                            <p style="font-size: 14px; font-weight: 500; margin: 0; padding: 0;" class="text-slate-700 dark:text-slate-300">No items added yet</p>
-                            <p style="font-size: 12px; margin: 4px 0 0 0; padding: 0;" class="text-slate-500 dark:text-slate-400">Click "Add Product" to start logging.</p>
+                            <i data-lucide="pill" class="w-8 h-8" style="margin-bottom: 8px; opacity: 0.5;"></i>
+                            <p style="font-size: 14px; font-weight: 500; margin: 0; padding: 0;" class="text-slate-700 dark:text-slate-300">No stock items added yet</p>
+                            <p style="font-size: 12px; margin: 4px 0 0 0; padding: 0;" class="text-slate-500 dark:text-slate-400">Click "Add {% if active_module == 'doctor' %}Medication{% else %}{{ 'Product'|module_term }}{% endif %}" if providing items from stock.</p>
                         </div>
                     {% endif %}
                 </div>
             </div>
 
-            <!-- Step 3: Record Payment Option -->
+            <!-- Financial Summary / Consultation Fee -->
+            <div class="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden">
+                <div class="p-6 md:p-8">
+                    <div class="flex flex-col gap-4">
+                        <div>
+                            <h3 class="text-lg font-bold text-slate-900 dark:text-slate-100">
+                                {% if active_module == 'doctor' %}Consultation Fee (Visita Cost){% else %}Grand Total{% endif %}
+                            </h3>
+                            <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">
+                                {% if active_module == 'doctor' %}Set the total cost for this consultation/visita (medicines from stock are provided at $0.00).{% else %}Automatically calculated from line items.{% endif %}
+                            </p>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <span class="text-2xl font-bold text-slate-400">$</span>
+                            {% if active_module == 'doctor' %}
+                                {{ form_widget(form.total, {'attr': {'class': 'bg-slate-50 border border-slate-200 rounded-lg px-4 py-2 text-2xl font-bold text-slate-900 dark:text-slate-100 w-48 focus:ring-2 focus:ring-indigo-500', 'placeholder': '0.00'}}) }}
+                            {% else %}
+                                {{ form_widget(form.total, {'attr': {'class': 'bg-transparent border-none text-3xl font-bold text-slate-900 dark:text-slate-100 p-0 w-48 focus:ring-0', 'readonly': true}}) }}
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Record Payment Option (Last Step) -->
             <div class="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-visible">
                 <div class="p-6 md:p-8">
                     <div class="mb-4">
@@ -79,7 +107,7 @@
                             <input type="checkbox" id="record_payment" name="record_payment" value="1" class="h-4.5 w-4.5 rounded border-slate-300 dark:border-slate-700 dark:bg-slate-900 text-indigo-600 focus:ring-indigo-500/20 cursor-pointer">
                             <label for="record_payment" class="text-base font-bold text-slate-900 dark:text-slate-100 cursor-pointer select-none">Record payment now?</label>
                         </div>
-                        <p class="text-sm text-slate-500 dark:text-slate-400 mt-1 pl-7.5">Check this box to log an immediate payment transaction against this sale order.</p>
+                        <p class="text-sm text-slate-500 dark:text-slate-400 mt-1 pl-7.5">Check this box to log an immediate payment transaction against this consultation/visita fee.</p>
                     </div>
 
                     <div id="payment-details-section" class="hidden pl-7.5 space-y-6 pt-4 border-t border-slate-100 dark:border-slate-700">
@@ -99,25 +127,9 @@
                                 </select>
                             </div>
                             <div class="space-y-3">
-                                <label class="text-sm font-semibold text-slate-900 dark:text-slate-300">Transaction Reference</label>
-                                <input type="text" id="payment_reference" name="payment_reference" placeholder="Check #, TX ID, etc." class="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg focus:outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all text-sm font-medium text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500">
+                                <label class="text-sm font-semibold text-slate-900 dark:text-slate-300">Payment Reference (Optional)</label>
+                                <input type="text" id="payment_reference" name="payment_reference" placeholder="e.g. TXN-98432" class="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg focus:outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all text-sm font-medium text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500">
                             </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Step 4: Financial Summary -->
-            <div class="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden">
-                <div class="p-6 md:p-8">
-                    <div class="flex flex-col gap-4">
-                        <div>
-                            <h3 class="text-lg font-bold text-slate-900 dark:text-slate-100">4. Grand Total</h3>
-                            <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">Automatically calculated from line items.</p>
-                        </div>
-                        <div class="flex items-center gap-2">
-                            <span class="text-2xl font-bold text-slate-400">$</span>
-                            {{ form_widget(form.total, {'attr': {'class': 'bg-transparent border-none text-3xl font-bold text-slate-900 dark:text-slate-100 p-0 w-48 focus:ring-0', 'readonly': true}}) }}
                         </div>
                     </div>
 
@@ -125,7 +137,7 @@
                         <a href="{{ path('app_sales_index') }}" class="w-full sm:w-auto px-6 py-2.5 text-sm font-medium text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors text-center">Discard</a>
                         <button type="submit" class="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-8 py-2.5 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg shadow-sm transition-colors active:scale-95">
                             <i data-lucide="save" class="w-4 h-4"></i>
-                            <span>Record Sale</span>
+                            <span>Save Consultation</span>
                         </button>
                     </div>
                 </div>
@@ -154,6 +166,13 @@
             const paymentAmountInput = document.getElementById('payment_amount');
 
             const updateGrandTotal = () => {
+                if (document.body.dataset.activeModule === 'doctor') {
+                    // In doctor mode, total is editable consultation fee (Visita price)
+                    if (recordPaymentCheckbox && recordPaymentCheckbox.checked) {
+                        paymentAmountInput.value = totalInput.value;
+                    }
+                    return;
+                }
                 let grandTotal = 0;
                 document.querySelectorAll('.item-row').forEach(row => {
                     const price = parseFloat(row.querySelector('.price-input').value) || 0;
@@ -261,4 +280,67 @@
             updateGrandTotal();
         });
     </script>
+
+    {% if active_module == 'doctor' %}
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const addRxBtn = document.getElementById('addRxBtn');
+            const rxContainer = document.getElementById('rxItemsContainer');
+            const rxPlaceholder = document.getElementById('rxPlaceholder');
+            const inputClass = 'w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 text-sm font-medium text-slate-900 placeholder-slate-400';
+
+            if (addRxBtn) {
+                addRxBtn.addEventListener('click', function() {
+                    if (rxPlaceholder) rxPlaceholder.style.display = 'none';
+
+                    const row = document.createElement('div');
+                    row.className = 'rx-row p-4 rounded-lg border border-slate-200 bg-white relative';
+                    row.innerHTML = `
+                        <button type="button" onclick="this.parentElement.remove(); checkRxPlaceholder();" class="absolute top-2 right-2 p-1 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded transition-all" title="Remove">
+                            <i data-lucide="x" class="w-4 h-4"></i>
+                        </button>
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-3 mb-3">
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-600 mb-1">Medication Name *</label>
+                                <input type="text" name="rx_name[]" required placeholder="e.g. Amoxicillin" class="${inputClass}">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-600 mb-1">Dosage</label>
+                                <input type="text" name="rx_dosage[]" placeholder="e.g. 500mg" class="${inputClass}">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-600 mb-1">Frequency</label>
+                                <input type="text" name="rx_frequency[]" placeholder="e.g. 3x daily" class="${inputClass}">
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-600 mb-1">Duration</label>
+                                <input type="text" name="rx_duration[]" placeholder="e.g. 7 days" class="${inputClass}">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-600 mb-1">Quantity</label>
+                                <input type="number" name="rx_quantity[]" placeholder="e.g. 21" min="1" class="${inputClass}">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-600 mb-1">Special Instructions</label>
+                                <input type="text" name="rx_instructions[]" placeholder="e.g. Take after meals" class="${inputClass}">
+                            </div>
+                        </div>
+                    `;
+                    rxContainer.appendChild(row);
+                    if (typeof lucide !== 'undefined') lucide.createIcons();
+                });
+            }
+        });
+
+        function checkRxPlaceholder() {
+            const container = document.getElementById('rxItemsContainer');
+            const placeholder = document.getElementById('rxPlaceholder');
+            if (container && placeholder) {
+                placeholder.style.display = container.querySelectorAll('.rx-row').length === 0 ? 'block' : 'none';
+            }
+        }
+    </script>
+    {% endif %}
 {% endblock %}
